@@ -1,0 +1,15 @@
+# .gitignore
+
+__pycache__/
+.venv
+*.pyc
+*.env
+*.log
+
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.bak
+
+workflow/
