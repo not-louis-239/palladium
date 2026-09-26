@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # repo at: https://github.com/not-louis-239/palladium
 # Palladium - Pygame terrain generator, for fun
 # Copyright (C) 2026 Louis Masarei-Boulton <243234869+not-louis-239@users.noreply.github.com>
@@ -32,12 +34,19 @@ def main():
 
     game = Game()
     screen = pg.display.set_mode((WN_W, WN_H))
+    pg.display.set_caption("Palladium")
     clock = pg.time.Clock()
 
-    while True:
+    running = True
+
+    while running:
         dt_s = clock.tick(60) / 1_000.0
         keys = pg.key.get_pressed()
         events = pg.event.get()
+
+        for event in events:
+            if event.type == pg.QUIT:
+                running = False
 
         game.update(dt_s)
         game.take_input(keys=keys, events=events, dt_s=dt_s)
