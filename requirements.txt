@@ -1,4 +1,4 @@
-crystallinium @ git+https://github.com/not-louis-239/crystallinium@cea2e395268d14a7b0f5621256e2d5fadb57fe35
+james @ git+https://github.com/not-louis-239/james@9b17bddd2730e7399b6ce40578fc5f10ed11c4dc
 noise==1.2.2
 numpy==2.4.6
 pygame-ce==2.5.8
