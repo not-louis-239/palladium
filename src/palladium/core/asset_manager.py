@@ -16,19 +16,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
 import pygame as pg
 
+from palladium.core.paths import FONTS_DIR
 
-class BrowseSystemState(State):
+
+class Images:
+    pass
 
 
-    def update(self, dt_s: float) -> None:
-        pass
+class Fonts:
+    def __init__(self) -> None:
+        self.font_path = FONTS_DIR / "lato/Lato-Light.ttf"
+        self.font_title = pg.font.Font(self.font_path, 64)
+        self.font_ui = pg.font.Font(self.font_path, 32)
 
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
 
-    def draw(self, screen: pg.Surface) -> None:
-        pass
+class Assets:
+    def __init__(self) -> None:
+        self.images = Images()
+        self.fonts = Fonts()

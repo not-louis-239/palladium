@@ -16,19 +16,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
-import pygame as pg
-
-
-class BrowseSystemState(State):
-
-
-    def update(self, dt_s: float) -> None:
-        pass
-
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
-
-    def draw(self, screen: pg.Surface) -> None:
-        pass
+UI_PADDING = 15

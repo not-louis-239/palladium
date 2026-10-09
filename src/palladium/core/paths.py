@@ -16,19 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
-import pygame as pg
+from pathlib import Path
 
 
-class BrowseSystemState(State):
+try:
+    ROOT_DIR = next(p for p in Path(__file__).resolve().parents if (p / ".git").exists())
+except StopIteration:
+    raise RuntimeError("Could not find root dir")
 
 
-    def update(self, dt_s: float) -> None:
-        pass
+ASSETS_DIR = ROOT_DIR / "assets"
 
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
-
-    def draw(self, screen: pg.Surface) -> None:
-        pass
+IMAGES_DIR = ASSETS_DIR / "images"
+FONTS_DIR = ASSETS_DIR / "fonts"

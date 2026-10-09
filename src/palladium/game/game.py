@@ -18,20 +18,35 @@
 
 import pygame as pg
 
-from palladium.gui.states import StateID, TitleState
+from palladium.core.asset_manager import Assets
+from palladium.gui.themes import THEMES, Theme
+from palladium.gui.states import State, StateID, TitleState, SeedState, PreferencesState, BrowseTerrainState, BrowseSystemState, SavedSeedsState
 
 
 class Game:
     def __init__(self):
-        self.states = {
-            StateID.TITLE: TitleState
+        self.assets = Assets()
+
+        self.states: dict[StateID, State] = {
+            StateID.TITLE: TitleState(self),
+            StateID.ENTER_SEED: SeedState(self),
+            StateID.BROWSE_SYSTEM: BrowseSystemState(self),
+            StateID.BROWSE_TERRAIN: BrowseTerrainState(self),
+            StateID.SAVED_SEEDS: SavedSeedsState(self),
+            StateID.PREFS: PreferencesState(self)
         }
+        self.state = StateID.TITLE
+
+        self.theme_idx = 0
+
+    def current_theme(self) -> Theme:
+        return THEMES[self.theme_idx]
 
     def update(self, dt_s: float) -> None:
-        ...
+        self.states[self.state].update(dt_s)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.event.Event], dt_s: float) -> None:
-        ...
+        self.states[self.state].take_input(keys, events, dt_s)
 
     def draw(self, screen: pg.Surface) -> None:
-        ...
+        self.states[self.state].draw(screen)
