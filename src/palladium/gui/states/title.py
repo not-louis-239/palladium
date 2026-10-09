@@ -16,22 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pygame as pg
+from james import Label, RectButton
 
-from palladium.gui.states import StateID, TitleState
+from palladium.game.game import Game
+from palladium.gui.states.base import State
 
 
-class Game:
-    def __init__(self):
-        self.states = {
-            StateID.TITLE: TitleState
-        }
+class TitleState(State):
+    def __init__(self, game: Game) -> None:
+        super().__init__(game)
 
-    def update(self, dt_s: float) -> None:
-        ...
 
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.event.Event], dt_s: float) -> None:
-        ...
-
-    def draw(self, screen: pg.Surface) -> None:
-        ...
