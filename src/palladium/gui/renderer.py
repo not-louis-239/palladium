@@ -18,6 +18,19 @@ import pygame as pg
 import james
 
 
-def draw_elem(surface: pg.Surface, elem: james.Element) -> None:
-    if isinstance(elem, james.Panel):
-        ...
+def draw_elem(surface: pg.Surface, elem: james.Element, theme: james.SupportsGetItemColour) -> None:
+    # Custom overrides in the renderer to add specialised behaviour to specific element types
+    if isinstance(elem, james.RectButton):
+        elem.draw_primitive(surface, theme)
+
+        # bottom-only border
+        pg.draw.line(
+            surface, theme[elem.k_border],
+            (elem.rect.left, elem.rect.bottom),
+            (elem.rect.right, elem.rect.bottom),
+            elem.border_w
+        )
+
+        return
+
+    elem.draw_default(surface, theme)

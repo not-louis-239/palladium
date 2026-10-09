@@ -13,3 +13,5 @@ Thumbs.db
 *.bak
 
 workflow/
+
+pyrightconfig.json

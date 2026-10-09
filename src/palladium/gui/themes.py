@@ -25,7 +25,14 @@ type Colour = tuple[int, int, int]
 
 class ThemeKey(StrEnum):
     BG = "BG"
+    BG_HOVERED = "BG_HOVERED"
+    BG_CLICKED = "BG_CLICKED"
     FG = "FG"
+    FG_HOVERED = "FG_HOVERED"
+    FG_CLICKED = "FG_CLICKED"
+    BORDER = "BORDER"
+    BORDER_HOVERED = "BORDER_HOVERED"
+    BORDER_CLICKED = "BORDER_CLICKED"
 
 
 @dataclass
@@ -40,7 +47,14 @@ class Theme:
 THEMES = [
     Theme("Dark", {
         ThemeKey.BG: (12, 12, 24),
-        ThemeKey.FG: (210, 210, 255)
+        ThemeKey.BG_HOVERED: (15, 15, 29),
+        ThemeKey.BG_CLICKED: (19, 19, 34),
+        ThemeKey.FG: (210, 210, 255),
+        ThemeKey.FG_HOVERED: (235, 235, 255),
+        ThemeKey.FG_CLICKED: (255, 255, 255),
+        ThemeKey.BORDER: (170, 170, 220),
+        ThemeKey.BORDER_HOVERED: (205, 205, 240),
+        ThemeKey.BORDER_CLICKED: (240, 240, 255)
     })
 ]
 
@@ -54,10 +68,10 @@ for theme in THEMES:
         bad.append((theme, missing_keys))
 
 if bad:
-    err_msg = "The following themes are missing required keys:\n\n"
+    err_msg = "The following themes are missing required keys:"
 
     for theme, missing in bad:
-        err_msg += f"{theme.display_name}:\n"
-        err_msg += "".join(f"  - {key}\n" for key in missing)
+        err_msg += f"\n  - {theme.display_name}:"
+        err_msg += "".join(f"\n      - {key}" for key in missing)
 
     raise RuntimeError(err_msg)

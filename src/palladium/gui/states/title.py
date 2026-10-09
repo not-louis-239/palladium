@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from james import Panel, VBox, Spacer, Label, RectButton
+from james import Panel, VBox, HBox, Spacer, Label, RectButton
 from pygame import Event, Surface, Rect
 from pygame.key import ScancodeWrapper
 
@@ -38,14 +38,45 @@ class TitleState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
         self.panel = Panel(
+            renderer=draw_elem,
             vert_padding=UI_PADDING,
             horiz_padding=UI_PADDING,
             child=VBox(
-                Label(
-                    text="palladium",
-                    font=self.game.assets.fonts.font_title
-                )
-            )
+                Spacer(flex=0.5),
+                HBox(
+                    Spacer(flex=1.0),
+                    Label(
+                        text="palladium",
+                        font=self.game.assets.fonts.font_title,
+                        k_fg=ThemeKey.FG,
+                    ),
+                    Spacer(flex=1.0),
+                    renderer=draw_elem
+                ),
+                Spacer(flex=1.0),
+                HBox(
+                    Spacer(flex=1.0),
+                    RectButton(
+                        text="begin",
+                        font=self.game.assets.fonts.font_ui,
+                        inset=UI_PADDING,
+                        k_bg_colour=ThemeKey.BG,
+                        k_bg_hovered=ThemeKey.BG_HOVERED,
+                        k_bg_clicked=ThemeKey.BG_CLICKED,
+                        k_fg_colour=ThemeKey.FG,
+                        k_fg_hovered=ThemeKey.FG_HOVERED,
+                        k_fg_clicked=ThemeKey.FG_CLICKED,
+                        k_border_colour=ThemeKey.BORDER,
+                        k_border_hovered=ThemeKey.BORDER_HOVERED,
+                        k_border_clicked=ThemeKey.BORDER_CLICKED,
+                        border_w=2
+                    ),
+                    Spacer(flex=1.0),
+                    renderer=draw_elem
+                ),
+                Spacer(flex=1.0),
+                renderer=draw_elem
+            ),
         )
 
         self.panel.layout(Rect(0, 0, WN_W, WN_H))
@@ -58,4 +89,4 @@ class TitleState(State):
 
     def draw(self, screen: Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])
-        draw_elem(screen, self.panel)
+        draw_elem(screen, self.panel, self.game.current_theme())

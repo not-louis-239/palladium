@@ -27,9 +27,9 @@ class Images:
 
 class Fonts:
     def __init__(self) -> None:
-        self.font_path = FONTS_DIR / "lato/Lato-Light.ttf"
+        self.font_path = FONTS_DIR / "lato/Lato-Regular.ttf"
         self.font_title = pg.font.Font(self.font_path, 64)
-        self.font_ui = pg.font.Font(self.font_path, 32)
+        self.font_ui = pg.font.Font(self.font_path, 45)
 
 
 class Assets:
