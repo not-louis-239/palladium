@@ -25,7 +25,7 @@ from pygame import Event, Surface, Rect
 from pygame.key import ScancodeWrapper
 
 from palladium.core.constants import WN_W, WN_H
-from palladium.gui.constants import UI_PADDING
+from palladium.gui.constants import UI_PADDING, DEFAULT_ATTRS
 from palladium.gui.themes import ThemeKey
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State
@@ -60,15 +60,7 @@ class TitleState(State):
                         text="begin",
                         font=self.game.assets.fonts.font_ui,
                         inset=UI_PADDING,
-                        k_bg_colour=ThemeKey.BG,
-                        k_bg_hovered=ThemeKey.BG_HOVERED,
-                        k_bg_clicked=ThemeKey.BG_CLICKED,
-                        k_fg_colour=ThemeKey.FG,
-                        k_fg_hovered=ThemeKey.FG_HOVERED,
-                        k_fg_clicked=ThemeKey.FG_CLICKED,
-                        k_border_colour=ThemeKey.BORDER,
-                        k_border_hovered=ThemeKey.BORDER_HOVERED,
-                        k_border_clicked=ThemeKey.BORDER_CLICKED,
+                        **DEFAULT_ATTRS,
                         border_w=2
                     ),
                     Spacer(flex=1.0),
