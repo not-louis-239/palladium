@@ -19,15 +19,36 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import random
 
 import pygame as pg
+from james import (
+    CircleButton,
+    HBox,
+    InputBox,
+    Label,
+    Panel,
+    RectButton,
+    SBox,
+    Spacer,
+    Table,
+    VBox,
+)
 
-from james import Panel, HBox, VBox, SBox, InputBox, Spacer, Label, CircleButton, RectButton, Table
-
+from palladium.core.utils import random_seed
+from palladium.gui.constants import (
+    BORDER_W,
+    DEFAULT_ATTRS,
+    DEFAULT_INPUT_BOX_ATTRS,
+    ICON_SIZE,
+    SCREEN_RECT,
+    UI_MARGIN_M,
+    UI_MARGIN_S,
+)
+from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
-from palladium.gui.constants import DEFAULT_ATTRS, DEFAULT_INPUT_BOX_ATTRS, BORDER_W, ICON_SIZE, UI_MARGIN_M, UI_MARGIN_S, SCREEN_RECT
-from palladium.gui.renderer import draw_elem
+from palladium.terrain.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -115,13 +136,20 @@ class SeedState(State):
     def update(self, dt_s: float) -> None:
         pass
 
+    def _proceed(self) -> None:
+        # MUST create star system before entering system browser
+        seed = self.seed_input_box.text or random_seed()
+        self.game.star_system = generate_star_system(seed)
+
+        self.game.enter_state(StateID.BROWSE_SYSTEM)
+
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         for event in events:
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
-                    self.game.state = StateID.TITLE
+                    self.game.enter_state(StateID.TITLE)
                 if self.proceed_button.check_overlaps(event.pos):
-                    self.game.state = StateID.BROWSE_SYSTEM
+                    self._proceed()
 
         self.seed_input_box.handle_input(keys, events, dt_s)
 

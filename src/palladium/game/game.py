@@ -19,8 +19,19 @@
 import pygame as pg
 
 from palladium.core.asset_manager import Assets
+from palladium.gui.states import (
+    BrowseStarState,
+    BrowseSystemState,
+    BrowseTerrainState,
+    PreferencesState,
+    SavedSeedsState,
+    SeedState,
+    State,
+    StateID,
+    TitleState,
+)
 from palladium.gui.themes import THEMES, Theme
-from palladium.gui.states import State, StateID, TitleState, SeedState, PreferencesState, BrowseStarState, BrowseTerrainState, BrowseSystemState, SavedSeedsState
+from palladium.terrain.star_system import StarSystem
 
 
 class Game:
@@ -37,6 +48,8 @@ class Game:
             StateID.PREFS: PreferencesState(self)
         }
         self.state = StateID.TITLE
+
+        self.star_system: StarSystem | None = None
 
         self.theme_idx = 0
 

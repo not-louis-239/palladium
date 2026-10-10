@@ -23,6 +23,7 @@
 
 from noise import snoise2 as _snoise2
 
+
 def snoise2(
         x: float, y: float, *, scale: float = 1.0,
         octaves: int = 1, persistence: float = 0.5,

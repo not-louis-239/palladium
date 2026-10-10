@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import pygame as pg
 
-from palladium.core.constants import WN_W, WN_H
+from palladium.core.constants import WN_H, WN_W
 from palladium.game.game import Game
 
 

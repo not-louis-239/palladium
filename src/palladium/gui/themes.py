@@ -16,9 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import StrEnum
 from dataclasses import dataclass
-
+from enum import StrEnum
 
 type Colour = tuple[int, int, int]
 
@@ -56,7 +55,7 @@ THEMES = [
         ThemeKey.BG_HOVERED: (15, 15, 29),
         ThemeKey.BG_ACTIVE: (19, 19, 34),
         ThemeKey.FG: (210, 210, 255),
-        ThemeKey.FG_ACCENT: (255, 255, 90),
+        ThemeKey.FG_ACCENT: (90, 255, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),
         ThemeKey.FG_ACTIVE: (255, 255, 255),
         ThemeKey.FG_INPUT_TEXT: (247, 220, 178),

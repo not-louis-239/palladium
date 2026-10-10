@@ -14,8 +14,7 @@
 
 
 import pygame as pg
-
-from james import Element, RectButton, InputBox, SupportsGetItemColour
+from james import Element, InputBox, RectButton, SupportsGetItemColour
 
 
 def draw_elem(surface: pg.Surface, elem: Element, theme: SupportsGetItemColour) -> None:

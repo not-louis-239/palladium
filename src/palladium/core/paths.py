@@ -18,7 +18,6 @@
 
 from pathlib import Path
 
-
 try:
     ROOT_DIR = next(p for p in Path(__file__).resolve().parents if (p / ".git").exists())
 except StopIteration:

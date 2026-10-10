@@ -18,13 +18,13 @@
 
 from . import (
     base,
-    title,
-    seed,
-    browse_system,
     browse_star,
+    browse_system,
     browse_terrain,
+    prefs,
     saved_seeds,
-    prefs
+    seed,
+    title,
 )
 
 State = base.State

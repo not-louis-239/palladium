@@ -16,15 +16,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.terrain.star_gen import StarProfile
+from palladium.core.utils import str_to_seed
 from palladium.terrain.planet import Planet
+from palladium.terrain.star_gen import StarProfile, generate_star_profile
 
 
 class StarSystem:
-    def __init__(self, star: StarProfile, planets: list[Planet]) -> None:
+    def __init__(self, star: StarProfile, planets: list[Planet], seed: int, seed_str: str) -> None:
         self.star = star
         self.planets = planets
+        self.seed = seed
+        self.seed_str = seed_str
 
 
-def generate_star_system(seed: int) -> StarSystem:
-    ...
+def generate_star_system(seed: int | str) -> StarSystem:
+    seed_int = str_to_seed(str(seed))
+    star = generate_star_profile(seed_int)
+
+    # TODO: add planet objects to star system generator
+
+    return StarSystem(star, [], seed_int, str(seed))

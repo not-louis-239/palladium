@@ -16,13 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import StrEnum
-from dataclasses import dataclass
 import random
+from dataclasses import dataclass
+from enum import StrEnum
 
-
-from palladium.core.utils import input_to_seed
-
+from palladium.core.utils import str_to_seed
 
 SUN_TEMP = 5778.0  # °K
 
@@ -114,7 +112,7 @@ def _test():
     for test_case in test_cases:
         print(f"{f'{test_case.radius:.2f}':{column_widths[0]}} | {f'{test_case.temp:.2f}':{column_widths[1]}} | {f'{test_case.luminosity:,.3g}':{column_widths[2]}}")
 
-    seed = input_to_seed(input("\nEnter a seed: "))
+    seed = str_to_seed(input("\nEnter a seed: "))
     print(f"Generated star profile: {generate_star_profile(seed)}")
 
 

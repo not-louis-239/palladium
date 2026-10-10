@@ -17,6 +17,11 @@
 
 
 import hashlib
+import random
+from itertools import pairwise
+
+from palladium.core.custom_types import Colour
+
 
 def _str_to_terrain_seed(s: str) -> int:
     """Hashes a string to a 64-bit signed integer, wrapping to -2^63 to 2^63-1.
@@ -24,13 +29,52 @@ def _str_to_terrain_seed(s: str) -> int:
     h = int(hashlib.sha256(s.encode()).hexdigest(), 16)
     return (h % (2**64)) - 2**63
 
-def input_to_seed(inp: str) -> int:
+
+def random_seed() -> int:
+    return random.randint(-2**63, 2**63 - 1)
+
+
+def str_to_seed(s: str) -> int:
     """Normalises input by case and leading or trailing whitespace,
     then attempts to convert the input directly to an integer seed.
     If that fails, it hashes the string to an integer seed.
     Then returns the seed."""
-    inp = inp.strip().lower()
+    s = s.strip().lower()
     try:
-        return int(inp)
+        return int(s)
     except ValueError:
-        return _str_to_terrain_seed(inp)
+        return _str_to_terrain_seed(s)
+
+
+def clamp(val: float, lower: float, upper: float) -> float:
+    return max(min(val, upper), lower)
+
+
+def lerp_colours(c1: Colour, c2: Colour, t: float) -> Colour:
+    t = clamp(t, 0, 1)
+    return tuple(
+        int(c1[x] + t * (c2[x] - c1[x])) for x in range(len(c1))  # type: ignore
+    )
+
+
+def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
+    """Returns a Colour determined by the anchor points in `grad`.
+    If val < grad[0], returns the first anchor.
+    If val > grad[-1], returns the last colour."""
+
+    if not grad:
+        raise ValueError("grad requires at least one value-colour pair")
+
+    keys = sorted(grad)
+    if val <= keys[0]:
+        return grad[keys[0]]
+    if val >= keys[-1]:
+        return grad[keys[-1]]
+
+    for k1, k2 in pairwise(keys):
+        if k1 <= val <= k2:
+            t = (val - k1) / (k2 - k1)
+            c1, c2 = grad[k1], grad[k2]
+            return lerp_colours(c1, c2, t)
+
+    return grad[keys[-1]]

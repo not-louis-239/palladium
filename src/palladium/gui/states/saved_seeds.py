@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
 import pygame as pg
+
+from palladium.gui.states.base import State
 
 
 class SavedSeedsState(State):

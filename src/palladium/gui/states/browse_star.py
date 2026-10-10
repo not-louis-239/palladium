@@ -20,10 +20,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pygame import Event, Surface
-from pygame.key import ScancodeWrapper
+import pygame as pg
 
-from palladium.gui.states import State
+from palladium.gui.states.base import State
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -39,8 +38,8 @@ class BrowseStarState(State):
     def update(self, dt_s: float) -> None:
         pass
 
-    def take_input(self, keys: ScancodeWrapper, events: list[Event], dt_s: float) -> None:
+    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         pass
 
-    def draw(self, screen: Surface) -> None:
+    def draw(self, screen: pg.Surface) -> None:
         pass

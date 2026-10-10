@@ -18,17 +18,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 import random
+from typing import TYPE_CHECKING
 
-from james import Panel, VBox, HBox, Spacer, Label, RectButton
 import pygame as pg
+from james import HBox, Label, Panel, RectButton, Spacer, VBox
 
-from palladium.core.constants import WN_W, WN_H
-from palladium.gui.constants import UI_MARGIN_M, BORDER_W, DEFAULT_ATTRS, SCREEN_RECT
-from palladium.gui.themes import ThemeKey
+from palladium.core.constants import WN_H, WN_W
+from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M
 from palladium.gui.renderer import draw_elem
-from palladium.gui.states.base import StateID, State
+from palladium.gui.states.base import State, StateID
+from palladium.gui.themes import ThemeKey
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -109,7 +109,7 @@ class TitleState(State):
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.begin_button.check_overlaps(event.pos):
-                    self.game.state = StateID.ENTER_SEED
+                    self.game.enter_state(StateID.ENTER_SEED)
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])

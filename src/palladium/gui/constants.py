@@ -20,9 +20,8 @@ from typing import TypedDict
 
 import pygame as pg
 
-from palladium.core.constants import WN_W, WN_H
+from palladium.core.constants import WN_H, WN_W
 from palladium.gui.themes import ThemeKey
-
 
 BORDER_W = 2
 
