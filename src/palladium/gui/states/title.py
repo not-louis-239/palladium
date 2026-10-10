@@ -21,14 +21,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from james import Panel, VBox, HBox, Spacer, Label, RectButton
-from pygame import Event, Surface, Rect
-from pygame.key import ScancodeWrapper
+import pygame as pg
 
-from palladium.core.constants import WN_W, WN_H
-from palladium.gui.constants import UI_PADDING, DEFAULT_ATTRS
+from palladium.gui.constants import UI_MARGIN_M, UI_MARGIN_S, BORDER_W, DEFAULT_ATTRS, SCREEN_RECT
 from palladium.gui.themes import ThemeKey
 from palladium.gui.renderer import draw_elem
-from palladium.gui.states.base import State
+from palladium.gui.states.base import StateID, State
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -37,48 +35,53 @@ if TYPE_CHECKING:
 class TitleState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        self.begin_button = RectButton(
+            text="begin",
+            font=self.game.assets.fonts.font_ui,
+            **DEFAULT_ATTRS,
+            border_w=BORDER_W
+        )
+
         self.panel = Panel(
             renderer=draw_elem,
-            vert_padding=UI_PADDING,
-            horiz_padding=UI_PADDING,
+            vert_padding=UI_MARGIN_M,
+            horiz_padding=UI_MARGIN_M,
             child=VBox(
                 Spacer(flex=0.5),
                 HBox(
-                    Spacer(flex=1.0),
+                    Spacer(),
                     Label(
                         text="palladium",
                         font=self.game.assets.fonts.font_title,
                         k_fg=ThemeKey.FG,
                     ),
-                    Spacer(flex=1.0),
+                    Spacer(),
                     renderer=draw_elem
                 ),
-                Spacer(flex=1.0),
+                Spacer(),
                 HBox(
-                    Spacer(flex=1.0),
-                    RectButton(
-                        text="begin",
-                        font=self.game.assets.fonts.font_ui,
-                        inset=UI_PADDING,
-                        **DEFAULT_ATTRS,
-                        border_w=2
-                    ),
-                    Spacer(flex=1.0),
+                    Spacer(),
+                    self.begin_button,
+                    Spacer(),
                     renderer=draw_elem
                 ),
-                Spacer(flex=1.0),
+                Spacer(),
                 renderer=draw_elem
             ),
         )
 
-        self.panel.layout(Rect(0, 0, WN_W, WN_H))
+        self.panel.layout(SCREEN_RECT)
 
     def update(self, dt_s: float) -> None:
         pass
 
-    def take_input(self, keys: ScancodeWrapper, events: list[Event], dt_s: float) -> None:
-        pass
+    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
+        for event in events:
+            if event.type == pg.MOUSEBUTTONUP and event.button == 1:
+                if self.begin_button.check_overlaps(event.pos):
+                    self.game.state = StateID.ENTER_SEED
 
-    def draw(self, screen: Surface) -> None:
+    def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])
         draw_elem(screen, self.panel, self.game.current_theme())

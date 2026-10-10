@@ -33,4 +33,20 @@ def draw_elem(surface: pg.Surface, elem: james.Element, theme: james.SupportsGet
 
         return
 
+    if isinstance(elem, james.InputBox):
+        elem.draw_primitive(surface, theme)
+        elem.draw_cursor(surface, theme)
+
+        # bottom-only border
+        pg.draw.line(
+            surface, theme[elem.k_border],
+            (elem.rect.left, elem.rect.bottom),
+            (elem.rect.right, elem.rect.bottom),
+            elem.border_w
+        )
+
+        elem.draw_tooltip_with_default_border(surface, theme)
+
+        return
+
     elem.draw_default(surface, theme)

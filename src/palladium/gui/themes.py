@@ -26,13 +26,18 @@ type Colour = tuple[int, int, int]
 class ThemeKey(StrEnum):
     BG = "BG"
     BG_HOVERED = "BG_HOVERED"
-    BG_CLICKED = "BG_CLICKED"
+    BG_ACTIVE = "BG_ACTIVE"
     FG = "FG"
     FG_HOVERED = "FG_HOVERED"
-    FG_CLICKED = "FG_CLICKED"
+    FG_ACTIVE = "FG_ACTIVE"
+    FG_INPUT_TEXT = "FG_INPUT_TEXT"
+    FG_INPUT_TEXT_HOVERED = "FG_INPUT_TEXT_HOVERED"
+    FG_INPUT_TEXT_ACTIVE = "FG_INPUT_TEXT_ACTIVE"
+    FG_SENTINEL = "FG_SENTINEL"
     BORDER = "BORDER"
     BORDER_HOVERED = "BORDER_HOVERED"
-    BORDER_CLICKED = "BORDER_CLICKED"
+    BORDER_ACTIVE = "BORDER_ACTIVE"
+    CURSOR = "CURSOR"
 
 
 @dataclass
@@ -48,13 +53,18 @@ THEMES = [
     Theme("Dark", {
         ThemeKey.BG: (12, 12, 24),
         ThemeKey.BG_HOVERED: (15, 15, 29),
-        ThemeKey.BG_CLICKED: (19, 19, 34),
+        ThemeKey.BG_ACTIVE: (19, 19, 34),
         ThemeKey.FG: (210, 210, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),
-        ThemeKey.FG_CLICKED: (255, 255, 255),
+        ThemeKey.FG_ACTIVE: (255, 255, 255),
+        ThemeKey.FG_INPUT_TEXT: (247, 220, 178),
+        ThemeKey.FG_INPUT_TEXT_HOVERED: (255, 233, 199),
+        ThemeKey.FG_INPUT_TEXT_ACTIVE: (255, 245, 227),
+        ThemeKey.FG_SENTINEL: (128, 128, 145),
         ThemeKey.BORDER: (170, 170, 220),
         ThemeKey.BORDER_HOVERED: (205, 205, 240),
-        ThemeKey.BORDER_CLICKED: (240, 240, 255)
+        ThemeKey.BORDER_ACTIVE: (240, 240, 255),
+        ThemeKey.CURSOR: (255, 255, 255)
     })
 ]
 

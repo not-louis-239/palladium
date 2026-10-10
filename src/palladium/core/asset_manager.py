@@ -18,17 +18,20 @@
 
 import pygame as pg
 
-from palladium.core.paths import FONTS_DIR
+from palladium.core.paths import FONTS_DIR, IMAGES_DIR
 
 
 class Images:
-    pass
+    def __init__(self) -> None:
+        self.back = IMAGES_DIR / "back.png"
+        self.proceed = IMAGES_DIR / "proceed.png"
 
 
 class Fonts:
     def __init__(self) -> None:
         self.font_path = FONTS_DIR / "lato/Lato-Regular.ttf"
         self.font_title = pg.font.Font(self.font_path, 64)
+        self.font_heading = pg.font.Font(self.font_path, 54)
         self.font_ui = pg.font.Font(self.font_path, 45)
 
 
