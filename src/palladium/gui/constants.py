@@ -33,6 +33,10 @@ ICON_SIZE = 64
 SCREEN_RECT = pg.Rect(0, 0, WN_W, WN_H)
 
 
+SOLAR_MASS_IN_KG = 1.98847e30
+SOLAR_RADIUS_IN_KM = 695_700
+
+
 # ugh, pyright, you complained so I added this. happy now?
 class UIKwargs(TypedDict, total=False):
     k_bg_colour: ThemeKey

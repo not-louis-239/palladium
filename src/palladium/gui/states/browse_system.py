@@ -43,7 +43,7 @@ class BrowseSystemState(State):
 
         self.seed_label = Label(
             text="",
-            font=self.game.assets.fonts.ui,
+            font=self.game.assets.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
@@ -58,7 +58,7 @@ class BrowseSystemState(State):
                     HBox(
                         Label(
                             text="star system ",
-                            font=self.game.assets.fonts.ui,
+                            font=self.game.assets.fonts.text,
                             k_fg=ThemeKey.FG
                         ),
                         self.seed_label,
@@ -95,10 +95,11 @@ class BrowseSystemState(State):
         # shouldn't be None if entered properly
         assert self.game.star_system is not None
 
-        self.seed_label.set_text(self.game.star_system.seed_str)
+        self.seed_label.set_text(self.game.star_system.seed_metadata.display_str)
         visual_radius = int(self.game.star_system.star.radius * 2 / self.zoom_level)
         self.star_button.r = visual_radius
         self.star_button.rect.update(WN_W // 2 - visual_radius, WN_H // 2 - visual_radius, 2 * visual_radius, 2 * visual_radius)
+
         self.overlay_panel.layout(SCREEN_RECT)
 
     def update(self, dt_s: float) -> None:
@@ -125,9 +126,8 @@ class BrowseSystemState(State):
         # Draw scale bar
         width = int(1 / self.zoom_level)
         height = 8
-
         bar_x = UI_MARGIN_M
-        bar_y = WN_H - 110
+        bar_y = WN_H - 80
 
         # TODO: scale bar auto-changes quantity depending on zoom level,
         # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii

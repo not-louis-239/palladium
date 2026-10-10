@@ -16,17 +16,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from dataclasses import dataclass
+
 from palladium.core.utils import str_to_seed
 from palladium.terrain.planet import Planet
 from palladium.terrain.star_gen import StarProfile, generate_star_profile
 
 
+@dataclass(frozen=True)
+class SeedMetadata:
+    display_str: str
+    display_offset: int
+
+    @property
+    def integer_value(self) -> int:
+        return str_to_seed(self.display_str) + self.display_offset
+
+
 class StarSystem:
-    def __init__(self, star: StarProfile, planets: list[Planet], seed: int, seed_str: str) -> None:
+    def __init__(self, star: StarProfile, planets: list[Planet], seed_metadata: SeedMetadata) -> None:
         self.star = star
         self.planets = planets
-        self.seed = seed
-        self.seed_str = seed_str
+        self.seed_metadata = seed_metadata
 
 
 def generate_star_system(seed: int | str) -> StarSystem:
@@ -35,4 +46,4 @@ def generate_star_system(seed: int | str) -> StarSystem:
 
     # TODO: add planet objects to star system generator
 
-    return StarSystem(star, [], seed_int, str(seed))
+    return StarSystem(star, [], SeedMetadata(str(seed), 0))

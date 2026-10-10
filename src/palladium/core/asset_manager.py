@@ -36,7 +36,7 @@ class Fonts:
         self.title = pg.font.Font(self._font_path, 64)
         self.heading = pg.font.Font(self._font_path, 54)
         self.ui = pg.font.Font(self._font_path, 45)
-        self.text = pg.font.Font(self._font_path, 32)
+        self.text = pg.font.Font(self._font_path, 28)
 
 
 class Assets:
