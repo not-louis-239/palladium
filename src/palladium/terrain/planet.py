@@ -16,20 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
-import pygame as pg
+from palladium.terrain.terrain_gen import TerrainSurface
 
 
-class BrowseTerrainState(State):
-    def on_entered(self) -> None:
-        pass
-
-    def update(self, dt_s: float) -> None:
-        pass
-
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
-
-    def draw(self, screen: pg.Surface) -> None:
-        pass
+class Planet:
+    def __init__(self, surface: TerrainSurface) -> None:
+        self.surface = surface

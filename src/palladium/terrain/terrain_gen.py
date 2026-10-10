@@ -29,8 +29,8 @@ class Cell:
 
 
 class TerrainSurface:
-    def __init__(self, heightmap: list[list[Cell]]) -> None:
-        self.heightmap = heightmap
+    def __init__(self, cells: list[list[Cell]]) -> None:
+        self.cells = cells
 
     def get_cell(self, x: int, y: int) -> Cell:
-        return self.heightmap[y][x]
+        return self.cells[y][x]

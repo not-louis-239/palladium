@@ -28,6 +28,7 @@ class ThemeKey(StrEnum):
     BG_HOVERED = "BG_HOVERED"
     BG_ACTIVE = "BG_ACTIVE"
     FG = "FG"
+    FG_ACCENT = "FG_ACCENT"
     FG_HOVERED = "FG_HOVERED"
     FG_ACTIVE = "FG_ACTIVE"
     FG_INPUT_TEXT = "FG_INPUT_TEXT"
@@ -55,6 +56,7 @@ THEMES = [
         ThemeKey.BG_HOVERED: (15, 15, 29),
         ThemeKey.BG_ACTIVE: (19, 19, 34),
         ThemeKey.FG: (210, 210, 255),
+        ThemeKey.FG_ACCENT: (255, 255, 90),
         ThemeKey.FG_HOVERED: (235, 235, 255),
         ThemeKey.FG_ACTIVE: (255, 255, 255),
         ThemeKey.FG_INPUT_TEXT: (247, 220, 178),

@@ -21,6 +21,7 @@ from . import (
     title,
     seed,
     browse_system,
+    browse_star,
     browse_terrain,
     saved_seeds,
     prefs
@@ -32,6 +33,7 @@ StateID = base.StateID
 TitleState = title.TitleState
 SeedState = seed.SeedState
 BrowseSystemState = browse_system.BrowseSystemState
+BrowseStarState = browse_star.BrowseStarState
 BrowseTerrainState = browse_terrain.BrowseTerrainState
 SavedSeedsState = saved_seeds.SavedSeedsState
 PreferencesState = prefs.PreferencesState

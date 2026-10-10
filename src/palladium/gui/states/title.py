@@ -99,6 +99,9 @@ class TitleState(State):
 
         self.panel.layout(SCREEN_RECT)
 
+    def on_entered(self) -> None:
+        pass
+
     def update(self, dt_s: float) -> None:
         pass
 

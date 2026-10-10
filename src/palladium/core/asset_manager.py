@@ -25,6 +25,9 @@ class Images:
     def __init__(self) -> None:
         self.back = IMAGES_DIR / "back.png"
         self.proceed = IMAGES_DIR / "proceed.png"
+        self.recentre = IMAGES_DIR / "recentre.png"
+        self.zoom_in = IMAGES_DIR / "zoom_in.png"
+        self.zoom_out = IMAGES_DIR / "zoom_out.png"
 
 
 class Fonts:

@@ -22,7 +22,8 @@ import pygame as pg
 
 
 class PreferencesState(State):
-
+    def on_entered(self) -> None:
+        pass
 
     def update(self, dt_s: float) -> None:
         pass

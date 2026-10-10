@@ -20,7 +20,7 @@ import pygame as pg
 
 from palladium.core.asset_manager import Assets
 from palladium.gui.themes import THEMES, Theme
-from palladium.gui.states import State, StateID, TitleState, SeedState, PreferencesState, BrowseTerrainState, BrowseSystemState, SavedSeedsState
+from palladium.gui.states import State, StateID, TitleState, SeedState, PreferencesState, BrowseStarState, BrowseTerrainState, BrowseSystemState, SavedSeedsState
 
 
 class Game:
@@ -31,6 +31,7 @@ class Game:
             StateID.TITLE: TitleState(self),
             StateID.ENTER_SEED: SeedState(self),
             StateID.BROWSE_SYSTEM: BrowseSystemState(self),
+            StateID.BROWSE_STAR: BrowseStarState(self),
             StateID.BROWSE_TERRAIN: BrowseTerrainState(self),
             StateID.SAVED_SEEDS: SavedSeedsState(self),
             StateID.PREFS: PreferencesState(self)
@@ -38,6 +39,10 @@ class Game:
         self.state = StateID.TITLE
 
         self.theme_idx = 0
+
+    def enter_state(self, state: StateID) -> None:
+        self.state = state
+        self.states[self.state].on_entered()
 
     def current_theme(self) -> Theme:
         return THEMES[self.theme_idx]

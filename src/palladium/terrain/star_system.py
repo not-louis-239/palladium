@@ -16,20 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
+from palladium.terrain.star_gen import StarProfile
+from palladium.terrain.planet import Planet
 
-import pygame as pg
+
+class StarSystem:
+    def __init__(self, star: StarProfile, planets: list[Planet]) -> None:
+        self.star = star
+        self.planets = planets
 
 
-class BrowseTerrainState(State):
-    def on_entered(self) -> None:
-        pass
-
-    def update(self, dt_s: float) -> None:
-        pass
-
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
-
-    def draw(self, screen: pg.Surface) -> None:
-        pass
+def generate_star_system(seed: int) -> StarSystem:
+    ...

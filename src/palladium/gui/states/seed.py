@@ -109,6 +109,9 @@ class SeedState(State):
 
         self.panel.layout(SCREEN_RECT)
 
+    def on_entered(self) -> None:
+        pass
+
     def update(self, dt_s: float) -> None:
         pass
 
@@ -117,6 +120,8 @@ class SeedState(State):
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.state = StateID.TITLE
+                if self.proceed_button.check_overlaps(event.pos):
+                    self.game.state = StateID.BROWSE_SYSTEM
 
         self.seed_input_box.handle_input(keys, events, dt_s)
 

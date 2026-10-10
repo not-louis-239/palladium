@@ -16,13 +16,44 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.gui.states.base import State
-
 import pygame as pg
+
+from james import HBox, Panel, Spacer, VBox
+
+from palladium.game.game import Game
+from palladium.gui.states.base import State
+from palladium.gui.renderer import draw_elem
 
 
 class BrowseSystemState(State):
+    def __init__(self, game: Game) -> None:
+        super().__init__(game)
 
+        self.overlay_panel = Panel(
+            child=VBox(
+                HBox(
+                    renderer=draw_elem
+                ),
+                Spacer(),
+                HBox(
+                    renderer=draw_elem
+                ),
+                HBox(
+                    renderer=draw_elem
+                ),
+                HBox(
+                    renderer=draw_elem
+                ),
+                HBox(
+                    renderer=draw_elem
+                ),
+                renderer=draw_elem
+            ),
+            renderer=draw_elem
+        )
+
+    def on_entered(self) -> None:
+        pass
 
     def update(self, dt_s: float) -> None:
         pass
@@ -32,3 +63,5 @@ class BrowseSystemState(State):
 
     def draw(self, screen: pg.Surface) -> None:
         pass
+
+        # TODO: add star background parallax effect

@@ -15,12 +15,12 @@
 
 import pygame as pg
 
-import james
+from james import Element, RectButton, InputBox, SupportsGetItemColour
 
 
-def draw_elem(surface: pg.Surface, elem: james.Element, theme: james.SupportsGetItemColour) -> None:
+def draw_elem(surface: pg.Surface, elem: Element, theme: SupportsGetItemColour) -> None:
     # Custom overrides in the renderer to add specialised behaviour to specific element types
-    if isinstance(elem, james.RectButton):
+    if isinstance(elem, RectButton):
         elem.draw_primitive(surface, theme)
 
         # bottom-only border
@@ -33,7 +33,7 @@ def draw_elem(surface: pg.Surface, elem: james.Element, theme: james.SupportsGet
 
         return
 
-    if isinstance(elem, james.InputBox):
+    if isinstance(elem, InputBox):
         elem.draw_primitive(surface, theme)
         elem.draw_cursor(surface, theme)
 

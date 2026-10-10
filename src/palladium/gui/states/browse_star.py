@@ -19,41 +19,28 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from abc import ABC, abstractmethod
-from enum import StrEnum
 
-import pygame as pg
+from pygame import Event, Surface
+from pygame.key import ScancodeWrapper
+
+from palladium.gui.states import State
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-class StateID(StrEnum):
-    TITLE = "title"
-    ENTER_SEED = "enter_seed"
-    BROWSE_SYSTEM = "browse_system"
-    BROWSE_STAR = "browse_star"
-    BROWSE_TERRAIN = "browse_terrain"
-    SAVED_SEEDS = "saved_seeds"
-    PREFS = "prefs"
-
-class State(ABC):
+class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
-        self.game = game
+        super().__init__(game)
 
-    @abstractmethod
     def on_entered(self) -> None:
-        """Automatic callback when entering a state"""
-        raise NotImplementedError
+        pass
 
-    @abstractmethod
     def update(self, dt_s: float) -> None:
-        raise NotImplementedError
+        pass
 
-    @abstractmethod
-    def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.event.Event], dt_s: float) -> None:
-        raise NotImplementedError
+    def take_input(self, keys: ScancodeWrapper, events: list[Event], dt_s: float) -> None:
+        pass
 
-    @abstractmethod
-    def draw(self, screen: pg.Surface) -> None:
-        raise NotImplementedError
+    def draw(self, screen: Surface) -> None:
+        pass
