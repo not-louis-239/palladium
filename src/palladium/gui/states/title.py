@@ -19,11 +19,13 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import random
 
 from james import Panel, VBox, HBox, Spacer, Label, RectButton
 import pygame as pg
 
-from palladium.gui.constants import UI_MARGIN_M, UI_MARGIN_S, BORDER_W, DEFAULT_ATTRS, SCREEN_RECT
+from palladium.core.constants import WN_W, WN_H
+from palladium.gui.constants import UI_MARGIN_M, BORDER_W, DEFAULT_ATTRS, SCREEN_RECT
 from palladium.gui.themes import ThemeKey
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import StateID, State
@@ -32,9 +34,33 @@ if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
+STAR_BG_SEED = 102
+
+LAYER_FIDELITY = 25
+RADIUS = 100
+LAYERS = [(
+    int(255 * ((0.8 * i) / LAYER_FIDELITY) ** 12),
+    int(RADIUS * (1 - i / LAYER_FIDELITY))
+) for i in range(LAYER_FIDELITY)]
+
+
 class TitleState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        star_rng = random.Random(STAR_BG_SEED)
+        star_positions = [
+            (star_rng.random() * WN_W, star_rng.random() * WN_H)
+            for _ in range(100)
+        ]
+
+        self.star_overlay_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
+        for star in star_positions:
+            for brightness, radius in LAYERS:
+                surface = pg.Surface((radius * 2, radius * 2), pg.SRCALPHA)
+                pg.draw.circle(surface, (255, 255, 255, brightness), (radius, radius), radius)
+                self.star_overlay_surface.blit(surface, (star[0] - radius, star[1] - radius))
+            pg.draw.circle(self.star_overlay_surface, (255, 255, 255, 255), star, 2)
 
         self.begin_button = RectButton(
             text="begin",
@@ -84,4 +110,5 @@ class TitleState(State):
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.blit(self.star_overlay_surface)
         draw_elem(screen, self.panel, self.game.current_theme())
