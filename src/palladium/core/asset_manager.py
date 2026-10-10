@@ -32,10 +32,11 @@ class Images:
 
 class Fonts:
     def __init__(self) -> None:
-        self.font_path = FONTS_DIR / "lato/Lato-Regular.ttf"
-        self.font_title = pg.font.Font(self.font_path, 64)
-        self.font_heading = pg.font.Font(self.font_path, 54)
-        self.font_ui = pg.font.Font(self.font_path, 45)
+        self._font_path = FONTS_DIR / "lato/Lato-Regular.ttf"
+        self.title = pg.font.Font(self._font_path, 64)
+        self.heading = pg.font.Font(self._font_path, 54)
+        self.ui = pg.font.Font(self._font_path, 45)
+        self.text = pg.font.Font(self._font_path, 32)
 
 
 class Assets:

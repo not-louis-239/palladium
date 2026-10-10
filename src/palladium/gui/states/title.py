@@ -64,7 +64,7 @@ class TitleState(State):
 
         self.begin_button = RectButton(
             text="begin",
-            font=self.game.assets.fonts.font_ui,
+            font=self.game.assets.fonts.ui,
             **DEFAULT_ATTRS,
             border_w=BORDER_W
         )
@@ -79,7 +79,7 @@ class TitleState(State):
                     Spacer(),
                     Label(
                         text="palladium",
-                        font=self.game.assets.fonts.font_title,
+                        font=self.game.assets.fonts.title,
                         k_fg=ThemeKey.FG,
                     ),
                     Spacer(),

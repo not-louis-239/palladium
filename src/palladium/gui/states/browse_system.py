@@ -21,11 +21,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import HBox, Panel, Spacer, VBox, Label
+from james import HBox, Panel, Spacer, VBox, Label, CircleButton
 
-from palladium.core.constants import KELVIN_COLOURS, WN_H, WN_W
-from palladium.core.utils import lerp_gradient
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.states.base import StateID
+from palladium.core.constants import WN_H, WN_W
+from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M
+from palladium.gui.utils import draw_scale_bar, draw_star
 from palladium.gui.renderer import draw_elem
 from palladium.gui.themes import ThemeKey
 from palladium.gui.states.base import State
@@ -38,10 +39,16 @@ class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
+        self.zoom_level = 0.03  # solar radii per pixel
+
         self.seed_label = Label(
             text="",
-            font=self.game.assets.fonts.font_ui,
+            font=self.game.assets.fonts.ui,
             k_fg=ThemeKey.FG_ACCENT
+        )
+
+        self.star_button = CircleButton(
+            r=0, font=self.game.assets.fonts.ui, k_fg_colour=ThemeKey.FG
         )
 
         self.overlay_panel = Panel(
@@ -51,7 +58,7 @@ class BrowseSystemState(State):
                     HBox(
                         Label(
                             text="star system ",
-                            font=self.game.assets.fonts.font_ui,
+                            font=self.game.assets.fonts.ui,
                             k_fg=ThemeKey.FG
                         ),
                         self.seed_label,
@@ -81,18 +88,28 @@ class BrowseSystemState(State):
 
         self.overlay_panel.layout(SCREEN_RECT)
 
+    def _adjust_zoom(self) -> None:
+        ...  # TODO: finish this function
+
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
         assert self.game.star_system is not None
 
         self.seed_label.set_text(self.game.star_system.seed_str)
+        visual_radius = int(self.game.star_system.star.radius * 2 / self.zoom_level)
+        self.star_button.r = visual_radius
+        self.star_button.rect.update(WN_W // 2 - visual_radius, WN_H // 2 - visual_radius, 2 * visual_radius, 2 * visual_radius)
         self.overlay_panel.layout(SCREEN_RECT)
 
     def update(self, dt_s: float) -> None:
         pass
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
-        pass
+        for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                if self.star_button.check_overlaps(event.pos):
+                    self.game.enter_state(StateID.BROWSE_STAR)
+
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])
@@ -102,8 +119,19 @@ class BrowseSystemState(State):
         # self.game.star_system should not be None if this state was entered properly
         assert self.game.star_system is not None
 
-        temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
-        pg.draw.circle(screen, temp_colour, (WN_W // 2, WN_H // 2), 100)
+        # Drawing the star may cause problems if the star is very big (hundreds of solar radii) at close zoom levels
+        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
+
+        # Draw scale bar
+        width = int(1 / self.zoom_level)
+        height = 8
+
+        bar_x = UI_MARGIN_M
+        bar_y = WN_H - 110
+
+        # TODO: scale bar auto-changes quantity depending on zoom level,
+        # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
+        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, self.game.assets.fonts.text, "1 solar radius")
 
         # Draw UI
         draw_elem(screen, self.overlay_panel, self.game.current_theme())

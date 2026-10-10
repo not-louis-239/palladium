@@ -22,7 +22,12 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
+
+
+from palladium.gui.utils import draw_star
+from palladium.core.constants import WN_W, WN_H
 from palladium.gui.states.base import State
+from palladium.gui.themes import ThemeKey
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -31,6 +36,7 @@ if TYPE_CHECKING:
 class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+        self.zoom_level = 0.03
 
     def on_entered(self) -> None:
         pass
@@ -42,4 +48,8 @@ class BrowseStarState(State):
         pass
 
     def draw(self, screen: pg.Surface) -> None:
-        pass
+        assert self.game.star_system is not None
+
+        screen.fill(self.game.current_theme()[ThemeKey.BG])
+
+        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 4, WN_H // 2))

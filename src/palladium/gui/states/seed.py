@@ -61,20 +61,20 @@ class SeedState(State):
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
             r=ICON_SIZE // 2,
-            font=game.assets.fonts.font_ui,
+            font=game.assets.fonts.ui,
             img_path=game.assets.images.back
         )
 
         self.proceed_button = RectButton(
             **DEFAULT_ATTRS,
-            font=self.game.assets.fonts.font_ui,
+            font=self.game.assets.fonts.ui,
             text="proceed",
             border_w=BORDER_W
         )
 
         self.seed_input_box = InputBox(
             flex=1.0,
-            font=self.game.assets.fonts.font_ui,
+            font=self.game.assets.fonts.ui,
             k_sentinel=ThemeKey.FG_SENTINEL,
             border_w=BORDER_W,
             sentinel_text="type a string or leave blank for random",
@@ -92,7 +92,7 @@ class SeedState(State):
                     Spacer(),
                     Label(
                         text="generation",
-                        font=self.game.assets.fonts.font_heading,
+                        font=self.game.assets.fonts.heading,
                         k_fg=ThemeKey.FG
                     ),
                     Spacer(),
@@ -104,7 +104,7 @@ class SeedState(State):
                         SBox(
                             Label(
                                 text="seed",
-                                font=self.game.assets.fonts.font_ui,
+                                font=self.game.assets.fonts.ui,
                                 k_fg=ThemeKey.FG
                             ),
                             renderer=draw_elem
