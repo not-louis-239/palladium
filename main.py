@@ -28,6 +28,9 @@ import pygame as pg
 from palladium.core.constants import WN_H, WN_W
 from palladium.game.game import Game
 
+import james
+james.input_box.InputBox.CURSOR_FLASH_INTERVAL = 1.0
+
 
 def main():
     pg.init()

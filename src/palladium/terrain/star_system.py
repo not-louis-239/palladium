@@ -23,14 +23,12 @@ from palladium.terrain.planet import Planet
 from palladium.terrain.star_gen import StarProfile, generate_star_profile
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SeedMetadata:
     display_str: str
-    display_offset: int
-
-    @property
-    def integer_value(self) -> int:
-        return str_to_seed(self.display_str) + self.display_offset
+    offset: int  # offset from the seed of `display_str`
+    is_string: bool  # True if the `display_str` is not a pure integer
+    integer_value: int  # internal integer value of the seed, including `offset`
 
 
 class StarSystem:
@@ -40,10 +38,12 @@ class StarSystem:
         self.seed_metadata = seed_metadata
 
 
-def generate_star_system(seed: int | str) -> StarSystem:
-    seed_int = str_to_seed(str(seed))
-    star = generate_star_profile(seed_int)
+def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
+    seed_int, is_string = str_to_seed(str(seed))
+    star = generate_star_profile(seed_int + offset)
 
     # TODO: add planet objects to star system generator
 
-    return StarSystem(star, [], SeedMetadata(str(seed), 0))
+    return StarSystem(star, [], SeedMetadata(
+        display_str=str(seed), offset=offset, is_string=is_string, integer_value=seed_int + offset
+    ))

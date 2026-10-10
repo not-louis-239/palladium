@@ -34,16 +34,16 @@ def random_seed() -> int:
     return random.randint(-2**63, 2**63 - 1)
 
 
-def str_to_seed(s: str) -> int:
+def str_to_seed(s: str) -> tuple[int, bool]:
     """Normalises input by case and leading or trailing whitespace,
     then attempts to convert the input directly to an integer seed.
     If that fails, it hashes the string to an integer seed.
-    Then returns the seed."""
+    Then returns (seed, was_modified)."""
     s = s.strip().lower()
     try:
-        return int(s)
+        return int(s), False
     except ValueError:
-        return _str_to_terrain_seed(s)
+        return _str_to_terrain_seed(s), True
 
 
 def clamp(val: float, lower: float, upper: float) -> float:

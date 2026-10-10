@@ -25,7 +25,7 @@ import pygame as pg
 from james import Label, Spacer, CircleButton, HBox, SBox, VBox, Panel
 from james.alignment_boxes import HAlign, VAlign
 
-from palladium.gui.utils import draw_star, draw_scale_bar
+from palladium.gui.utils import draw_star, draw_scale_bar, get_seed_messages
 from palladium.core.constants import WN_W, WN_H
 from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
 from palladium.gui.renderer import draw_elem
@@ -54,6 +54,18 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_ACCENT,
         )
 
+        self.offset_label = Label(
+            text="",
+            font=self.game.assets.fonts.text,
+            k_fg=ThemeKey.FG_ACCENT2,
+        )
+
+        self.seed_int_label = Label(
+            text="",
+            font=self.game.assets.fonts.text,
+            k_fg=ThemeKey.FG_SENTINEL,
+        )
+
         self.mass_label = Label(
             text="",
             font=self.game.assets.fonts.text,
@@ -78,6 +90,8 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_ACCENT
         )
 
+        # TODO: fix text overflow in some places
+
         self.overlay_panel = Panel(
             child=HBox(
                 VBox(
@@ -85,12 +99,9 @@ class BrowseStarState(State):
                         HBox(
                             self.back_button,
                             Spacer(),
-                            Label(
-                                text="star system ",
-                                font=self.game.assets.fonts.text,
-                                k_fg=ThemeKey.FG
-                            ),
                             self.seed_label,
+                            self.offset_label,
+                            self.seed_int_label,
                             Spacer(),
                             renderer=draw_elem
                         ),
@@ -127,13 +138,21 @@ class BrowseStarState(State):
             renderer=draw_elem
         )
 
-    def on_entered(self) -> None:
+    def _refresh_labels(self) -> None:
         assert self.game.star_system is not None
 
-        self.seed_label.set_text(self.game.star_system.seed_metadata.display_str)
+        # Refresh seed labels
+        seed_str, offset_text, seed_int_str = get_seed_messages(self.game.star_system.seed_metadata)
+        self.seed_label.set_text(seed_str)
+        self.seed_int_label.set_text(seed_int_str)
+        self.offset_label.set_text(offset_text)
 
+        # Star properties
+
+        # Temperature
         self.temp_label.set_text(f"    {self.game.star_system.star.temp - 273.15:,.2f}°C")
 
+        # Luminosity
         lum = self.game.star_system.star.luminosity
         if lum >= 1:
             self.luminosity_label.set_text(f"    {lum:,.2f} × Sun")
@@ -148,7 +167,13 @@ class BrowseStarState(State):
         else:
             self.luminosity_label.set_text(f"    {lum:,.3g} × Sun")
 
+        # Refresh UI
+
+        # Layout components
         self.overlay_panel.layout(SCREEN_RECT)
+
+    def on_entered(self) -> None:
+        self._refresh_labels()
 
     def update(self, dt_s: float) -> None:
         pass

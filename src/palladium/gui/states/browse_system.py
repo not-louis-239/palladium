@@ -24,12 +24,13 @@ import pygame as pg
 from james import HBox, Panel, Spacer, VBox, Label, CircleButton
 
 from palladium.gui.states.base import StateID
-from palladium.core.constants import WN_H, WN_W
+from palladium.core.constants import WN_H, WN_W, Controls
 from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M
-from palladium.gui.utils import draw_scale_bar, draw_star
+from palladium.gui.utils import draw_scale_bar, draw_star, get_seed_messages
 from palladium.gui.renderer import draw_elem
 from palladium.gui.themes import ThemeKey
 from palladium.gui.states.base import State
+from palladium.terrain.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -47,6 +48,18 @@ class BrowseSystemState(State):
             k_fg=ThemeKey.FG_ACCENT
         )
 
+        self.offset_label = Label(
+            text="",
+            font=self.game.assets.fonts.text,
+            k_fg=ThemeKey.FG_ACCENT2
+        )
+
+        self.seed_int_label = Label(
+            text="",
+            font=self.game.assets.fonts.text,
+            k_fg=ThemeKey.FG_SENTINEL
+        )
+
         self.star_button = CircleButton(
             r=0, font=self.game.assets.fonts.ui, k_fg_colour=ThemeKey.FG
         )
@@ -62,24 +75,30 @@ class BrowseSystemState(State):
                             k_fg=ThemeKey.FG
                         ),
                         self.seed_label,
+                        self.offset_label,
+                        self.seed_int_label,
                         renderer=draw_elem
                     ),
                     Spacer(),
                     renderer=draw_elem
                 ),
                 Spacer(),
-                HBox(
-                    renderer=draw_elem
-                ),
-                HBox(
-                    renderer=draw_elem
-                ),
-                HBox(
-                    renderer=draw_elem
-                ),
-                HBox(
-                    renderer=draw_elem
-                ),
+
+                # TODO: add buttons: re-centre, zoom in, zoom out, 'click and drag' instruction
+
+                # HBox(
+                #     renderer=draw_elem
+                # ),
+                # HBox(
+                #     renderer=draw_elem
+                # ),
+                # HBox(
+                #     renderer=draw_elem
+                # ),
+                # HBox(
+                #     renderer=draw_elem
+                # ),
+
                 renderer=draw_elem
             ),
             vert_padding=UI_MARGIN_M,
@@ -89,28 +108,57 @@ class BrowseSystemState(State):
         self.overlay_panel.layout(SCREEN_RECT)
 
     def _adjust_zoom(self) -> None:
-        ...  # TODO: finish this function
+        ...  # TODO: finish this function, this should also account for adjusting some other things
 
-    def on_entered(self) -> None:
-        # shouldn't be None if entered properly
+    def _refresh_ui(self) -> None:
         assert self.game.star_system is not None
 
-        self.seed_label.set_text(self.game.star_system.seed_metadata.display_str)
+        # Refresh seed labels
+        seed_str, offset_text, seed_int_str = get_seed_messages(self.game.star_system.seed_metadata)
+        self.seed_label.set_text(seed_str)
+        self.seed_int_label.set_text(seed_int_str)
+        self.offset_label.set_text(offset_text)
+
+        # Refresh interactive invisible star button
         visual_radius = int(self.game.star_system.star.radius * 2 / self.zoom_level)
         self.star_button.r = visual_radius
         self.star_button.rect.update(WN_W // 2 - visual_radius, WN_H // 2 - visual_radius, 2 * visual_radius, 2 * visual_radius)
 
+        # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
+
+    def _refresh_with_seed_offset(self, offset: int) -> None:
+        assert self.game.star_system is not None
+
+        seed_string = self.game.star_system.seed_metadata.display_str
+
+        if self.game.star_system.seed_metadata.is_string:
+            star_system = generate_star_system(seed_string, offset)
+        else:
+            star_system = generate_star_system(int(seed_string) + offset, 0)
+        self.game.star_system = star_system
+
+        self._refresh_ui()
+
+    def on_entered(self) -> None:
+        # shouldn't be None if entered properly
+        self._refresh_ui()
 
     def update(self, dt_s: float) -> None:
         pass
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
+        assert self.game.star_system is not None
+
         for event in events:
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                 if self.star_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_STAR)
 
+            if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
+                self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
+            if event.type == pg.KEYDOWN and event.key == Controls.SEED_PLUS_ONE:
+                self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset + 1)
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])

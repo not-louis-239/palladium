@@ -16,9 +16,10 @@
 import pygame as pg
 
 from palladium.core.utils import lerp_gradient
-from palladium.core.constants import KELVIN_COLOURS, WN_W, WN_H
+from palladium.core.constants import KELVIN_COLOURS
 from palladium.gui.constants import BORDER_W, UI_MARGIN_M
 from palladium.terrain.star_gen import StarProfile
+from palladium.terrain.star_system import SeedMetadata
 from palladium.core.custom_types import Colour
 
 
@@ -39,3 +40,28 @@ def draw_scale_bar(screen: pg.Surface, colour: Colour, left: float, top: float, 
 def draw_star(screen: pg.Surface, star: StarProfile, zoom_level: float, pos: tuple[int, int]) -> None:
     temp_colour = lerp_gradient(star.temp, KELVIN_COLOURS)
     pg.draw.circle(screen, temp_colour, pos, star.radius * 2 / zoom_level)
+
+
+def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:
+    """Returns: seed text, offset, internal integer value
+    in the form of strings designed to be joined together visually."""
+
+    # Seed text
+    seed_str = seed_metadata.display_str
+
+    # Offset text
+    offset = seed_metadata.offset
+    if not offset:
+        offset_text = ""
+    elif offset > 0:
+        offset_text = f" + {offset}"
+    else:
+        offset_text = f" - {-offset}"
+
+    # Internal integer
+    if seed_metadata.is_string:
+        seed_int_label = f" ({seed_metadata.integer_value})"
+    else:
+        seed_int_label = ""
+
+    return (seed_str, offset_text, seed_int_label)

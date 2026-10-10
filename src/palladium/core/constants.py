@@ -16,7 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from enum import IntEnum
+
+import pygame as pg
+
 from palladium.core.custom_types import Colour
+
+
+class Controls(IntEnum):
+    SEED_MINUS_ONE = pg.K_j
+    SEED_PLUS_ONE = pg.K_l
+
 
 WN_W, WN_H = 1280, 720
 
