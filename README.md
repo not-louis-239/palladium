@@ -1,6 +1,6 @@
 # Palladium
 
-Version: 0.1.0
+**Version**: 0.1.0
 
 This is an upgraded version of a terrain generator I made ages ago using Python that was terminal-only. Now it has a shiny new Pygame interface!
 

@@ -36,6 +36,20 @@ if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
+def _format_qty(v: float) -> str:
+    if v >= 1:
+        return f"{v:,.2f}"
+    if v >= 0.1:
+        return f"{v:,.3f}"
+    if v >= 0.01:
+        return f"{v:,.4f}"
+    if v >= 0.001:
+        return f"{v:,.5f}"
+    if v >= 0.0001:
+        return f"{v:,.6f}"
+    return f"{v:,.3g}"
+
+
 class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
@@ -66,7 +80,7 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_SENTINEL,
         )
 
-        self.mass_label = Label(
+        self.temp_label = Label(
             text="",
             font=self.game.assets.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
@@ -78,7 +92,7 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_ACCENT
         )
 
-        self.temp_label = Label(
+        self.mass_label = Label(
             text="",
             font=self.game.assets.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
@@ -122,6 +136,18 @@ class BrowseStarState(State):
                     ),
                     self.temp_label,
                     Label(
+                        text="radius",
+                        font=self.game.assets.fonts.text,
+                        k_fg=ThemeKey.FG
+                    ),
+                    self.radius_label,
+                    Label(
+                        text="mass",
+                        font=self.game.assets.fonts.text,
+                        k_fg=ThemeKey.FG
+                    ),
+                    self.mass_label,
+                    Label(
                         text="luminosity",
                         font=self.game.assets.fonts.text,
                         k_fg=ThemeKey.FG
@@ -152,20 +178,14 @@ class BrowseStarState(State):
         # Temperature
         self.temp_label.set_text(f"    {self.game.star_system.star.temp - 273.15:,.2f}°C")
 
+        # Radius
+        self.radius_label.set_text(f"    {_format_qty(self.game.star_system.star.radius)} × Sun")
+
+        # Mass
+        self.mass_label.set_text(f"    {_format_qty(self.game.star_system.star.mass)} × Sun")
+
         # Luminosity
-        lum = self.game.star_system.star.luminosity
-        if lum >= 1:
-            self.luminosity_label.set_text(f"    {lum:,.2f} × Sun")
-        elif lum >= 0.1:
-            self.luminosity_label.set_text(f"    {lum:,.3f} × Sun")
-        elif lum >= 0.01:
-            self.luminosity_label.set_text(f"    {lum:,.4f} × Sun")
-        elif lum >= 0.001:
-            self.luminosity_label.set_text(f"    {lum:,.5f} × Sun")
-        elif lum >= 0.0001:
-            self.luminosity_label.set_text(f"    {lum:,.6f} × Sun")
-        else:
-            self.luminosity_label.set_text(f"    {lum:,.3g} × Sun")
+        self.luminosity_label.set_text(f"    {_format_qty(self.game.star_system.star.luminosity)} × Sun")
 
         # Refresh UI
 

@@ -45,5 +45,6 @@ def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
     # TODO: add planet objects to star system generator
 
     return StarSystem(star, [], SeedMetadata(
-        display_str=str(seed), offset=offset, is_string=is_string, integer_value=seed_int + offset
+        display_str=str(seed_int if not is_string else seed),
+        offset=offset, is_string=is_string, integer_value=seed_int + offset
     ))
