@@ -25,7 +25,7 @@ from james import HBox, Panel, Spacer, VBox, Label, CircleButton
 
 from palladium.gui.states.base import StateID
 from palladium.core.constants import WN_H, WN_W, Controls
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, DEFAULT_ATTRS, ICON_SIZE
 from palladium.gui.utils import draw_scale_bar, draw_star, get_seed_messages, draw_transparent_rect
 from palladium.gui.renderer import draw_elem
 from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
@@ -42,32 +42,39 @@ class BrowseSystemState(State):
 
         self.zoom_level = 0.03  # solar radii per pixel
 
+        self.back_button = CircleButton(
+            **DEFAULT_ATTRS,
+            r=ICON_SIZE // 2,
+            img_path=self.images.back,
+            font=self.fonts.ui
+        )
+
         self.seed_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
         self.offset_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT2
         )
 
         self.seed_int_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_SENTINEL
         )
 
         self.star_button = CircleButton(
-            r=0, font=self.game.assets.fonts.ui, k_fg_colour=ThemeKey.FG
+            r=0, font=self.fonts.ui, k_fg_colour=ThemeKey.FG
         )
 
         self.header_hbox = HBox(
             Label(
                 text="star system ",
-                font=self.game.assets.fonts.text,
+                font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             self.seed_label,
@@ -80,6 +87,7 @@ class BrowseSystemState(State):
         self.overlay_panel = Panel(
             child=VBox(
                 HBox(
+                    self.back_button,
                     Spacer(),
                     self.header_hbox,
                     Spacer(),
@@ -104,6 +112,7 @@ class BrowseSystemState(State):
 
                 renderer=draw_elem
             ),
+            horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
             renderer=draw_elem
         )
@@ -155,8 +164,12 @@ class BrowseSystemState(State):
 
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
+                if self.back_button.check_overlaps(event.pos):
+                    self.game.enter_state(StateID.ENTER_SEED)
+                    return
                 if self.star_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_STAR)
+                    return
 
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
                 self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
@@ -184,7 +197,7 @@ class BrowseSystemState(State):
 
         # TODO: scale bar auto-changes quantity depending on zoom level,
         # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
-        scale_font = self.game.assets.fonts.text
+        scale_font = self.fonts.text
         scale_text = "1 solar radius"
         draw_transparent_rect(
             screen, TRANSLUCENT_BLACK,

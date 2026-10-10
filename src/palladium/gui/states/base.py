@@ -41,6 +41,10 @@ class State(ABC):
     def __init__(self, game: Game) -> None:
         self.game = game
 
+        # aliases for ease of access
+        self.fonts = game.assets.fonts
+        self.images = game.assets.images
+
     @abstractmethod
     def on_entered(self) -> None:
         """Automatic callback when entering a state"""

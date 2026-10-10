@@ -68,14 +68,14 @@ class SeedState(State):
 
         self.proceed_button = RectButton(
             **DEFAULT_ATTRS,
-            font=self.game.assets.fonts.ui,
+            font=self.fonts.ui,
             text="proceed",
             border_w=BORDER_W
         )
 
         self.seed_input_box = InputBox(
             flex=1.0,
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_sentinel=ThemeKey.FG_SENTINEL,
             border_w=BORDER_W,
             sentinel_text="enter text or leave blank for random",
@@ -85,11 +85,11 @@ class SeedState(State):
 
         self.offset_input_box = InputBox(
             flex=1.0,
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_sentinel=ThemeKey.FG_SENTINEL,
             border_w=BORDER_W,
             sentinel_text="0",
-            tooltip_font=self.game.assets.fonts.tips,
+            tooltip_font=self.fonts.tips,
             k_cursor=ThemeKey.CURSOR,
             k_tooltip=ThemeKey.FG_ERROR,
             tooltip_inset=UI_MARGIN_XS,
@@ -106,7 +106,7 @@ class SeedState(State):
                     Spacer(),
                     Label(
                         text="generation",
-                        font=self.game.assets.fonts.heading,
+                        font=self.fonts.heading,
                         k_fg=ThemeKey.FG
                     ),
                     Spacer(),
@@ -118,7 +118,7 @@ class SeedState(State):
                         SBox(
                             Label(
                                 text="seed",
-                                font=self.game.assets.fonts.text,
+                                font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
                             renderer=draw_elem
@@ -131,7 +131,7 @@ class SeedState(State):
                         SBox(
                             Label(
                                 text="offset",
-                                font=self.game.assets.fonts.text,
+                                font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
                             renderer=draw_elem

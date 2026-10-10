@@ -57,8 +57,8 @@ class BrowseStarState(State):
 
         self.back_button = CircleButton(
             r=ICON_SIZE // 4,
-            img_path=self.game.assets.images.back,
-            font=self.game.assets.fonts.heading,
+            img_path=self.images.back,
+            font=self.fonts.heading,
             k_fg_colour=ThemeKey.FG,
             k_fg_hovered=ThemeKey.FG_HOVERED,
             k_fg_active=ThemeKey.FG_ACTIVE
@@ -66,43 +66,43 @@ class BrowseStarState(State):
 
         self.seed_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT,
         )
 
         self.offset_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT2,
         )
 
         self.seed_int_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_SENTINEL,
         )
 
         self.temp_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
         self.radius_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
         self.mass_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
         self.luminosity_label = Label(
             text="",
-            font=self.game.assets.fonts.text,
+            font=self.fonts.text,
             k_fg=ThemeKey.FG_ACCENT
         )
 
@@ -119,28 +119,28 @@ class BrowseStarState(State):
         self.info_vbox = VBox(
             Label(
                 text="surface temperature",
-                font=self.game.assets.fonts.text,
+                font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             self.temp_label,
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="radius",
-                font=self.game.assets.fonts.text,
+                font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             self.radius_label,
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="mass",
-                font=self.game.assets.fonts.text,
+                font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             self.mass_label,
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="luminosity",
-                font=self.game.assets.fonts.text,
+                font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             self.luminosity_label,
@@ -231,7 +231,7 @@ class BrowseStarState(State):
 
         # TODO: scale bar auto-changes quantity depending on zoom level,
         # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
-        scale_font = self.game.assets.fonts.text
+        scale_font = self.fonts.text
         scale_text = "1 solar radius"
         draw_transparent_rect(
             screen, TRANSLUCENT_BLACK,
