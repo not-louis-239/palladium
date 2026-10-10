@@ -22,8 +22,7 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
-from james import Label, Spacer, CircleButton, HBox, SBox, VBox, Panel
-from james.alignment_boxes import HAlign, VAlign
+from james import Label, Spacer, CircleButton, HBox, VBox, Panel
 
 from palladium.gui.utils import draw_star, draw_transparent_rect, draw_scale_bar, get_seed_messages
 from palladium.core.constants import WN_W, WN_H
@@ -60,7 +59,9 @@ class BrowseStarState(State):
             r=ICON_SIZE // 4,
             img_path=self.game.assets.images.back,
             font=self.game.assets.fonts.heading,
-            k_fg_colour=ThemeKey.FG
+            k_fg_colour=ThemeKey.FG,
+            k_fg_hovered=ThemeKey.FG_HOVERED,
+            k_fg_active=ThemeKey.FG_ACTIVE
         )
 
         self.seed_label = Label(

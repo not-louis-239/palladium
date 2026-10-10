@@ -36,6 +36,8 @@ def draw_elem(surface: pg.Surface, elem: Element, theme: SupportsGetItemColour) 
         elem.draw_primitive(surface, theme)
         elem.draw_cursor(surface, theme)
 
+        elem.draw_tooltip(surface, theme)
+
         # bottom-only border
         pg.draw.line(
             surface, theme[elem.k_border],
@@ -43,8 +45,6 @@ def draw_elem(surface: pg.Surface, elem: Element, theme: SupportsGetItemColour) 
             (elem.rect.right, elem.rect.bottom),
             elem.border_w
         )
-
-        elem.draw_tooltip_with_default_border(surface, theme)
 
         return
 

@@ -19,7 +19,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import random
 
 import pygame as pg
 from james import (
@@ -35,7 +34,7 @@ from james import (
     VBox,
 )
 
-from palladium.core.utils import random_seed
+from palladium.core.utils import random_seed, safe_convert
 from palladium.gui.constants import (
     BORDER_W,
     DEFAULT_ATTRS,
@@ -44,6 +43,7 @@ from palladium.gui.constants import (
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
+    UI_MARGIN_XS
 )
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
@@ -57,6 +57,7 @@ if TYPE_CHECKING:
 class SeedState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+        self.is_valid = True
 
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
@@ -88,7 +89,10 @@ class SeedState(State):
             k_sentinel=ThemeKey.FG_SENTINEL,
             border_w=BORDER_W,
             sentinel_text="0",
+            tooltip_font=self.game.assets.fonts.tips,
             k_cursor=ThemeKey.CURSOR,
+            k_tooltip=ThemeKey.FG_ERROR,
+            tooltip_inset=UI_MARGIN_XS,
             **DEFAULT_INPUT_BOX_ATTRS,
         )
 
@@ -154,11 +158,31 @@ class SeedState(State):
 
         self.panel.layout(SCREEN_RECT)
 
-    def on_entered(self) -> None:
-        pass
+    def _validate(self) -> None:
+        if self.offset_input_box.text and safe_convert(self.offset_input_box.text, int) is None:
+            self.offset_input_box.k_border_colour = ThemeKey.FG_ERROR
+            self.offset_input_box.k_border_hovered = ThemeKey.FG_ERROR_HOVERED
+            self.offset_input_box.k_border_active = ThemeKey.FG_ERROR_ACTIVE
+            self.offset_input_box.set_tooltip("Invalid integer value.")
+            self.is_valid = False
+        else:
+            self.offset_input_box.k_border_colour = ThemeKey.BORDER
+            self.offset_input_box.k_border_hovered = ThemeKey.BORDER_HOVERED
+            self.offset_input_box.k_border_active = ThemeKey.BORDER_ACTIVE
+            self.offset_input_box.clear_tooltip()
+            self.is_valid = True
 
-    def update(self, dt_s: float) -> None:
-        pass
+        # Grey out the proceed button if not all fields are valid
+        if not self.is_valid:
+            self.proceed_button.disabled = True
+            self.proceed_button.k_fg_colour = ThemeKey.FG_SENTINEL
+            self.proceed_button.k_fg_hovered = ThemeKey.FG_SENTINEL
+            self.proceed_button.k_fg_active = ThemeKey.FG_SENTINEL
+        else:
+            self.proceed_button.disabled = False
+            self.proceed_button.k_fg_colour = ThemeKey.FG
+            self.proceed_button.k_fg_hovered = ThemeKey.FG_HOVERED
+            self.proceed_button.k_fg_active = ThemeKey.FG_ACTIVE
 
     def _proceed(self) -> None:
         # MUST create star system before entering system browser
@@ -174,16 +198,23 @@ class SeedState(State):
 
         self.game.enter_state(StateID.BROWSE_SYSTEM)
 
+    def on_entered(self) -> None:
+        pass
+
+    def update(self, dt_s: float) -> None:
+        pass
+
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.TITLE)
-                if self.proceed_button.check_overlaps(event.pos):
+                if self.proceed_button.check_overlaps(event.pos) and self.is_valid:
                     self._proceed()
 
         self.seed_input_box.handle_input(keys, events, dt_s)
-        self.offset_input_box.handle_input(keys, events, dt_s)
+        if self.offset_input_box.handle_input(keys, events, dt_s):
+            self._validate()
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])

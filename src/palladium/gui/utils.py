@@ -13,17 +13,16 @@
 # limitations under the License.
 
 
+from itertools import pairwise
+
 import pygame as pg
 
-from palladium.core.utils import lerp_gradient
+from palladium.core.utils import clamp
 from palladium.core.constants import KELVIN_COLOURS
 from palladium.gui.constants import BORDER_W, UI_MARGIN_M
 from palladium.terrain.star_gen import StarProfile
 from palladium.terrain.star_system import SeedMetadata
 from palladium.core.custom_types import Colour, AColour
-
-
-# TODO: there are some other GUI functions in the other utils.py that should probably go here
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:
@@ -45,6 +44,29 @@ def draw_scale_bar(screen: pg.Surface, colour: Colour, left: float, top: float, 
         colour),
         dest=(left + width + UI_MARGIN_M, top - font.get_height() // 2)
     )
+
+
+def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
+    """Returns a Colour determined by the anchor points in `grad`.
+    If val < grad[0], returns the first anchor.
+    If val > grad[-1], returns the last colour."""
+
+    if not grad:
+        raise ValueError("grad requires at least one value-colour pair")
+
+    keys = sorted(grad)
+    if val <= keys[0]:
+        return grad[keys[0]]
+    if val >= keys[-1]:
+        return grad[keys[-1]]
+
+    for k1, k2 in pairwise(keys):
+        if k1 <= val <= k2:
+            t = (val - k1) / (k2 - k1)
+            c1, c2 = grad[k1], grad[k2]
+            return lerp_colours(c1, c2, t)
+
+    return grad[keys[-1]]
 
 
 def draw_star(screen: pg.Surface, star: StarProfile, zoom_level: float, pos: tuple[int, int]) -> None:
@@ -75,3 +97,10 @@ def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:
         seed_int_label = ""
 
     return (seed_str, offset_text, seed_int_label)
+
+
+def lerp_colours(c1: Colour, c2: Colour, t: float) -> Colour:
+    t = clamp(t, 0, 1)
+    return tuple(
+        int(c1[x] + t * (c2[x] - c1[x])) for x in range(len(c1))  # type: ignore
+    )

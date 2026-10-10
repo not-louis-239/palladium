@@ -18,9 +18,7 @@
 
 import hashlib
 import random
-from itertools import pairwise
-
-from palladium.core.custom_types import Colour
+from typing import Callable, Any
 
 
 def _str_to_terrain_seed(s: str) -> int:
@@ -50,31 +48,8 @@ def clamp(val: float, lower: float, upper: float) -> float:
     return max(min(val, upper), lower)
 
 
-def lerp_colours(c1: Colour, c2: Colour, t: float) -> Colour:
-    t = clamp(t, 0, 1)
-    return tuple(
-        int(c1[x] + t * (c2[x] - c1[x])) for x in range(len(c1))  # type: ignore
-    )
-
-
-def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
-    """Returns a Colour determined by the anchor points in `grad`.
-    If val < grad[0], returns the first anchor.
-    If val > grad[-1], returns the last colour."""
-
-    if not grad:
-        raise ValueError("grad requires at least one value-colour pair")
-
-    keys = sorted(grad)
-    if val <= keys[0]:
-        return grad[keys[0]]
-    if val >= keys[-1]:
-        return grad[keys[-1]]
-
-    for k1, k2 in pairwise(keys):
-        if k1 <= val <= k2:
-            t = (val - k1) / (k2 - k1)
-            c1, c2 = grad[k1], grad[k2]
-            return lerp_colours(c1, c2, t)
-
-    return grad[keys[-1]]
+def safe_convert[T](val, typ: Callable[[Any], T]) -> T | None:
+    try:
+        return typ(val)
+    except TypeError, ValueError:
+        return None

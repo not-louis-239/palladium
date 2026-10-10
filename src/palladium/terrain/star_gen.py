@@ -66,11 +66,11 @@ def generate_star_profile(seed: int) -> StarProfile:
 
     match profile:
         case StarType.SUPERGIANT:
-            # Assuming a SUPERGIANT gets chosen, the highest possible power star is with:
+            # Assuming a SUPERGIANT gets chosen, the highest possible power star has:
             #   - radius = 10 ** 3 = 1,000 solar radii
             #   - mass = radius ** 0.5 * 3 = 94.87 solar masses
             #   - temp = 10 ** 4.6 = 39,811°K
-            # -> luminosity of approx. 2,254,000,000
+            # -> luminosity of approx. 2,254,000,000 suns
 
             radius = 10 ** inst.uniform(1.5, 3)
             mass = (radius ** 0.5) * inst.uniform(1.5, 3)
@@ -88,6 +88,12 @@ def generate_star_profile(seed: int) -> StarProfile:
             mass = (radius ** 1.25) * inst.uniform(0.8, 1.2)
             temp = 10 ** inst.uniform(3.3, 3.6)
         case StarType.BROWN_DWARF:
+            # Assuming a BROWN_DWARF gets chosen, the lowest possible power star has:
+            #   - radius = 0.08 solar radii
+            #   - mass = 0.012 solar masses
+            #   - temp = 10 ** 2.4 = 251.19°K
+            # -> luminosity of approx. 2.29x10^-8 suns
+
             radius = inst.uniform(0.08, 0.12)
             mass = inst.uniform(0.012, 0.075)
             temp = 10 ** inst.uniform(2.4, 3.3)

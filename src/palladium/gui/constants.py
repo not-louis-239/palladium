@@ -25,6 +25,7 @@ from palladium.gui.themes import ThemeKey
 
 BORDER_W = 2
 
+UI_MARGIN_XS = 7
 UI_MARGIN_S = 15
 UI_MARGIN_M = 32
 

@@ -32,9 +32,6 @@ import james
 james.input_box.InputBox.CURSOR_FLASH_INTERVAL = 1.0
 
 
-# TODO: KeyboardInterrupt handler
-
-
 def main():
     pg.init()
 
@@ -60,4 +57,8 @@ def main():
         pg.display.flip()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received. Exiting now.")
+        sys.exit(0)
