@@ -25,10 +25,10 @@ from james import HBox, Panel, Spacer, VBox, Label, CircleButton
 
 from palladium.gui.states.base import StateID
 from palladium.core.constants import WN_H, WN_W, Controls
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M
-from palladium.gui.utils import draw_scale_bar, draw_star, get_seed_messages
+from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.utils import draw_scale_bar, draw_star, get_seed_messages, draw_transparent_rect
 from palladium.gui.renderer import draw_elem
-from palladium.gui.themes import ThemeKey
+from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
 from palladium.gui.states.base import State
 from palladium.terrain.star_system import generate_star_system
 
@@ -64,21 +64,24 @@ class BrowseSystemState(State):
             r=0, font=self.game.assets.fonts.ui, k_fg_colour=ThemeKey.FG
         )
 
+        self.header_hbox = HBox(
+            Label(
+                text="star system ",
+                font=self.game.assets.fonts.text,
+                k_fg=ThemeKey.FG
+            ),
+            self.seed_label,
+            self.offset_label,
+            self.seed_int_label,
+            renderer=draw_elem,
+            padding=UI_MARGIN_S
+        )
+
         self.overlay_panel = Panel(
             child=VBox(
                 HBox(
                     Spacer(),
-                    HBox(
-                        Label(
-                            text="star system ",
-                            font=self.game.assets.fonts.text,
-                            k_fg=ThemeKey.FG
-                        ),
-                        self.seed_label,
-                        self.offset_label,
-                        self.seed_int_label,
-                        renderer=draw_elem
-                    ),
+                    self.header_hbox,
                     Spacer(),
                     renderer=draw_elem
                 ),
@@ -172,14 +175,27 @@ class BrowseSystemState(State):
         draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
 
         # Draw scale bar
+        # TODO: this should (probably) eventually be an inherited class from james.Element
+
         width = int(1 / self.zoom_level)
         height = 8
-        bar_x = UI_MARGIN_M
+        bar_x = UI_MARGIN_M + UI_MARGIN_S
         bar_y = WN_H - 80
 
         # TODO: scale bar auto-changes quantity depending on zoom level,
         # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
-        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, self.game.assets.fonts.text, "1 solar radius")
+        scale_font = self.game.assets.fonts.text
+        scale_text = "1 solar radius"
+        draw_transparent_rect(
+            screen, TRANSLUCENT_BLACK,
+            pg.Rect(
+                bar_x - UI_MARGIN_S, bar_y - scale_font.get_height() // 2 - UI_MARGIN_S,
+                width + UI_MARGIN_M + 2 * UI_MARGIN_S + scale_font.size(scale_text)[0], scale_font.get_height() + 2 * UI_MARGIN_S
+            )
+        )
+
+        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, "1 solar radius")
 
         # Draw UI
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_elem(screen, self.overlay_panel, self.game.current_theme())

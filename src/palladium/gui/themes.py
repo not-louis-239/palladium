@@ -19,7 +19,13 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
+from palladium.core.custom_types import AColour
+
+
 type Colour = tuple[int, int, int]
+
+
+TRANSLUCENT_BLACK: AColour = (0, 0, 0, 170)
 
 
 class ThemeKey(StrEnum):

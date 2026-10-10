@@ -20,10 +20,20 @@ from palladium.core.constants import KELVIN_COLOURS
 from palladium.gui.constants import BORDER_W, UI_MARGIN_M
 from palladium.terrain.star_gen import StarProfile
 from palladium.terrain.star_system import SeedMetadata
-from palladium.core.custom_types import Colour
+from palladium.core.custom_types import Colour, AColour
 
 
 # TODO: there are some other GUI functions in the other utils.py that should probably go here
+
+
+def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:
+    """Draws a transparent rectangle. This function is dedicated
+    to this purpose because `pg.draw.rect` doesn't work well: it overwrites
+    alpha values on the destination surface instead of layering colours
+    depending on opacity."""
+    rect_surface = pg.Surface(rect.size, pg.SRCALPHA)
+    rect_surface.fill(colour)
+    surface.blit(rect_surface, rect)
 
 
 def draw_scale_bar(screen: pg.Surface, colour: Colour, left: float, top: float, width: float, height: float, font: pg.font.Font, text: str):

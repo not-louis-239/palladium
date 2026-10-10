@@ -25,9 +25,10 @@ import pygame as pg
 from james import Label, Spacer, CircleButton, HBox, SBox, VBox, Panel
 from james.alignment_boxes import HAlign, VAlign
 
-from palladium.gui.utils import draw_star, draw_scale_bar, get_seed_messages
+from palladium.gui.utils import draw_star, draw_transparent_rect, draw_scale_bar, get_seed_messages
 from palladium.core.constants import WN_W, WN_H
 from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
+from palladium.gui.themes import TRANSLUCENT_BLACK
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
@@ -104,56 +105,65 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_ACCENT
         )
 
+        self.header_hbox = HBox(
+            self.back_button,
+            Spacer(min_w=UI_MARGIN_S),
+            self.seed_label,
+            self.offset_label,
+            self.seed_int_label,
+            renderer=draw_elem,
+            padding=UI_MARGIN_S
+        )
+
+        self.info_vbox = VBox(
+            Label(
+                text="surface temperature",
+                font=self.game.assets.fonts.text,
+                k_fg=ThemeKey.FG
+            ),
+            self.temp_label,
+            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+            Label(
+                text="radius",
+                font=self.game.assets.fonts.text,
+                k_fg=ThemeKey.FG
+            ),
+            self.radius_label,
+            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+            Label(
+                text="mass",
+                font=self.game.assets.fonts.text,
+                k_fg=ThemeKey.FG
+            ),
+            self.mass_label,
+            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+            Label(
+                text="luminosity",
+                font=self.game.assets.fonts.text,
+                k_fg=ThemeKey.FG
+            ),
+            self.luminosity_label,
+            padding=UI_MARGIN_S,
+            renderer=draw_elem
+        )
+
         # TODO: fix text overflow in some places
 
         self.overlay_panel = Panel(
             child=HBox(
                 VBox(
-                    SBox(
-                        HBox(
-                            self.back_button,
-                            Spacer(),
-                            self.seed_label,
-                            self.offset_label,
-                            self.seed_int_label,
-                            Spacer(),
-                            renderer=draw_elem
-                        ),
-                        forced_width=WN_W // 2 - UI_MARGIN_M - UI_MARGIN_S // 2,
-                        strict=True,
-                        h_align=HAlign.CENTRE,
-                        v_align=VAlign.TOP,
+                    HBox(
+                        self.header_hbox,
+                        Spacer(),
                         renderer=draw_elem
                     ),
                     Spacer(),
                     renderer=draw_elem,
                 ),
+                Spacer(),
                 VBox(
-                    Label(
-                        text="surface temperature",
-                        font=self.game.assets.fonts.text,
-                        k_fg=ThemeKey.FG
-                    ),
-                    self.temp_label,
-                    Label(
-                        text="radius",
-                        font=self.game.assets.fonts.text,
-                        k_fg=ThemeKey.FG
-                    ),
-                    self.radius_label,
-                    Label(
-                        text="mass",
-                        font=self.game.assets.fonts.text,
-                        k_fg=ThemeKey.FG
-                    ),
-                    self.mass_label,
-                    Label(
-                        text="luminosity",
-                        font=self.game.assets.fonts.text,
-                        k_fg=ThemeKey.FG
-                    ),
-                    self.luminosity_label,
-                    gap=UI_MARGIN_S,
+                    self.info_vbox,
+                    Spacer(),
                     renderer=draw_elem
                 ),
                 gap=UI_MARGIN_M,
@@ -209,12 +219,30 @@ class BrowseStarState(State):
 
         screen.fill(self.game.current_theme()[ThemeKey.BG])
 
-        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 4, WN_H // 2))
+        # Draw star
+        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
 
+        # Scale bar
         width = int(1 / self.zoom_level)
         height = 8
-        bar_x = UI_MARGIN_M
+        bar_x = UI_MARGIN_M + UI_MARGIN_S
         bar_y = WN_H - 80
-        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, self.game.assets.fonts.text, "1 solar radius")
 
+        # TODO: scale bar auto-changes quantity depending on zoom level,
+        # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
+        scale_font = self.game.assets.fonts.text
+        scale_text = "1 solar radius"
+        draw_transparent_rect(
+            screen, TRANSLUCENT_BLACK,
+            pg.Rect(
+                bar_x - UI_MARGIN_S, bar_y - scale_font.get_height() // 2 - UI_MARGIN_S,
+                width + UI_MARGIN_M + 2 * UI_MARGIN_S + scale_font.size(scale_text)[0], scale_font.get_height() + 2 * UI_MARGIN_S
+            )
+        )
+
+        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, "1 solar radius")
+
+        # Draw overlay panel
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_vbox.rect)
         draw_elem(screen, self.overlay_panel, self.game.current_theme())
