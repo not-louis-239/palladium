@@ -210,7 +210,7 @@ class BrowseStarState(State):
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         for event in events:
-            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
 

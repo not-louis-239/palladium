@@ -154,7 +154,7 @@ class BrowseSystemState(State):
         assert self.game.star_system is not None
 
         for event in events:
-            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.star_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_STAR)
 

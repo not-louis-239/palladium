@@ -20,7 +20,6 @@ import random
 from dataclasses import dataclass
 from enum import StrEnum
 
-from palladium.core.utils import str_to_seed
 
 SUN_TEMP = 5778.0  # °K
 
@@ -67,6 +66,12 @@ def generate_star_profile(seed: int) -> StarProfile:
 
     match profile:
         case StarType.SUPERGIANT:
+            # Assuming a SUPERGIANT gets chosen, the highest possible power star is with:
+            #   - radius = 10 ** 3 = 1,000 solar radii
+            #   - mass = radius ** 0.5 * 3 = 94.87 solar masses
+            #   - temp = 10 ** 4.6 = 39,811°K
+            # -> luminosity of approx. 2,254,000,000
+
             radius = 10 ** inst.uniform(1.5, 3)
             mass = (radius ** 0.5) * inst.uniform(1.5, 3)
             temp = 10 ** inst.uniform(3.5, 4.6)
@@ -111,9 +116,6 @@ def _test():
     print(f"{'Radius':{column_widths[0]}} | {'Temp':{column_widths[1]}} | {'Luminosity':{column_widths[2]}}")
     for test_case in test_cases:
         print(f"{f'{test_case.radius:.2f}':{column_widths[0]}} | {f'{test_case.temp:.2f}':{column_widths[1]}} | {f'{test_case.luminosity:,.3g}':{column_widths[2]}}")
-
-    seed = str_to_seed(input("\nEnter a seed: "))
-    print(f"Generated star profile: {generate_star_profile(seed)}")
 
 
 if __name__ == "__main__":

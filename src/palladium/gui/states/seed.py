@@ -74,10 +74,20 @@ class SeedState(State):
 
         self.seed_input_box = InputBox(
             flex=1.0,
-            font=self.game.assets.fonts.ui,
+            font=self.game.assets.fonts.text,
             k_sentinel=ThemeKey.FG_SENTINEL,
             border_w=BORDER_W,
-            sentinel_text="type a string or leave blank for random",
+            sentinel_text="enter text or leave blank for random",
+            k_cursor=ThemeKey.CURSOR,
+            **DEFAULT_INPUT_BOX_ATTRS,
+        )
+
+        self.offset_input_box = InputBox(
+            flex=1.0,
+            font=self.game.assets.fonts.text,
+            k_sentinel=ThemeKey.FG_SENTINEL,
+            border_w=BORDER_W,
+            sentinel_text="0",
             k_cursor=ThemeKey.CURSOR,
             **DEFAULT_INPUT_BOX_ATTRS,
         )
@@ -104,17 +114,31 @@ class SeedState(State):
                         SBox(
                             Label(
                                 text="seed",
-                                font=self.game.assets.fonts.ui,
+                                font=self.game.assets.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
                             renderer=draw_elem
                         ),
-                        Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                        Spacer(flex=0.0, min_w=UI_MARGIN_S),
                         self.seed_input_box,
+                        renderer=draw_elem
+                    ),
+                    HBox(
+                        SBox(
+                            Label(
+                                text="offset",
+                                font=self.game.assets.fonts.text,
+                                k_fg=ThemeKey.FG
+                            ),
+                            renderer=draw_elem
+                        ),
+                        Spacer(flex=0.0, min_w=UI_MARGIN_S),
+                        self.offset_input_box,
                         renderer=draw_elem
                     ),
                     column_flexes=[0, 0, 1],
                     cell_renderer=draw_elem,
+                    cell_inset=UI_MARGIN_S // 2
                 ),
                 Spacer(),
                 HBox(
@@ -139,19 +163,27 @@ class SeedState(State):
     def _proceed(self) -> None:
         # MUST create star system before entering system browser
         seed = self.seed_input_box.text or random_seed()
-        self.game.star_system = generate_star_system(seed)
+
+        # TODO: add error message, for now invalid offsets defualt to 0
+        try:
+            offset = int(self.offset_input_box.text)
+        except ValueError:
+            offset = 0
+
+        self.game.star_system = generate_star_system(seed, offset)
 
         self.game.enter_state(StateID.BROWSE_SYSTEM)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         for event in events:
-            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.TITLE)
                 if self.proceed_button.check_overlaps(event.pos):
                     self._proceed()
 
         self.seed_input_box.handle_input(keys, events, dt_s)
+        self.offset_input_box.handle_input(keys, events, dt_s)
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])

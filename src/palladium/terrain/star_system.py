@@ -40,6 +40,11 @@ class StarSystem:
 
 def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
     seed_int, is_string = str_to_seed(str(seed))
+
+    if not is_string:
+        seed_int += offset
+        offset = 0
+
     star = generate_star_profile(seed_int + offset)
 
     # TODO: add planet objects to star system generator

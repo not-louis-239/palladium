@@ -32,6 +32,9 @@ import james
 james.input_box.InputBox.CURSOR_FLASH_INTERVAL = 1.0
 
 
+# TODO: KeyboardInterrupt handler
+
+
 def main():
     pg.init()
 
