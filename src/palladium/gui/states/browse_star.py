@@ -24,13 +24,14 @@ import pygame as pg
 
 from james import Label, Spacer, CircleButton, HBox, VBox, Panel
 
-from palladium.gui.utils import draw_star, draw_transparent_rect, draw_scale_bar, get_seed_messages
+from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_W, WN_H
 from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
 from palladium.gui.themes import TRANSLUCENT_BLACK
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
+from palladium.gui.elements.scale_bar import ScaleBar
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -53,7 +54,16 @@ def _format_qty(v: float) -> str:
 class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
         self.zoom_level = 0.03
+        self.scale_bar = ScaleBar(
+            k_fg=ThemeKey.FG,
+            bar_width=round(1 / self.zoom_level),
+            text="1 solar radius",
+            font=self.fonts.text,
+            inset=UI_MARGIN_S,
+            gap=UI_MARGIN_S
+        )
 
         self.back_button = CircleButton(
             r=ICON_SIZE // 4,
@@ -186,6 +196,11 @@ class BrowseStarState(State):
                         renderer=draw_elem
                     ),
                     Spacer(),
+                    HBox(
+                        self.scale_bar,
+                        Spacer(),
+                        renderer=draw_elem
+                    ),
                     renderer=draw_elem,
                 ),
                 Spacer(),
@@ -251,27 +266,8 @@ class BrowseStarState(State):
         # Draw star
         draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
 
-        # Scale bar
-        width = int(1 / self.zoom_level)
-        height = 8
-        bar_x = UI_MARGIN_M + UI_MARGIN_S
-        bar_y = WN_H - 80
-
-        # TODO: scale bar auto-changes quantity depending on zoom level,
-        # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
-        scale_font = self.fonts.text
-        scale_text = "1 solar radius"
-        draw_transparent_rect(
-            screen, TRANSLUCENT_BLACK,
-            pg.Rect(
-                bar_x - UI_MARGIN_S, bar_y - scale_font.get_height() // 2 - UI_MARGIN_S,
-                width + UI_MARGIN_M + 2 * UI_MARGIN_S + scale_font.size(scale_text)[0], scale_font.get_height() + 2 * UI_MARGIN_S
-            )
-        )
-
-        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, scale_text)
-
-        # Draw overlay panel
+        # Draw overlay panel and transparent rects for improved contrast
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_vbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
         draw_elem(screen, self.overlay_panel, self.game.current_theme())

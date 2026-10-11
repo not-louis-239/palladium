@@ -44,7 +44,12 @@ class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
-        self.zoom_level = 0.03  # solar radii per pixel
+        self.not_to_scale_label = Label(
+            text="not to scale",
+            font=self.fonts.text,
+            inset=UI_MARGIN_S,
+            k_fg=ThemeKey.FG
+        )
 
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
@@ -103,11 +108,7 @@ class BrowseSystemState(State):
                 ),
                 Spacer(),
                 HBox(
-                    Label(
-                        text="not to scale",
-                        font=self.fonts.text,
-                        k_fg=ThemeKey.FG
-                    ),
+                    self.not_to_scale_label,
                     Spacer(),
                     renderer=draw_elem
                 ),
@@ -122,9 +123,6 @@ class BrowseSystemState(State):
         )
 
         self.overlay_panel.layout(SCREEN_RECT)
-
-    def _adjust_zoom(self) -> None:
-        ...  # TODO: finish this function, this should also account for adjusting some other things
 
     def _refresh_ui(self) -> None:
         assert self.game.star_system is not None
@@ -195,4 +193,5 @@ class BrowseSystemState(State):
 
         # Draw UI
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.not_to_scale_label.rect)
         draw_elem(screen, self.overlay_panel, self.game.current_theme())

@@ -188,7 +188,6 @@ class SeedState(State):
         # MUST create star system before entering system browser
         seed = self.seed_input_box.text or random_seed()
 
-        # TODO: add error message, for now invalid offsets defualt to 0
         try:
             offset = int(self.offset_input_box.text)
         except ValueError:

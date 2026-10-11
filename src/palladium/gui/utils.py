@@ -35,17 +35,6 @@ def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -
     surface.blit(rect_surface, rect)
 
 
-def draw_scale_bar(screen: pg.Surface, colour: Colour, left: float, top: float, width: float, height: float, font: pg.font.Font, text: str):
-    pg.draw.line(screen, colour, (left, top), (left, top + height), width=BORDER_W)
-    pg.draw.line(screen, colour, (left + width, top), (left + width, top + height), width=BORDER_W)
-    pg.draw.line(screen, colour, (left, top + height), (left + width, top + height), width=BORDER_W)
-    screen.blit(
-        font.render(text, True,
-        colour),
-        dest=(left + width + UI_MARGIN_M, top - font.get_height() // 2)
-    )
-
-
 def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
     """Returns a Colour determined by the anchor points in `grad`.
     If val < grad[0], returns the first anchor.
