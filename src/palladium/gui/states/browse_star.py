@@ -25,6 +25,7 @@ import pygame as pg
 from james import Label, Spacer, CircleButton, HBox, VBox, Panel
 
 from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
+from palladium.core.utils import clamp
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_W, WN_H
 from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
 from palladium.gui.themes import TRANSLUCENT_BLACK
@@ -35,6 +36,23 @@ from palladium.gui.elements.scale_bar import ScaleBar
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
+
+
+ZOOM_RATE = 5 # multiply/divide by this per second
+
+PER_PIXELS = 50 # minimum scale bar size
+SCALE_BAR_LEVELS: list[float] = [  # solar radii per `PER_PIXELS` pixels
+    0.001, 0.002, 0.005,
+    0.01, 0.02, 0.05,
+    0.1, 0.2, 0.5,
+    1, 2, 5,
+    10, 20, 50,
+    100, 200, 500,
+    1000
+]
+
+INNER_ZOOM_LIMIT = 0.0001
+OUTER_ZOOM_LIMIT = 10
 
 
 def _format_qty(v: float) -> str:
@@ -51,15 +69,31 @@ def _format_qty(v: float) -> str:
     return f"{v:,.3g}"
 
 
+def _disable(button: CircleButton):
+    button.k_fg_colour = ThemeKey.FG_SENTINEL
+    button.k_fg_hovered = ThemeKey.FG_SENTINEL
+    button.k_fg_active = ThemeKey.FG_SENTINEL
+    button.disabled = True
+
+def _enable(button: CircleButton):
+    button.k_fg_colour = ThemeKey.FG
+    button.k_fg_hovered = ThemeKey.FG_HOVERED
+    button.k_fg_active = ThemeKey.FG_ACTIVE
+    button.disabled = False
+
+
 class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
-        self.zoom_level = 0.03
+        self.zoom_level = 0.03  # solar radii per pixel
+        self._setup_ui()
+
+    def _setup_ui(self) -> None:
         self.scale_bar = ScaleBar(
             k_fg=ThemeKey.FG,
             bar_width=round(1 / self.zoom_level),
-            text="1 solar radius",
+            text="",
             font=self.fonts.text,
             inset=UI_MARGIN_S,
             gap=UI_MARGIN_S
@@ -68,6 +102,24 @@ class BrowseStarState(State):
         self.back_button = CircleButton(
             r=ICON_SIZE // 4,
             img_path=self.images.back,
+            font=self.fonts.heading,
+            k_fg_colour=ThemeKey.FG,
+            k_fg_hovered=ThemeKey.FG_HOVERED,
+            k_fg_active=ThemeKey.FG_ACTIVE
+        )
+
+        self.zoom_in_button = CircleButton(
+            r=ICON_SIZE // 4,
+            img_path=self.images.zoom_in,
+            font=self.fonts.heading,
+            k_fg_colour=ThemeKey.FG,
+            k_fg_hovered=ThemeKey.FG_HOVERED,
+            k_fg_active=ThemeKey.FG_ACTIVE
+        )
+
+        self.zoom_out_button = CircleButton(
+            r=ICON_SIZE // 4,
+            img_path=self.images.zoom_out,
             font=self.fonts.heading,
             k_fg_colour=ThemeKey.FG,
             k_fg_hovered=ThemeKey.FG_HOVERED,
@@ -185,6 +237,14 @@ class BrowseStarState(State):
             renderer=draw_elem
         )
 
+        self.zoom_hbox = HBox(
+            self.zoom_in_button,
+            self.zoom_out_button,
+            padding=UI_MARGIN_S,
+            gap=UI_MARGIN_S,
+            renderer=draw_elem
+        )
+
         # TODO: fix potential text overflow in some places
 
         self.overlay_panel = Panel(
@@ -197,10 +257,16 @@ class BrowseStarState(State):
                     ),
                     Spacer(),
                     HBox(
+                        self.zoom_hbox,
+                        Spacer(),
+                        renderer=draw_elem
+                    ),
+                    HBox(
                         self.scale_bar,
                         Spacer(),
                         renderer=draw_elem
                     ),
+                    gap=UI_MARGIN_S,
                     renderer=draw_elem,
                 ),
                 Spacer(),
@@ -216,6 +282,30 @@ class BrowseStarState(State):
             horiz_padding=UI_MARGIN_M,
             renderer=draw_elem
         )
+
+        # Initialise the scale bar
+        self._adjust_zoom(self.zoom_level)
+
+    def _adjust_zoom(self, new_zoom: float) -> None:
+        """Adjust zoom and refresh labels"""
+
+        # Clamp and set zoom
+        new_zoom = clamp(new_zoom, INNER_ZOOM_LIMIT, OUTER_ZOOM_LIMIT)
+        self.zoom_level = new_zoom
+
+        # Set the scale bar to an appropriate level
+        scale = SCALE_BAR_LEVELS[0]  # number of solar radii represented by the scale bar
+        for candidate_scale in SCALE_BAR_LEVELS:
+            if candidate_scale / self.zoom_level > PER_PIXELS:
+                scale = candidate_scale
+                break
+
+        bar_w = scale / self.zoom_level
+        bar_zoom_str = f"{round(scale):,.0f}" if scale > 1 else str(scale)
+        self.scale_bar.text = f"{bar_zoom_str} solar radi{'us' if scale == 1 else 'i'}"
+        self.scale_bar.bar_width = int(bar_w)
+
+        self.overlay_panel.layout(SCREEN_RECT)
 
     def _refresh_labels(self) -> None:
         assert self.game.star_system is not None
@@ -258,6 +348,22 @@ class BrowseStarState(State):
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
 
+        if self.zoom_in_button.check_held():
+            self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
+        if self.zoom_out_button.check_held():
+            self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
+
+        # Grey out zoom buttons when zoom is at max or min
+        if self.zoom_level >= OUTER_ZOOM_LIMIT:
+            _disable(self.zoom_out_button)
+        else:
+            _enable(self.zoom_out_button)
+
+        if self.zoom_level <= INNER_ZOOM_LIMIT:
+            _disable(self.zoom_in_button)
+        else:
+            _enable(self.zoom_in_button)
+
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
 
@@ -267,6 +373,7 @@ class BrowseStarState(State):
         draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
 
         # Draw overlay panel and transparent rects for improved contrast
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.zoom_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_vbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)

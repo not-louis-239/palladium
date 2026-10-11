@@ -38,6 +38,8 @@ class Game:
     def __init__(self):
         self.assets = Assets()
 
+        self.star_system: StarSystem | None = None
+
         self.states: dict[StateID, State] = {
             StateID.TITLE: TitleState(self),
             StateID.ENTER_SEED: SeedState(self),
@@ -48,8 +50,6 @@ class Game:
             StateID.PREFS: PreferencesState(self)
         }
         self.state = StateID.TITLE
-
-        self.star_system: StarSystem | None = None
 
         self.theme_idx = 0
 
