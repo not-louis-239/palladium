@@ -25,7 +25,7 @@ import pygame as pg
 from james import Label, Spacer, CircleButton, HBox, VBox, Panel
 
 from palladium.gui.utils import draw_star, draw_transparent_rect, draw_scale_bar, get_seed_messages
-from palladium.core.constants import WN_W, WN_H
+from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_W, WN_H
 from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
 from palladium.gui.themes import TRANSLUCENT_BLACK
 from palladium.gui.renderer import draw_elem
@@ -94,6 +94,12 @@ class BrowseStarState(State):
             k_fg=ThemeKey.FG_ACCENT
         )
 
+        self.radius_km_label = Label(
+            text="",
+            font=self.fonts.text,
+            k_fg=ThemeKey.FG_SENTINEL
+        )
+
         self.mass_label = Label(
             text="",
             font=self.fonts.text,
@@ -122,33 +128,54 @@ class BrowseStarState(State):
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
-            self.temp_label,
+            HBox(
+                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                self.temp_label,
+                renderer=draw_elem
+            ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="radius",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
-            self.radius_label,
+            HBox(
+                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                self.radius_label,
+                renderer=draw_elem
+            ),
+            HBox(
+                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                self.radius_km_label,
+                renderer=draw_elem
+            ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="mass",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
-            self.mass_label,
+            HBox(
+                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                self.mass_label,
+                renderer=draw_elem
+            ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
                 text="luminosity",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
-            self.luminosity_label,
+            HBox(
+                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                self.luminosity_label,
+                renderer=draw_elem
+            ),
             padding=UI_MARGIN_S,
             renderer=draw_elem
         )
 
-        # TODO: fix text overflow in some places
+        # TODO: fix potential text overflow in some places
 
         self.overlay_panel = Panel(
             child=HBox(
@@ -187,16 +214,17 @@ class BrowseStarState(State):
         # Star properties
 
         # Temperature
-        self.temp_label.set_text(f"    {self.game.star_system.star.temp - 273.15:,.2f}°C")
+        self.temp_label.set_text(f"{self.game.star_system.star.temp - 273.15:,.2f}°C")
 
         # Radius
-        self.radius_label.set_text(f"    {_format_qty(self.game.star_system.star.radius)} × Sun")
+        self.radius_label.set_text(f"{_format_qty(self.game.star_system.star.radius)} × Sun")
+        self.radius_km_label.set_text(f" ({self.game.star_system.star.radius * SOLAR_RADIUS_IN_KM:,.0f} km)")
 
         # Mass
-        self.mass_label.set_text(f"    {_format_qty(self.game.star_system.star.mass)} × Sun")
+        self.mass_label.set_text(f"{_format_qty(self.game.star_system.star.mass)} × Sun")
 
         # Luminosity
-        self.luminosity_label.set_text(f"    {_format_qty(self.game.star_system.star.luminosity)} × Sun")
+        self.luminosity_label.set_text(f"{_format_qty(self.game.star_system.star.luminosity)} × Sun")
 
         # Refresh UI
 
@@ -241,7 +269,7 @@ class BrowseStarState(State):
             )
         )
 
-        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, "1 solar radius")
+        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, scale_text)
 
         # Draw overlay panel
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)

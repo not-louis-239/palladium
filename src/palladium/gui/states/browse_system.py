@@ -25,8 +25,8 @@ from james import HBox, Panel, Spacer, VBox, Label, CircleButton
 
 from palladium.gui.states.base import StateID
 from palladium.core.constants import WN_H, WN_W, Controls
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, DEFAULT_ATTRS, ICON_SIZE
-from palladium.gui.utils import draw_scale_bar, draw_star, get_seed_messages, draw_transparent_rect
+from palladium.gui.constants import KELVIN_COLOURS, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, DEFAULT_ATTRS, ICON_SIZE
+from palladium.gui.utils import lerp_gradient, get_seed_messages, draw_transparent_rect
 from palladium.gui.renderer import draw_elem
 from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
 from palladium.gui.states.base import State
@@ -34,6 +34,10 @@ from palladium.terrain.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
+
+
+STAR_DISPLAY_RADIUS = 8
+PLANET_DISPLAY_RADIUS = 2
 
 
 class BrowseSystemState(State):
@@ -67,8 +71,12 @@ class BrowseSystemState(State):
             k_fg=ThemeKey.FG_SENTINEL
         )
 
+        # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
-            r=0, font=self.fonts.ui, k_fg_colour=ThemeKey.FG
+            r=STAR_DISPLAY_RADIUS + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG,
+            k_bg_colour=ThemeKey.BG,
+            k_bg_hovered=ThemeKey.BG_HOVERED,
+            k_bg_active=ThemeKey.BG_ACTIVE
         )
 
         self.header_hbox = HBox(
@@ -94,21 +102,17 @@ class BrowseSystemState(State):
                     renderer=draw_elem
                 ),
                 Spacer(),
+                HBox(
+                    Label(
+                        text="not to scale",
+                        font=self.fonts.text,
+                        k_fg=ThemeKey.FG
+                    ),
+                    Spacer(),
+                    renderer=draw_elem
+                ),
 
-                # TODO: add buttons: re-centre, zoom in, zoom out, 'click and drag' instruction
-
-                # HBox(
-                #     renderer=draw_elem
-                # ),
-                # HBox(
-                #     renderer=draw_elem
-                # ),
-                # HBox(
-                #     renderer=draw_elem
-                # ),
-                # HBox(
-                #     renderer=draw_elem
-                # ),
+                # TODO: add buttons: re-centre, 'click and drag' instruction
 
                 renderer=draw_elem
             ),
@@ -132,9 +136,8 @@ class BrowseSystemState(State):
         self.offset_label.set_text(offset_text)
 
         # Refresh interactive invisible star button
-        visual_radius = int(self.game.star_system.star.radius * 2 / self.zoom_level)
-        self.star_button.r = visual_radius
-        self.star_button.rect.update(WN_W // 2 - visual_radius, WN_H // 2 - visual_radius, 2 * visual_radius, 2 * visual_radius)
+        radius = self.star_button.r
+        self.star_button.rect.update(WN_W // 2 - radius, WN_H // 2 - radius, 2 * radius, 2 * radius)
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
@@ -184,30 +187,11 @@ class BrowseSystemState(State):
         # self.game.star_system should not be None if this state was entered properly
         assert self.game.star_system is not None
 
-        # Drawing the star may cause problems if the star is very big (hundreds of solar radii) at close zoom levels
-        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
-
-        # Draw scale bar
-        # TODO: this should (probably) eventually be an inherited class from james.Element
-
-        width = int(1 / self.zoom_level)
-        height = 8
-        bar_x = UI_MARGIN_M + UI_MARGIN_S
-        bar_y = WN_H - 80
-
-        # TODO: scale bar auto-changes quantity depending on zoom level,
-        # e.g. 0.1 -> 0.2 -> 0.5 -> 1 -> 2 -> 5 -> 10 -> 20 -> 50 -> 100 solar radii
-        scale_font = self.fonts.text
-        scale_text = "1 solar radius"
-        draw_transparent_rect(
-            screen, TRANSLUCENT_BLACK,
-            pg.Rect(
-                bar_x - UI_MARGIN_S, bar_y - scale_font.get_height() // 2 - UI_MARGIN_S,
-                width + UI_MARGIN_M + 2 * UI_MARGIN_S + scale_font.size(scale_text)[0], scale_font.get_height() + 2 * UI_MARGIN_S
-            )
-        )
-
-        draw_scale_bar(screen, self.game.current_theme()[ThemeKey.FG], bar_x, bar_y, width, height, scale_font, "1 solar radius")
+        # Drawing the star at a constant size so that the system remains visible
+        star_pos = (WN_W // 2, WN_H // 2)
+        draw_elem(screen, self.star_button, self.game.current_theme())
+        temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
+        pg.draw.circle(screen, temp_colour, star_pos, STAR_DISPLAY_RADIUS)
 
         # Draw UI
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)

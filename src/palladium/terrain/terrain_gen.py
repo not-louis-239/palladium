@@ -34,3 +34,7 @@ class TerrainSurface:
 
     def get_cell(self, x: int, y: int) -> Cell:
         return self.cells[y][x]
+
+
+def generate_terrain_surface() -> TerrainSurface:
+    ...
