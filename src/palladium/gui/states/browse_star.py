@@ -86,7 +86,7 @@ class BrowseStarState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
-        self.zoom_level = 0.03  # solar radii per pixel
+        self.zoom_level = 0.015  # solar radii per pixel
         self._setup_ui()
 
     def _setup_ui(self) -> None:

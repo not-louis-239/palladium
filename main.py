@@ -56,6 +56,8 @@ def main():
         game.draw(screen)
         pg.display.flip()
 
+    pg.quit()
+
 if __name__ == "__main__":
     try:
         main()

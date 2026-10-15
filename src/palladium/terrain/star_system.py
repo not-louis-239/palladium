@@ -16,11 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import random
 from dataclasses import dataclass
 
 from palladium.core.utils import str_to_seed
 from palladium.terrain.planet import Planet
 from palladium.terrain.star_gen import StarProfile, generate_star_profile
+
+
+PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -38,18 +42,39 @@ class StarSystem:
         self.seed_metadata = seed_metadata
 
 
-def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
-    seed_int, is_string = str_to_seed(str(seed))
+def _generate_planets(seed_int: int) -> list[Planet]:
+    # Spawn planets - decide on a number of planets from a weighted distribution
+    rng = random.Random(seed_int)
+    num_planets = rng.choices(
+        range(len(PLANET_COUNT_WEIGHTS)),
+        weights=PLANET_COUNT_WEIGHTS
+    )[0]
 
+    planets: list[Planet] = []
+    
+    for _ in range(num_planets):
+        # TODO: Generate planets
+        ...
+
+    return planets
+
+def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
+    # Handling seed conversion and display
+    # Merge seed and offset if seed is an integer
+    seed_int, is_string = str_to_seed(str(seed))
     if not is_string:
         seed_int += offset
         offset = 0
 
-    star = generate_star_profile(seed_int + offset)
+    # Create the master seed for generation
+    generation_seed = seed_int + offset
 
-    # TODO: add planet objects to star system generator
+    # From here on out, use `generation_seed` for generation, and make each stage its own function
+    star = generate_star_profile(generation_seed)
+    planets = _generate_planets(generation_seed)
 
-    return StarSystem(star, [], SeedMetadata(
+    # Return StarSystem with all its metadata
+    return StarSystem(star, planets, seed_metadata=SeedMetadata(
         display_str=str(seed_int if not is_string else seed),
         offset=offset, is_string=is_string, integer_value=seed_int + offset
     ))
