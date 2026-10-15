@@ -53,6 +53,7 @@ class StarProfile:
     @property
     def luminosity(self) -> float:
         # crude approximation using Stefan-Boltzmann law
+        # returns a luminosity expressed in terms of the Sun
         return (self.radius ** 2) * ((self.temp / SUN_TEMP) ** 4)
 
 

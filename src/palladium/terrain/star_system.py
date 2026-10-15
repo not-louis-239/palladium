@@ -20,7 +20,7 @@ import random
 from dataclasses import dataclass
 
 from palladium.core.utils import str_to_seed
-from palladium.terrain.planet import Planet
+from palladium.terrain.planet import Planet, generate_planet
 from palladium.terrain.star_gen import StarProfile, generate_star_profile
 
 
@@ -42,7 +42,7 @@ class StarSystem:
         self.seed_metadata = seed_metadata
 
 
-def _generate_planets(seed_int: int) -> list[Planet]:
+def _generate_planets(seed_int: int, star_profile: StarProfile) -> list[Planet]:
     # Spawn planets - decide on a number of planets from a weighted distribution
     rng = random.Random(seed_int)
     num_planets = rng.choices(
@@ -51,10 +51,10 @@ def _generate_planets(seed_int: int) -> list[Planet]:
     )[0]
 
     planets: list[Planet] = []
-    
+
     for _ in range(num_planets):
         # TODO: Generate planets
-        ...
+        planets.append(generate_planet(seed_int, star_profile))
 
     return planets
 
@@ -71,7 +71,7 @@ def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
 
     # From here on out, use `generation_seed` for generation, and make each stage its own function
     star = generate_star_profile(generation_seed)
-    planets = _generate_planets(generation_seed)
+    planets = _generate_planets(generation_seed, star)
 
     # Return StarSystem with all its metadata
     return StarSystem(star, planets, seed_metadata=SeedMetadata(
