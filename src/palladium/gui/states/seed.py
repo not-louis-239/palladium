@@ -43,7 +43,7 @@ from palladium.gui.constants import (
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
-    UI_MARGIN_XS
+    UI_MARGIN_XS,
 )
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID

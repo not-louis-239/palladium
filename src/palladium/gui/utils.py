@@ -17,12 +17,11 @@ from itertools import pairwise
 
 import pygame as pg
 
+from palladium.core.custom_types import AColour, Colour
 from palladium.core.utils import clamp
 from palladium.gui.constants import KELVIN_COLOURS
-from palladium.gui.constants import BORDER_W, UI_MARGIN_M
 from palladium.terrain.star_gen import StarProfile
 from palladium.terrain.star_system import SeedMetadata
-from palladium.core.custom_types import Colour, AColour
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:

@@ -21,18 +21,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
+from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from james import Label, Spacer, CircleButton, HBox, VBox, Panel
-
-from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
+from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W
 from palladium.core.utils import clamp
-from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_W, WN_H
-from palladium.gui.constants import UI_MARGIN_M, ICON_SIZE, SCREEN_RECT, UI_MARGIN_S
-from palladium.gui.themes import TRANSLUCENT_BLACK
+from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey
-from palladium.gui.elements.scale_bar import ScaleBar
+from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game

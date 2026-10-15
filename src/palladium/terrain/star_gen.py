@@ -20,7 +20,6 @@ import random
 from dataclasses import dataclass
 from enum import StrEnum
 
-
 SUN_TEMP = 5778.0  # °K
 
 

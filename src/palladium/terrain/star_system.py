@@ -23,7 +23,6 @@ from palladium.core.utils import str_to_seed
 from palladium.terrain.planet import Planet, generate_planet
 from palladium.terrain.star_gen import StarProfile, generate_star_profile
 
-
 PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
 
 

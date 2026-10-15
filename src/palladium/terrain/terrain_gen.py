@@ -20,7 +20,6 @@ from enum import StrEnum
 
 from palladium.terrain.noise_port import snoise2
 
-
 MAP_WIDTH = 180
 MAP_HEIGHT = 90
 
@@ -263,9 +262,8 @@ def stats_to_biome(height: float, temp: float, humidity: float, seed: int) -> Bi
     if humidity <= 0.4 and temp >= 30:
         return BiomeType.SAVANNA
 
-    if humidity <= 0.54:
-        if temp >= 30 or temp >= 25 and humidity >= 0.46:
-            return BiomeType.TROPICAL_GRASS
+    if temp >= 30 and humidity <= 0.54 or temp >= 25 and humidity >= 0.46:
+        return BiomeType.TROPICAL_GRASS
 
     # Other biomes
 
@@ -278,9 +276,8 @@ def stats_to_biome(height: float, temp: float, humidity: float, seed: int) -> Bi
         elif temp >= 10:
             return BiomeType.PINE_FOREST
 
-    if humidity >= 0.92:
-        if temp >= 5:
-            return BiomeType.PINE_FOREST
+    if humidity >= 0.92 and temp >= 5:
+        return BiomeType.PINE_FOREST
 
     if (
         temp <= -5 and humidity <= 0.92

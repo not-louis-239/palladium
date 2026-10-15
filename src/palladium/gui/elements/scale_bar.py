@@ -18,12 +18,11 @@
 
 from typing import Any
 
-import pygame as pg
-from pygame import Rect
-
 import james
-from james.utils import get_text_surf
+import pygame as pg
 from james import Colour, SupportsGetItemColour
+from james.utils import get_text_surf
+from pygame import Rect
 
 from palladium.gui.constants import BORDER_W
 

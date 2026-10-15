@@ -21,7 +21,6 @@ from enum import StrEnum
 
 from palladium.core.custom_types import AColour
 
-
 type Colour = tuple[int, int, int]
 
 

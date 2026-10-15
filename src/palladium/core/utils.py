@@ -18,7 +18,8 @@
 
 import hashlib
 import random
-from typing import Callable, Any
+from collections.abc import Callable
+from typing import Any
 
 
 def _str_to_terrain_seed(s: str) -> int:

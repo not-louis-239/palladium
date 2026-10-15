@@ -21,7 +21,6 @@ from enum import IntEnum
 import pygame as pg
 
 
-
 class Controls(IntEnum):
     SEED_MINUS_ONE = pg.K_j
     SEED_PLUS_ONE = pg.K_l
