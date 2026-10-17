@@ -32,6 +32,8 @@ from palladium.gui.constants import (
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
+    UI_MARGIN_XS,
+    CIRCLE_RADIUS_DRAW_LIMIT
 )
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
@@ -49,9 +51,10 @@ if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-SOLAR_RADIUS_PIXELS = 20  # for rendering bodies, a body with 1 solar radius will have this radius in pixels
+SOLAR_RADIUS_PIXELS = 5  # for rendering bodies, a body with 1 solar radius will have this radius in pixels
 MAGNITUDE_PIXEL_DIFF = 2  # a 10x difference in size results in this much of a factor of difference
 MIN_SIZE = 2  # stars and planets will never be smaller than this
+MAX_SIZE = 7
 
 PER_PIXELS = 50
 SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
@@ -83,9 +86,17 @@ DURATION_UNITS = (
     ("second", 1)
 )
 
+SCROLL_SENSITIVITY = 15
+SCROLL_SPEED = 800  # pix/s
+SCROLL_FRICTION = 0.9  # fraction of scroll velocity dissipated per second
 
-def _body_radius(solar_radii: float) -> float:
-    return max(MIN_SIZE, SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(solar_radii))
+DISTANCE_RINGS: list[float] = [0.1, 1, 10, 100, 1_000, 10_000]   # astronomical units
+INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this to avoid overcrowding
+
+
+def _format_zoom_value(val: float) -> str:
+    return f"{round(val):,.0f}" if val > 1 else str(val)
+
 
 def _format_speed_value(val: float) -> str:
     if val >= 1_000_000_000:
@@ -100,8 +111,14 @@ def _format_speed_value(val: float) -> str:
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        # astronomical units
+        self.scroll_disp = pg.Vector2(0, 0)
+        self.scroll_vel = pg.Vector2(0, 0)
+
         self.zoom_level = 0.01  # astronomical units per pixel
         self.run_speed = 86_400  # multiplier
+        self.paused = False
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
@@ -183,6 +200,14 @@ class BrowseSystemState(State):
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
+                        recentre_button := CircleButton(
+                            r=ICON_SIZE // 4,
+                            img_path=self.images.recentre,
+                            font=self.fonts.heading,
+                            k_fg_colour=ThemeKey.FG,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE
+                        ),
                         padding=UI_MARGIN_S,
                         gap=UI_MARGIN_S,
                         renderer=draw_elem
@@ -243,6 +268,7 @@ class BrowseSystemState(State):
         self.zoom_out_button = zoom_out_button
         self.slow_button = slow_button
         self.fast_button = fast_button
+        self.recentre_button = recentre_button
         self.speed_label = speed_label
         self.speed_text_label = speed_text_label
         self.speed_mult_label = speed_mult_label
@@ -275,10 +301,10 @@ class BrowseSystemState(State):
 
         Accounts for logarithmic scaling of bodies
         """
-        orbit_radius_pixels = (orbit_radius * SOLAR_RADIUS_IN_AU) / self.zoom_level
-        x = CENTRE_POS[0] - math.cos(orbit_angle_rads) * orbit_radius_pixels
-        y = CENTRE_POS[1] + math.sin(orbit_angle_rads) * orbit_radius_pixels
-        r = max(MIN_SIZE, SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(body_radius))
+        orbit_radius_au = (orbit_radius * SOLAR_RADIUS_IN_AU)
+        x = CENTRE_POS[0] + (-self.scroll_disp[0] - math.cos(orbit_angle_rads) * orbit_radius_au) / self.zoom_level
+        y = CENTRE_POS[1] + (-self.scroll_disp[1] + math.sin(orbit_angle_rads) * orbit_radius_au) / self.zoom_level
+        r = clamp(SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(body_radius), MIN_SIZE, MAX_SIZE)
 
         return (x, y, r)
 
@@ -297,11 +323,14 @@ class BrowseSystemState(State):
                 break
 
         bar_w = scale / self.zoom_level
-        bar_zoom_str = f"{round(scale):,.0f}" if scale > 1 else str(scale)
+        bar_zoom_str = _format_zoom_value(scale)
         self.scale_bar.text = f"{bar_zoom_str} astronomical unit{'' if scale == 1 else 's'}"
         self.scale_bar.bar_width = int(bar_w)
 
         self.overlay_panel.layout(SCREEN_RECT)
+
+        if self.game.star_system is not None:
+            self._refresh_body_buttons()
 
     def _adjust_speed(self, new_speed: float) -> None:
         self.run_speed = clamp(new_speed, MIN_SPEED, MAX_SPEED)
@@ -325,7 +354,7 @@ class BrowseSystemState(State):
 
         self.overlay_panel.layout(SCREEN_RECT)
 
-    def _refresh_ui(self) -> None:
+    def _refresh_ui_for_new_system(self) -> None:
         """Refresh UI when regenerating star system or scrolling through offsets"""
 
         assert self.game.star_system is not None
@@ -336,13 +365,16 @@ class BrowseSystemState(State):
         self.seed_int_label.set_text(seed_int_str)
         self.offset_label.set_text(offset_text)
 
-        # Refresh interactive invisible star button
-        radius = _body_radius(self.game.star_system.star.radius)
-        self.star_button.r = int(radius) + UI_MARGIN_S
-        self.star_button.rect.update(WN_W // 2 - radius, WN_H // 2 - radius, 2 * radius, 2 * radius)
-
         # Refresh planet stats
-        # TODO: Refresh planet buttons
+        self.planet_buttons.clear()
+        for i in range(len(self.game.star_system.planets)):
+            self.planet_buttons.append(CircleButton(
+                r=0, font=self.fonts.text,
+                k_bg_colour=ThemeKey.BG, k_bg_hovered=ThemeKey.BG_HOVERED, k_bg_active=ThemeKey.BG_ACTIVE,
+                k_fg_colour=ThemeKey.FG
+            ))
+
+        self._refresh_body_buttons()
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
@@ -358,14 +390,36 @@ class BrowseSystemState(State):
             star_system = generate_star_system(int(seed_string) + offset, 0)
         self.game.star_system = star_system
 
-        self._refresh_ui()
+        self._refresh_ui_for_new_system()
+
+    def _refresh_body_buttons(self) -> None:
+        assert self.game.star_system is not None
+
+        x, y, star_r = self._scaled_body_pos(0, 0, self.game.star_system.star.radius)
+        self.star_button.r = int(star_r) + UI_MARGIN_S
+        self.star_button.layout(pg.Rect(x - star_r, y - star_r, 2 * star_r, 2 * star_r))
+
+        for i, planet in enumerate(self.game.star_system.planets):
+            x, y, r = self._scaled_body_pos(planet.orbit_phase, planet.orbit_radius, planet.radius)
+            r = int(r + UI_MARGIN_S)
+
+            button = self.planet_buttons[i]
+            button.r = r
+            button.layout(pg.Rect(x - r, y - r, 2 * r, 2 * r))
 
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
-        self._refresh_ui()
+        self._refresh_ui_for_new_system()
 
     def update(self, dt_s: float) -> None:
         assert self.game.star_system is not None
+
+        self.scroll_disp += self.scroll_vel * dt_s
+        self.scroll_vel *= (1 - SCROLL_FRICTION) ** dt_s
+        self._refresh_body_buttons()
+
+        if self.paused:
+            return
 
         for planet in self.game.star_system.planets:
             # TODO: how to make motion blur to avoid planets clipping or reversing their orbits visually?
@@ -387,11 +441,25 @@ class BrowseSystemState(State):
                 if self.star_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_STAR)
                     return
+                if self.recentre_button.check_overlaps(event.pos):
+                    self.scroll_disp.update(0, 0)
 
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
                 self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_PLUS_ONE:
                 self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset + 1)
+
+            if event.type == pg.KEYDOWN and event.key == Controls.PAUSE_SIMULATION:
+                self.paused = not self.paused
+                if self.paused:
+                    self.speed_text_label.text = ""
+                    self.speed_mult_label.text = "simulation paused"
+                    self.overlay_panel.layout(SCREEN_RECT)
+                else:
+                    self._adjust_speed(self.run_speed)
+            if event.type == pg.MOUSEWHEEL:
+                self.scroll_vel.x += event.x * SCROLL_SENSITIVITY * self.zoom_level
+                self.scroll_vel.y -= event.y * SCROLL_SENSITIVITY * self.zoom_level
 
         if self.zoom_in_button.check_held():
             self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
@@ -433,15 +501,35 @@ class BrowseSystemState(State):
         # Draw star and planet buttons
         draw_elem(screen, self.star_button, self.game.current_theme())
 
+        for button in self.planet_buttons:
+            draw_elem(screen, button, self.game.current_theme())
+
+        # Draw distance rings
+        centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level
+        centre_y = CENTRE_POS[1] - self.scroll_disp.y / self.zoom_level
+        for distance in DISTANCE_RINGS:
+            radius = distance / self.zoom_level
+            if INNER_RING_DRAW_LIMIT < radius < CIRCLE_RADIUS_DRAW_LIMIT:
+                # TODO: eventually use pg.draw.arc hopefully so that I can draw the rings at any distance
+                # without compromising performance
+                pg.draw.circle(screen, self.game.current_theme()[ThemeKey.FG_SENTINEL], (centre_x, centre_y), radius, 1)
+
+                text_bottom = centre_y - radius - UI_MARGIN_XS
+                text_surf = self.fonts.tips.render(
+                    f"{_format_zoom_value(distance)} au",
+                    True, self.game.current_theme()[ThemeKey.FG_SENTINEL]
+                )
+
+                screen.blit(text_surf, text_surf.get_rect(centerx=centre_x, bottom=text_bottom))
+
         # Draw planets
         for planet in self.game.star_system.planets:
-            # TODO: implement orbiting planet animations
             x, y, r = self._scaled_body_pos(planet.orbit_phase, planet.orbit_radius, planet.radius)
             # TODO: colour planets according to composition and properties
             # could use preset sprites for this, but for now we'll make it a constant colour
             pg.draw.circle(screen, (0, 255, 130), (x, y), r)
 
-        # Drawing the star at a logarithmic so that the system remains visible
+        # Drawing the star at a logarithmic scale so that the system remains visible
         # but it shouldn't go below a minimum size
         x, y, r = self._scaled_body_pos(0, 0, self.game.star_system.star.radius)
         temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)

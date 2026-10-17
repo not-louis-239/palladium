@@ -85,3 +85,4 @@ KELVIN_COLOURS: dict[float, Colour] = {
     20000.0: (162, 198, 255),
     40000.0: (143, 184, 255),
 }
+CIRCLE_RADIUS_DRAW_LIMIT = 5 * WN_W

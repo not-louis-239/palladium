@@ -19,6 +19,7 @@ import pygame as pg
 
 from palladium.core.custom_types import AColour, Colour
 from palladium.core.utils import clamp
+from palladium.gui.constants import CIRCLE_RADIUS_DRAW_LIMIT
 from palladium.gui.constants import KELVIN_COLOURS
 from palladium.terrain.star_gen import StarProfile
 from palladium.terrain.star_system import SeedMetadata
@@ -59,7 +60,7 @@ def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
 
 def draw_star(screen: pg.Surface, star: StarProfile, zoom_level: float, pos: tuple[int, int]) -> None:
     temp_colour = lerp_gradient(star.temp, KELVIN_COLOURS)
-    pg.draw.circle(screen, temp_colour, pos, star.radius / zoom_level)
+    pg.draw.circle(screen, temp_colour, pos, min(CIRCLE_RADIUS_DRAW_LIMIT, star.radius / zoom_level))
 
 
 def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:

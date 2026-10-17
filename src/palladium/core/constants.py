@@ -24,6 +24,7 @@ import pygame as pg
 class Controls(IntEnum):
     SEED_MINUS_ONE = pg.K_j
     SEED_PLUS_ONE = pg.K_l
+    PAUSE_SIMULATION = pg.K_SPACE
 
 
 WN_W, WN_H = 1280, 720
