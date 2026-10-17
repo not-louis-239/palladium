@@ -20,6 +20,7 @@ import hashlib
 import random
 from collections.abc import Callable
 from typing import Any
+from types import ModuleType
 
 
 def _str_to_terrain_seed(s: str) -> int:
@@ -29,8 +30,8 @@ def _str_to_terrain_seed(s: str) -> int:
     return (h % (2**64)) - 2**63
 
 
-def random_seed() -> int:
-    return random.randint(-2**63, 2**63 - 1)
+def random_seed(inst: ModuleType | random.Random = random) -> int:
+    return inst.randint(-2**63, 2**63 - 1)
 
 
 def str_to_seed(s: str) -> tuple[int, bool]:

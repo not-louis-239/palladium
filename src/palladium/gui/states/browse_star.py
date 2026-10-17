@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W
+from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
 from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
 from palladium.gui.elements.scale_bar import ScaleBar
@@ -36,8 +36,6 @@ if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-ZOOM_RATE = 5 # multiply/divide by this per second
-
 PER_PIXELS = 50 # minimum scale bar size
 SCALE_BAR_LEVELS: list[float] = [  # solar radii per `PER_PIXELS` pixels
     0.001, 0.002, 0.005,
@@ -49,6 +47,7 @@ SCALE_BAR_LEVELS: list[float] = [  # solar radii per `PER_PIXELS` pixels
     1000
 ]
 
+# solar radii per pixel
 INNER_ZOOM_LIMIT = 0.0001
 OUTER_ZOOM_LIMIT = 10
 

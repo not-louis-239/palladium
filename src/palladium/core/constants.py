@@ -30,4 +30,6 @@ WN_W, WN_H = 1280, 720
 
 
 SOLAR_RADIUS_IN_KM = 695_700
+SOLAR_RADIUS_IN_AU = 0.00465047
 SOLAR_MASS_IN_KG = 1.98847e30
+ZOOM_RATE = 5 # multiply/divide by this per second

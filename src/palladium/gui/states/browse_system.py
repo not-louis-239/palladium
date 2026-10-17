@@ -18,12 +18,13 @@
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.constants import WN_H, WN_W, Controls
+from palladium.core.constants import SOLAR_RADIUS_IN_AU, WN_H, WN_W, ZOOM_RATE, Controls
 from palladium.gui.constants import (
     DEFAULT_ATTRS,
     ICON_SIZE,
@@ -32,95 +33,201 @@ from palladium.gui.constants import (
     UI_MARGIN_M,
     UI_MARGIN_S,
 )
+from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
-from palladium.gui.utils import draw_transparent_rect, get_seed_messages, lerp_gradient
+from palladium.gui.utils import (
+    clamp,
+    draw_transparent_rect,
+    get_seed_messages,
+    lerp_gradient,
+)
 from palladium.terrain.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-STAR_DISPLAY_RADIUS = 8
-PLANET_DISPLAY_RADIUS = 2
+SOLAR_RADIUS_PIXELS = 20  # for rendering bodies, a body with 1 solar radius will have this radius in pixels
+MAGNITUDE_PIXEL_DIFF = 2  # a 10x difference in size results in this much of a factor of difference
+MIN_SIZE = 2  # stars and planets will never be smaller than this
+
+PER_PIXELS = 50
+SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
+    0.01, 0.02, 0.05,
+    0.1, 0.2, 0.5,
+    1, 2, 5,
+    10, 20, 50,
+    100, 200, 500,
+    1_000, 2_000, 5_000,
+    10_000
+]
+
+# astronomical units per pixel
+INNER_ZOOM_LIMIT = 0.002
+OUTER_ZOOM_LIMIT = 100
+
+CENTRE_POS = (WN_W // 2, WN_H // 2)
+
+SPEED_ADJUST_RATE = 10  # factor per second
+MAX_SPEED = 3_153_600_000  # multiplier
+MIN_SPEED = 1
+
+DURATION_UNITS = (
+    ("year", 365 * 24 * 60 * 60),
+    ("week", 7 * 24 * 60 * 60),
+    ("day", 24 * 60 * 60),
+    ("hour", 60 * 60),
+    ("minute", 60),
+    ("second", 1)
+)
+
+
+def _body_radius(solar_radii: float) -> float:
+    return max(MIN_SIZE, SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(solar_radii))
+
+def _format_speed_value(val: float) -> str:
+    if val >= 1_000_000_000:
+        return f"{val / 1_000_000_000:.2f}B"
+    if val >= 1_000_000:
+        return f"{val / 1_000_000:.2f}M"
+    if val >= 1_000:
+        return f"{val / 1_000:.2f}k"
+    return f"{val:.2f}"
 
 
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
-
-        self.not_to_scale_label = Label(
-            text="not to scale",
-            font=self.fonts.text,
-            inset=UI_MARGIN_S,
-            k_fg=ThemeKey.FG
-        )
-
-        self.back_button = CircleButton(
-            **DEFAULT_ATTRS,
-            r=ICON_SIZE // 2,
-            img_path=self.images.back,
-            font=self.fonts.ui
-        )
-
-        self.seed_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT
-        )
-
-        self.offset_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT2
-        )
-
-        self.seed_int_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_SENTINEL
-        )
+        self.zoom_level = 0.01  # astronomical units per pixel
+        self.run_speed = 86_400  # multiplier
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
-            r=STAR_DISPLAY_RADIUS + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG,
+            r=0 + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG,
             k_bg_colour=ThemeKey.BG,
             k_bg_hovered=ThemeKey.BG_HOVERED,
             k_bg_active=ThemeKey.BG_ACTIVE
         )
 
-        self.header_hbox = HBox(
-            Label(
-                text="star system ",
-                font=self.fonts.text,
-                k_fg=ThemeKey.FG
-            ),
-            self.seed_label,
-            self.offset_label,
-            self.seed_int_label,
-            renderer=draw_elem,
-            padding=UI_MARGIN_S
-        )
-
         self.overlay_panel = Panel(
             child=VBox(
                 HBox(
-                    self.back_button,
+                    back_button := CircleButton(
+                        **DEFAULT_ATTRS,
+                        r=ICON_SIZE // 2,
+                        img_path=self.images.back,
+                        font=self.fonts.ui
+                    ),
                     Spacer(),
-                    self.header_hbox,
+                    header_hbox := HBox(
+                        Label(
+                            text="star system ",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG
+                        ),
+                        seed_label := Label(
+                            text="",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ACCENT
+                        ),
+                        offset_label := Label(
+                            text="",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ACCENT2
+                        ),
+                        seed_int_label := Label(
+                            text="",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_SENTINEL
+                        ),
+                        renderer=draw_elem,
+                        padding=UI_MARGIN_S
+                    ),
                     Spacer(),
                     renderer=draw_elem
                 ),
                 Spacer(),
                 HBox(
-                    self.not_to_scale_label,
+                    buttons_hbox := HBox(
+                        zoom_in_button := CircleButton(
+                            r=ICON_SIZE // 4,
+                            img_path=self.images.zoom_in,
+                            font=self.fonts.heading,
+                            k_fg_colour=ThemeKey.FG,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE
+                        ),
+                        zoom_out_button := CircleButton(
+                            r=ICON_SIZE // 4,
+                            img_path=self.images.zoom_out,
+                            font=self.fonts.heading,
+                            k_fg_colour=ThemeKey.FG,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE
+                        ),
+                        slow_button := CircleButton(
+                            r=ICON_SIZE // 4,
+                            img_path=self.images.backward,
+                            font=self.fonts.heading,
+                            k_fg_colour=ThemeKey.FG,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE
+                        ),
+                        fast_button := CircleButton(
+                            r=ICON_SIZE // 4,
+                            img_path=self.images.forward,
+                            font=self.fonts.heading,
+                            k_fg_colour=ThemeKey.FG,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE
+                        ),
+                        padding=UI_MARGIN_S,
+                        gap=UI_MARGIN_S,
+                        renderer=draw_elem
+                    ),
                     Spacer(),
+                    renderer=draw_elem
+                ),
+                HBox(
+                    speed_label := HBox(
+                        speed_text_label := Label(
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG,
+                        ),
+                        speed_mult_label := Label(
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_SENTINEL,
+                        ),
+                        padding=UI_MARGIN_S,
+                        renderer=draw_elem
+                    ),
+                    Spacer(),
+                    renderer=draw_elem
+                ),
+                HBox(
+                    scale_bar := ScaleBar(
+                        k_fg=ThemeKey.FG,
+                        bar_width=round(1 / self.zoom_level),
+                        text="",
+                        font=self.fonts.text,
+                        inset=UI_MARGIN_S,
+                        gap=UI_MARGIN_S
+                    ),
+                    Spacer(),
+                    not_to_scale_label := Label(
+                        text="star and planet sizes not to scale",
+                        font=self.fonts.text,
+                        inset=UI_MARGIN_S,
+                        k_fg=ThemeKey.FG
+                    ),
                     renderer=draw_elem
                 ),
 
                 # TODO: add buttons: re-centre, 'click and drag' instruction
 
+                gap=UI_MARGIN_S,
                 renderer=draw_elem
             ),
             horiz_padding=UI_MARGIN_M,
@@ -128,9 +235,99 @@ class BrowseSystemState(State):
             renderer=draw_elem
         )
 
+        # Bind UI components to `self`
+        self.back_button = back_button
+        self.scale_bar = scale_bar
+        self.buttons_hbox = buttons_hbox
+        self.zoom_in_button = zoom_in_button
+        self.zoom_out_button = zoom_out_button
+        self.slow_button = slow_button
+        self.fast_button = fast_button
+        self.speed_label = speed_label
+        self.speed_text_label = speed_text_label
+        self.speed_mult_label = speed_mult_label
+        self.not_to_scale_label = not_to_scale_label
+        self.header_hbox = header_hbox
+        self.seed_label = seed_label
+        self.offset_label = offset_label
+        self.seed_int_label = seed_int_label
+
+        # planet buttons
+        self.planet_buttons: list[CircleButton] = []
+
+        # refresh labels
+        self._adjust_zoom(self.zoom_level)
+        self._adjust_speed(self.run_speed)
+
+    def _scaled_body_pos(self, orbit_angle_rads: float, orbit_radius: float, body_radius: float):
+        """
+        Expects:
+
+        orbit_angle_rads: angle of the planet along its orbit in radians
+        orbit_radius: radius of the planet's orbit in solar radii
+        body_radius: radius of the planet in solar radii
+
+        Returns (x, y, r) where:
+
+        x is the x-position, in pixels, in screen space
+        y is the y-position, in pixels, in screen space
+        r is the radius, in pixels, in screen space
+
+        Accounts for logarithmic scaling of bodies
+        """
+        orbit_radius_pixels = (orbit_radius * SOLAR_RADIUS_IN_AU) / self.zoom_level
+        x = CENTRE_POS[0] - math.cos(orbit_angle_rads) * orbit_radius_pixels
+        y = CENTRE_POS[1] + math.sin(orbit_angle_rads) * orbit_radius_pixels
+        r = max(MIN_SIZE, SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(body_radius))
+
+        return (x, y, r)
+
+    def _adjust_zoom(self, new_zoom: float) -> None:
+        """Adjust zoom and refresh labels"""
+
+        # Clamp and set zoom
+        new_zoom = clamp(new_zoom, INNER_ZOOM_LIMIT, OUTER_ZOOM_LIMIT)
+        self.zoom_level = new_zoom
+
+        # Set the scale bar to an appropriate level
+        scale = SCALE_BAR_LEVELS[0]  # number of astronomical units represented by the scale bar
+        for candidate_scale in SCALE_BAR_LEVELS:
+            if candidate_scale / self.zoom_level > PER_PIXELS:
+                scale = candidate_scale
+                break
+
+        bar_w = scale / self.zoom_level
+        bar_zoom_str = f"{round(scale):,.0f}" if scale > 1 else str(scale)
+        self.scale_bar.text = f"{bar_zoom_str} astronomical unit{'' if scale == 1 else 's'}"
+        self.scale_bar.bar_width = int(bar_w)
+
+        self.overlay_panel.layout(SCREEN_RECT)
+
+    def _adjust_speed(self, new_speed: float) -> None:
+        self.run_speed = clamp(new_speed, MIN_SPEED, MAX_SPEED)
+
+        if self.run_speed == 1:
+            self.speed_text_label.set_text("real time speed")
+            self.speed_mult_label.set_text("")
+        else:
+            for unit in DURATION_UNITS:
+                name, num_seconds = unit
+                if (num_units := self.run_speed / num_seconds) >= 1:
+
+                    text = f"{num_units:.2f} {name}{'' if 1 <= num_units <= 1.005 else 's'}"
+                    speed_text = f"1 second = {text}"
+                    break
+            else:
+                speed_text = f"1 second = {self.run_speed} seconds"
+
+            self.speed_text_label.set_text(speed_text)
+            self.speed_mult_label.set_text(f" (×{_format_speed_value(self.run_speed)})")
+
         self.overlay_panel.layout(SCREEN_RECT)
 
     def _refresh_ui(self) -> None:
+        """Refresh UI when regenerating star system or scrolling through offsets"""
+
         assert self.game.star_system is not None
 
         # Refresh seed labels
@@ -140,8 +337,12 @@ class BrowseSystemState(State):
         self.offset_label.set_text(offset_text)
 
         # Refresh interactive invisible star button
-        radius = self.star_button.r
+        radius = _body_radius(self.game.star_system.star.radius)
+        self.star_button.r = int(radius) + UI_MARGIN_S
         self.star_button.rect.update(WN_W // 2 - radius, WN_H // 2 - radius, 2 * radius, 2 * radius)
+
+        # Refresh planet stats
+        # TODO: Refresh planet buttons
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
@@ -164,7 +365,16 @@ class BrowseSystemState(State):
         self._refresh_ui()
 
     def update(self, dt_s: float) -> None:
-        pass
+        assert self.game.star_system is not None
+
+        for planet in self.game.star_system.planets:
+            # TODO: how to make motion blur to avoid planets clipping or reversing their orbits visually?
+            # hold up, I have an idea
+            # draw copies at a fixed distance behind it
+            # but the faster it is, the lower the alpha falloff
+            # past a certain point, just draw a ring of motion blur
+            planet.orbit_phase += self.run_speed * planet.orbit_direction * (2 * math.pi) * dt_s / planet.orbit_duration
+            planet.orbit_phase %= (2 * math.pi)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         assert self.game.star_system is not None
@@ -183,21 +393,64 @@ class BrowseSystemState(State):
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_PLUS_ONE:
                 self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset + 1)
 
+        if self.zoom_in_button.check_held():
+            self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
+        if self.zoom_out_button.check_held():
+            self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
+        if self.fast_button.check_held():
+            self._adjust_speed(self.run_speed * SPEED_ADJUST_RATE ** dt_s)
+        if self.slow_button.check_held():
+            self._adjust_speed(self.run_speed / SPEED_ADJUST_RATE ** dt_s)
+
+        for button, value, bound in (
+            (self.zoom_out_button, self.zoom_level, OUTER_ZOOM_LIMIT),
+            (self.zoom_in_button, self.zoom_level, INNER_ZOOM_LIMIT),
+            (self.fast_button, self.run_speed, MAX_SPEED),
+            (self.slow_button, self.run_speed, MIN_SPEED),
+        ):
+            button.disabled = value == bound
+
+            if button.disabled:
+                button.k_fg_colour = ThemeKey.FG_SENTINEL
+                button.k_fg_hovered = ThemeKey.FG_SENTINEL
+                button.k_fg_active = ThemeKey.FG_SENTINEL
+            else:
+                button.k_fg_colour = ThemeKey.FG
+                button.k_fg_hovered = ThemeKey.FG_HOVERED
+                button.k_fg_active = ThemeKey.FG_ACTIVE
+
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG])
 
         # TODO: add star background parallax effect
 
+
+        # Draw the star system
+
         # self.game.star_system should not be None if this state was entered properly
         assert self.game.star_system is not None
 
-        # Drawing the star at a constant size so that the system remains visible
-        star_pos = (WN_W // 2, WN_H // 2)
+        # Draw star and planet buttons
         draw_elem(screen, self.star_button, self.game.current_theme())
+
+        # Draw planets
+        for planet in self.game.star_system.planets:
+            # TODO: implement orbiting planet animations
+            x, y, r = self._scaled_body_pos(planet.orbit_phase, planet.orbit_radius, planet.radius)
+            # TODO: colour planets according to composition and properties
+            # could use preset sprites for this, but for now we'll make it a constant colour
+            pg.draw.circle(screen, (0, 255, 130), (x, y), r)
+
+        # Drawing the star at a logarithmic so that the system remains visible
+        # but it shouldn't go below a minimum size
+        x, y, r = self._scaled_body_pos(0, 0, self.game.star_system.star.radius)
         temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
-        pg.draw.circle(screen, temp_colour, star_pos, STAR_DISPLAY_RADIUS)
+        pg.draw.circle(screen, temp_colour, (x, y), r)
 
         # Draw UI
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.speed_label.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.not_to_scale_label.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.buttons_hbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
         draw_elem(screen, self.overlay_panel, self.game.current_theme())

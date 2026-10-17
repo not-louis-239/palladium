@@ -28,6 +28,8 @@ class Images:
         self.recentre = IMAGES_DIR / "recentre.png"
         self.zoom_in = IMAGES_DIR / "zoom_in.png"
         self.zoom_out = IMAGES_DIR / "zoom_out.png"
+        self.forward = IMAGES_DIR / "forward.png"
+        self.backward = IMAGES_DIR / "backward.png"
 
 
 class Fonts:
