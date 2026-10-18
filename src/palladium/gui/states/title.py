@@ -72,7 +72,6 @@ class TitleState(State):
         )
 
         self.panel = Panel(
-            renderer=draw_elem,
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
             child=VBox(
@@ -85,17 +84,14 @@ class TitleState(State):
                         k_fg=ThemeKey.FG,
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
                 HBox(
                     Spacer(),
                     self.begin_button,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
-                renderer=draw_elem
             ),
         )
 

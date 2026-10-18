@@ -99,7 +99,6 @@ class SeedState(State):
         )
 
         self.panel = Panel(
-            renderer=draw_elem,
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
             child=VBox(
@@ -112,7 +111,6 @@ class SeedState(State):
                         k_fg=ThemeKey.FG
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(min_h=UI_MARGIN_S, flex=0.0),
                 Table(
@@ -123,11 +121,9 @@ class SeedState(State):
                                 font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
-                            renderer=draw_elem
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
                         self.seed_input_box,
-                        renderer=draw_elem
                     ),
                     HBox(
                         SBox(
@@ -136,11 +132,9 @@ class SeedState(State):
                                 font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
-                            renderer=draw_elem
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
                         self.offset_input_box,
-                        renderer=draw_elem
                     ),
                     column_flexes=[0, 0, 1],
                     cell_renderer=draw_elem,
@@ -151,10 +145,8 @@ class SeedState(State):
                     Spacer(),
                     self.proceed_button,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 gap=UI_MARGIN_S,
-                renderer=draw_elem
             )
         )
 

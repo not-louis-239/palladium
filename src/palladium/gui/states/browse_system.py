@@ -163,11 +163,9 @@ class BrowseSystemState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL
                         ),
-                        renderer=draw_elem,
                         padding=UI_MARGIN_S
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
                 HBox(
@@ -214,10 +212,8 @@ class BrowseSystemState(State):
                         ),
                         padding=UI_MARGIN_S,
                         gap=UI_MARGIN_S,
-                        renderer=draw_elem
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 HBox(
                     speed_label := HBox(
@@ -230,10 +226,8 @@ class BrowseSystemState(State):
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
                         padding=UI_MARGIN_S,
-                        renderer=draw_elem
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 HBox(
                     scale_bar := ScaleBar(
@@ -251,17 +245,14 @@ class BrowseSystemState(State):
                         inset=UI_MARGIN_S,
                         k_fg=ThemeKey.FG
                     ),
-                    renderer=draw_elem
                 ),
 
                 # TODO: add buttons: re-centre, 'click and drag' instruction
 
                 gap=UI_MARGIN_S,
-                renderer=draw_elem
             ),
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
-            renderer=draw_elem
         )
 
         # Bind UI components from the main panel to `self`
@@ -297,18 +288,14 @@ class BrowseSystemState(State):
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_temperature := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
-                    renderer=draw_elem
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
                 Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="radius:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_radius := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
-                    renderer=draw_elem
                 ),
-                renderer=draw_elem
             ),
-            renderer=draw_elem,
             horiz_padding=UI_MARGIN_S,
             vert_padding=UI_MARGIN_S
         )
@@ -628,12 +615,14 @@ class BrowseSystemState(State):
         pg.draw.circle(screen, temp_colour, (x, y), r)
 
         # Draw UI
+        self.work_surface.fill((0, 0, 0, 0))
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.speed_label.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.not_to_scale_label.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.buttons_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
-        draw_elem(screen, self.overlay_panel, self.game.current_theme())
+        draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
+        screen.blit(self.work_surface)
 
         # Draw hover boxes over planets or stars
         if self.star_button.check_hovered():

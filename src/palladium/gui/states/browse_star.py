@@ -177,7 +177,6 @@ class BrowseStarState(State):
             self.seed_label,
             self.offset_label,
             self.seed_int_label,
-            renderer=draw_elem,
             padding=UI_MARGIN_S
         )
 
@@ -190,7 +189,6 @@ class BrowseStarState(State):
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.temp_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
@@ -201,12 +199,10 @@ class BrowseStarState(State):
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.radius_label,
-                renderer=draw_elem
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.radius_km_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
@@ -217,7 +213,6 @@ class BrowseStarState(State):
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.mass_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
@@ -228,10 +223,8 @@ class BrowseStarState(State):
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.luminosity_label,
-                renderer=draw_elem
             ),
             padding=UI_MARGIN_S,
-            renderer=draw_elem
         )
 
         self.zoom_hbox = HBox(
@@ -239,7 +232,6 @@ class BrowseStarState(State):
             self.zoom_out_button,
             padding=UI_MARGIN_S,
             gap=UI_MARGIN_S,
-            renderer=draw_elem
         )
 
         # TODO: fix potential text overflow in some places
@@ -250,34 +242,27 @@ class BrowseStarState(State):
                     HBox(
                         self.header_hbox,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     Spacer(),
                     HBox(
                         self.zoom_hbox,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     HBox(
                         self.scale_bar,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     gap=UI_MARGIN_S,
-                    renderer=draw_elem,
                 ),
                 Spacer(),
                 VBox(
                     self.info_vbox,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 gap=UI_MARGIN_M,
-                renderer=draw_elem
             ),
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
-            renderer=draw_elem
         )
 
         # Initialise the scale bar

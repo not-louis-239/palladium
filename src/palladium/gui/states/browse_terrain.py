@@ -71,17 +71,16 @@ class BrowseTerrainState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
-                        renderer=draw_elem,
                         padding=UI_MARGIN_S,
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
-                renderer=draw_elem
             ),
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
-            renderer=draw_elem
+        )
+
+        self.hover_panel = Panel(
         )
 
         self.seed_hbox = seed_hbox
