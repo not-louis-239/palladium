@@ -51,13 +51,17 @@ class ThemeKey(StrEnum):
     FG_ERROR_HOVERED = "FG_ERROR_HOVERED"
     FG_ERROR_ACTIVE = "FG_ERROR_ACTIVE"
 
-    FG_HABITABLE_ZONE = "FG_HABITABLE_ZONE"
-
     BORDER = "BORDER"
     BORDER_HOVERED = "BORDER_HOVERED"
     BORDER_ACTIVE = "BORDER_ACTIVE"
 
     CURSOR = "CURSOR"
+
+    FG_HABITABLE_ZONE = "FG_HABITABLE_ZONE"
+
+    FG_PROFILER_UPDATE = "FG_PROFILER_UPDATE"
+    FG_PROFILER_INPUT = "FG_PROFILER_INPUT"
+    FG_PROFILER_DRAW = "FG_PROFILER_DRAW"
 
 
 @dataclass
@@ -93,13 +97,17 @@ THEMES = [
         ThemeKey.FG_ERROR_HOVERED: (255, 20, 90),
         ThemeKey.FG_ERROR_ACTIVE: (255, 38, 117),
 
-        ThemeKey.FG_HABITABLE_ZONE: (0, 50, 0),
-
         ThemeKey.BORDER: (170, 170, 220),
         ThemeKey.BORDER_HOVERED: (205, 205, 240),
         ThemeKey.BORDER_ACTIVE: (240, 240, 255),
 
-        ThemeKey.CURSOR: (255, 255, 255)
+        ThemeKey.CURSOR: (255, 255, 255),
+
+        ThemeKey.FG_HABITABLE_ZONE: (0, 50, 0),
+
+        ThemeKey.FG_PROFILER_UPDATE: (100, 255, 255),
+        ThemeKey.FG_PROFILER_INPUT: (100, 100, 255),
+        ThemeKey.FG_PROFILER_DRAW: (100, 255, 100)
     })
 ]
 

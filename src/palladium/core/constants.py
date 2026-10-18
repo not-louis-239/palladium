@@ -26,6 +26,8 @@ class Controls(IntEnum):
     SEED_PLUS_ONE = pg.K_l
     PAUSE_SIMULATION = pg.K_SPACE
 
+    PROFILER_TOGGLE = pg.K_F1
+
 
 WN_W, WN_H = 1280, 720
 

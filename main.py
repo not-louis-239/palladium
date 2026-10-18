@@ -19,6 +19,7 @@
 
 
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -53,10 +54,16 @@ def main():
             if event.type == pg.QUIT:
                 running = False
 
+        t_i = time.time()
         game.update(dt_s)
+        t_update = time.time()
         game.take_input(keys=keys, events=events, dt_s=dt_s)
+        t_input = time.time()
         game.draw(screen)
         pg.display.flip()
+        t_draw = time.time()
+
+        game.profiler.record_snapshot(t_i=t_i, t_update=t_update, t_input=t_input, t_draw=t_draw)
 
     pg.quit()
 

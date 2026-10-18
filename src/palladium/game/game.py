@@ -32,6 +32,8 @@ from palladium.gui.states import (
 )
 from palladium.gui.themes import THEMES, Theme
 from palladium.generators.star_system import StarSystem
+from palladium.core.profiler import Profiler
+from palladium.core.constants import Controls
 
 
 class Game:
@@ -53,6 +55,7 @@ class Game:
         self.state = StateID.TITLE
 
         self.theme_idx = 0
+        self.profiler = Profiler(self)
 
     def enter_state(self, state: StateID) -> None:
         self.state = state
@@ -65,7 +68,12 @@ class Game:
         self.states[self.state].update(dt_s)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.event.Event], dt_s: float) -> None:
+        for event in events:
+            if event.type == pg.KEYDOWN and event.key == Controls.PROFILER_TOGGLE:
+                self.profiler.visible = not self.profiler.visible
+
         self.states[self.state].take_input(keys, events, dt_s)
 
     def draw(self, screen: pg.Surface) -> None:
         self.states[self.state].draw(screen)
+        self.profiler.show(screen)
