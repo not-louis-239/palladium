@@ -31,7 +31,7 @@ from palladium.gui.states import (
     TitleState,
 )
 from palladium.gui.themes import THEMES, Theme
-from palladium.terrain.star_system import StarSystem
+from palladium.generators.star_system import StarSystem
 
 
 class Game:
@@ -39,6 +39,7 @@ class Game:
         self.assets = Assets()
 
         self.star_system: StarSystem | None = None
+        self.planet_idx: int | None = None
 
         self.states: dict[StateID, State] = {
             StateID.TITLE: TitleState(self),

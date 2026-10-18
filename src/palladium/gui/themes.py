@@ -48,6 +48,8 @@ class ThemeKey(StrEnum):
     FG_ERROR_HOVERED = "FG_ERROR_HOVERED"
     FG_ERROR_ACTIVE = "FG_ERROR_ACTIVE"
 
+    FG_HABITABLE_ZONE = "FG_HABITABLE_ZONE"
+
     BORDER = "BORDER"
     BORDER_HOVERED = "BORDER_HOVERED"
     BORDER_ACTIVE = "BORDER_ACTIVE"
@@ -85,6 +87,8 @@ THEMES = [
         ThemeKey.FG_ERROR: (255, 0, 76),
         ThemeKey.FG_ERROR_HOVERED: (255, 20, 90),
         ThemeKey.FG_ERROR_ACTIVE: (255, 38, 117),
+
+        ThemeKey.FG_HABITABLE_ZONE: (0, 50, 0),
 
         ThemeKey.BORDER: (170, 170, 220),
         ThemeKey.BORDER_HOVERED: (205, 205, 240),

@@ -21,8 +21,8 @@ from palladium.core.custom_types import AColour, Colour
 from palladium.core.utils import clamp
 from palladium.gui.constants import CIRCLE_RADIUS_DRAW_LIMIT
 from palladium.gui.constants import KELVIN_COLOURS
-from palladium.terrain.star_gen import StarProfile
-from palladium.terrain.star_system import SeedMetadata
+from palladium.generators.star_gen import StarProfile
+from palladium.generators.star_system import SeedMetadata
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:

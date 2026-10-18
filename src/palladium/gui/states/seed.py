@@ -48,7 +48,7 @@ from palladium.gui.constants import (
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
-from palladium.terrain.star_system import generate_star_system
+from palladium.generators.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -194,7 +194,6 @@ class SeedState(State):
             offset = 0
 
         self.game.star_system = generate_star_system(seed, offset)
-
         self.game.enter_state(StateID.BROWSE_SYSTEM)
 
     def on_entered(self) -> None:

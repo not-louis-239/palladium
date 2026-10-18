@@ -17,11 +17,19 @@
 
 
 from enum import StrEnum
+from typing import Generator
 
-from palladium.terrain.noise_port import snoise2
+import math
+import pygame as pg
+
+from palladium.core.utils import clamp
+from palladium.generators.noise_port import snoise2
+
 
 MAP_WIDTH = 180
 MAP_HEIGHT = 90
+
+_HALF_MAP_WIDTH = MAP_WIDTH // 2
 
 
 class BiomeType(StrEnum):
@@ -76,6 +84,50 @@ class BiomeType(StrEnum):
     FROZEN_OCEAN = "frozen ocean"
 
 
+BIOME_COLOURS = {
+    BiomeType.VOLCANO: (128, 0, 0),
+    BiomeType.FROZEN_PEAKS: (227, 220, 255),
+    BiomeType.ALPINE: (167, 197, 209),
+    BiomeType.EXTREME_HILLS: (149, 166, 158),
+    BiomeType.PYRO: (255, 207, 76),
+    BiomeType.LAVA: (255, 170, 23),
+    BiomeType.MAGMA: (255, 105, 0),
+    BiomeType.SALT_FLATS: (192, 192, 192),
+    BiomeType.HOT_DESERT: (255, 210, 127),
+    BiomeType.DESERT: (255, 234, 198),
+    BiomeType.COLD_DESERT: (255, 250, 239),
+    BiomeType.ASPHALT: (45, 45, 45),
+    BiomeType.GEYSER: (255, 101, 166),
+    BiomeType.HOT_SPRING: (0, 255, 172),
+    BiomeType.SAVANNA: (198, 218, 117),
+    BiomeType.TROPICAL_RAINFOREST: (0, 69, 0),
+    BiomeType.SWAMP: (108, 129, 55),
+    BiomeType.PRAIRIE: (255, 219, 73),
+    BiomeType.TROPICAL_GRASS: (201, 189, 11),
+    BiomeType.FOREST: (83, 220, 23),
+    BiomeType.RAINFOREST: (0, 142, 0),
+    BiomeType.PINE_FOREST: (88, 175, 141),
+    BiomeType.BOREAL_FOREST: (156, 217, 192),
+    BiomeType.TUNDRA: (207, 255, 255),
+    BiomeType.FROZEN_PLAINS: (207, 200, 255),
+    BiomeType.VOLCANIC_BEACH: (131, 91, 80),
+    BiomeType.SULPHUR_COAST: (226, 255, 153),
+    BiomeType.SULPHUR: (208, 255, 84),
+    BiomeType.TROPICAL_BEACH: (255, 248, 157),
+    BiomeType.REEF: (0, 255, 235),
+    BiomeType.TROPICAL_OCEAN: (0, 116, 148),
+    BiomeType.BEACH: (255, 250, 187),
+    BiomeType.WARM_SEA: (0, 214, 255),
+    BiomeType.OCEAN: (0, 76, 112),
+    BiomeType.STONY_SHORE: (195, 195, 195),
+    BiomeType.COLD_SEA: (0, 155, 255),
+    BiomeType.ABYSS: (15, 0, 33),
+    BiomeType.SNOWY_BEACH: (228, 221, 255),
+    BiomeType.FROZEN_COAST: (123, 212, 255),
+    BiomeType.FROZEN_OCEAN: (177, 230, 255),
+}
+
+
 class Cell:
     def __init__(
             self,
@@ -84,7 +136,7 @@ class Cell:
             humidity: float  # % relative humidity
         ) -> None:
         self.height = height
-        self.temperature = temperature
+        self.temp = temperature
         self.humidity = humidity
         self.biome = stats_to_biome(height, temperature, humidity, seed=0)
 
@@ -93,26 +145,88 @@ class TerrainSurface:
     def __init__(self, cells: list[list[Cell]]) -> None:
         self.cells = cells
 
+    def __iter__(self):
+        for row in self.cells:
+            yield row
+
+    def get_neighbours(self, x: int, y: int) -> Generator[tuple[int, int], None, None]:
+        left = ((x - 1) % MAP_WIDTH, y)
+        right = ((x + 1) % MAP_WIDTH, y)
+
+        if y == 0:  # top of map
+            above = ((x + _HALF_MAP_WIDTH) % MAP_WIDTH, y)
+            below = (x, 1)
+        elif y == MAP_HEIGHT - 1:  # bottom of map
+            above = (x, MAP_HEIGHT - 2)
+            below = ((x + _HALF_MAP_WIDTH) % MAP_WIDTH, y)
+        else:
+            above = (x, y - 1)
+            below = (x, y + 1)
+
+        yield left
+        yield right
+        yield above
+        yield below
+
+    def get_normal_at(self, x: int, y: int) -> pg.Vector3:
+        left, right, above, below = self.get_neighbours(x, y)
+
+        h_left = self.cells[left[1]][left[0]].height
+        h_right = self.cells[right[1]][right[0]].height
+        h_above = self.cells[above[1]][above[0]].height
+        h_below = self.cells[below[1]][below[0]].height
+
+        dx = (h_right - h_left) / 2
+        dy = (h_below - h_above) / 2
+
+        return pg.Vector3(-dx, -dy, 1).normalize()
+
     def get_cell(self, x: int, y: int) -> Cell:
         return self.cells[y][x]
 
 
-def generate_terrain_surface(base_temp: float) -> TerrainSurface:
+def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
+    """Expects base_temp in °K"""
+
     grid: list[list[Cell]] = []
 
     # TODO: this is a stub, finish it later
 
-    for x in range(MAP_WIDTH):
+    for y in range(MAP_HEIGHT):
         row: list[Cell] = []
-        for y in range(MAP_HEIGHT):
+
+        for x in range(MAP_WIDTH):
             # Assign heights - metres
-            height = snoise2(x, y, scale=0.05, octaves=4, base=0)
+            # seed_int needs to be a small enough seed that `snoise2` doesn't break
+            height = -1000 + 4000 * snoise2(x, y, scale=0.015, octaves=4, base=seed_int % 32_768)
 
             # Assign temperature - °K
-            temp = 293.15 - 0.007 * height
+            altitude_penalty = 0.007 * height  # adiabatic laps rate -> -7°C/km
+            latitude_multiplier = 1.2 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
+            temp = base_temp * latitude_multiplier - altitude_penalty
 
             # Assign humidity - values from 0 to 1
-            humidity = 0.8
+            base_humidity = 0.65 + 0.15 * snoise2(x, y, scale=0.05, octaves=4, base=(seed_int + 1) % 32_768)
+
+            # Coasts and oceans have higher humidity
+            if height < 100:
+                gap = 100 - height
+                coast_bonus = min(0.05, 0.00025 * gap)
+            else:
+                coast_bonus = 0
+
+            # Humidity decreases with latitude - first slowly, then rapid dropoff
+            latitude_multiplier = 1.15 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
+
+            # Dry bands around ±30°
+            latitude_abs = abs((y - MAP_HEIGHT // 2) / (MAP_HEIGHT // 2))
+            if 0.1 <= latitude_abs <= 0.35:
+                strength = 1 - abs(latitude_abs - 0.225) / 0.125
+                dry_band_factor = 1 - snoise2(x, y, scale=0.05, octaves=4, base=(seed_int + 2) % 32_768) * strength * 2
+            else:
+                dry_band_factor = 1
+
+            humidity = clamp((base_humidity + coast_bonus) * latitude_multiplier * dry_band_factor, 0, 1)
 
             # Cell assigns itself a biome on creation
             cell = Cell(height, temp, humidity)

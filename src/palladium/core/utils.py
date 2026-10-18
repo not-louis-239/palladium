@@ -50,7 +50,7 @@ def clamp(val: float, lower: float, upper: float) -> float:
     return max(min(val, upper), lower)
 
 
-def safe_convert[T](val, typ: Callable[[Any], T]) -> T | None:
+def safe_convert[T](val: Any, typ: Callable[[Any], T]) -> T | None:
     try:
         return typ(val)
     except TypeError, ValueError:
