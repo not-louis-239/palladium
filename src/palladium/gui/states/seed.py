@@ -34,6 +34,7 @@ from james import (
     VBox,
 )
 
+from palladium.core.constants import WN_W, WN_H
 from palladium.core.utils import random_seed, safe_convert
 from palladium.gui.constants import (
     BORDER_W,
@@ -47,7 +48,7 @@ from palladium.gui.constants import (
 )
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey
+from palladium.gui.themes import ThemeKey, CLEAR
 from palladium.generators.star_system import generate_star_system
 
 if TYPE_CHECKING:
@@ -58,6 +59,7 @@ class SeedState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
         self.is_valid = True
+        self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
@@ -215,5 +217,8 @@ class SeedState(State):
             self._validate()
 
     def draw(self, screen: pg.Surface) -> None:
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
-        draw_elem(screen, self.panel, self.game.current_theme())
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
+
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.panel, self.game.current_theme())
+        screen.blit(self.work_surface)

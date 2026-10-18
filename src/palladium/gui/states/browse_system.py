@@ -38,7 +38,7 @@ from palladium.gui.constants import (
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey, CLEAR
 from palladium.gui.utils import (
     clamp,
     draw_transparent_rect,
@@ -113,6 +113,8 @@ def _format_speed_value(val: float) -> str:
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         # astronomical units
         self.scroll_disp = pg.Vector2(0, 0)
@@ -564,7 +566,7 @@ class BrowseSystemState(State):
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
 
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw the habitable zone
         centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level
@@ -574,9 +576,9 @@ class BrowseSystemState(State):
         inner_r, outer_r = inner / self.zoom_level, outer / self.zoom_level
 
         if outer_r < CIRCLE_RADIUS_DRAW_LIMIT:
-            self.hz_surface.fill((0, 0, 0, 0))
+            self.hz_surface.fill(CLEAR)
             pg.draw.circle(self.hz_surface, self.game.current_theme()[ThemeKey.FG_HABITABLE_ZONE], (centre_x, centre_y), outer_r)
-            pg.draw.circle(self.hz_surface, (0, 0, 0, 0), (centre_x, centre_y), inner_r)
+            pg.draw.circle(self.hz_surface, CLEAR, (centre_x, centre_y), inner_r)
             screen.blit(self.hz_surface)
 
         # TODO: add star background parallax effect
@@ -588,10 +590,12 @@ class BrowseSystemState(State):
         assert self.game.star_system is not None
 
         # Draw star and planet buttons
-        draw_elem(screen, self.star_button, self.game.current_theme())
-
+        self.work_surface.fill((0, 0, 0, 0))
+        draw_elem(self.work_surface, self.star_button, self.game.current_theme())
         for button in self.planet_buttons:
-            draw_elem(screen, button, self.game.current_theme())
+            draw_elem(self.work_surface, button, self.game.current_theme())
+
+        screen.blit(self.work_surface)
 
         # Draw distance rings
         for distance in DISTANCE_RINGS:

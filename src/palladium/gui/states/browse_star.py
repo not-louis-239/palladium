@@ -364,7 +364,7 @@ class BrowseStarState(State):
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
 
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw star
         draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))

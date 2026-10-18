@@ -142,7 +142,7 @@ class BrowseTerrainState(State):
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
 
     def draw(self, screen: pg.Surface) -> None:
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw terrain
         screen.blit(self.planet_surface)
