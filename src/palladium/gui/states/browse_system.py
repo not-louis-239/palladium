@@ -284,7 +284,7 @@ class BrowseSystemState(State):
                     k_fg=ThemeKey.FG
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="surface temperature:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="est. surface temperature:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_temperature := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -636,7 +636,7 @@ class BrowseSystemState(State):
                 if button.check_hovered():
                     self._refresh_hover_labels(
                         name=planet.name,
-                        temp=planet.avg_surface_temp,
+                        temp=planet.displayed_surface_temp,
                         radius=planet.radius
                     )
                     draw_elem(screen, self.hover_box, self.game.current_theme())

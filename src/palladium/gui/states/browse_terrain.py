@@ -84,25 +84,25 @@ class BrowseTerrainState(State):
             child=VBox(
                 hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="surface temp", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="surface temperature:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_surface_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="altitude", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="altitude:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_altitude := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="humidity", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="humidity:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_humidity := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="biome", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="biome:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_biome := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -129,15 +129,18 @@ class BrowseTerrainState(State):
         self.panel.layout(SCREEN_RECT)
 
     def _refresh_planet_surface(self) -> None:
+        planet = self.current_planet()
+        assert planet.surface is not None
+
         cell_w, cell_h = WN_W / MAP_WIDTH, WN_H / MAP_HEIGHT
 
-        for y, row in enumerate(self.current_planet().surface):
+        for y, row in enumerate(planet.surface):
             for x, cell in enumerate(row):
                 colour = BIOME_COLOURS[cell.biome]
 
                 # Draw colours based on the dot product between the gradient and the light's normal
                 # Get the normal by getting the gradient between the cell and its neighbours
-                normal = self.current_planet().surface.get_normal_at(x, y)
+                normal = planet.surface.get_normal_at(x, y)
                 brightness = normal.dot(LIGHT_NORMAL)
 
                 colour = (
@@ -157,10 +160,14 @@ class BrowseTerrainState(State):
         self.offset_label.set_text(offset_text)
         self.panel.layout(SCREEN_RECT)
 
+        if self.current_planet().surface is None:
+            self.current_planet().generate_surface()
+
         self._refresh_planet_surface()
 
     def _refresh_hover_panel(self) -> None:
         planet = self.current_planet()
+        assert planet.surface is not None
 
         # Get the cell
         mx, my = pg.mouse.get_pos()

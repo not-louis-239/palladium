@@ -204,9 +204,9 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
             height = -1000 + 4000 * snoise2(x, y, scale=0.015, octaves=4, base=seed_int % 32_768)
 
             # Assign temperature - °K
-            altitude_penalty = 0.007 * height  # adiabatic laps rate -> -7°C/km
+            altitude_penalty = 0.000021 * height  # temperature drops by 0.0021% per metre
             latitude_multiplier = 1.2 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
-            temp = base_temp * latitude_multiplier - altitude_penalty
+            temp = base_temp * latitude_multiplier * max(0, (1 - altitude_penalty))
 
             # Assign humidity - values from 0 to 1
             base_humidity = 0.65 + 0.15 * snoise2(x, y, scale=0.05, octaves=4, base=(seed_int + 1) % 32_768)

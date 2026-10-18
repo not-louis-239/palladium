@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import time
 import math
 import random
 import statistics
@@ -25,26 +26,34 @@ from palladium.generators.star_gen import StarProfile
 from palladium.generators.terrain_gen import TerrainSurface, generate_terrain_surface
 
 
+ESTIMATED_SURFACE_TEMP_RATIO = 1.174
+
+
 class Planet:
     def __init__(
-            self, name: str, surface: TerrainSurface, day_length: float, mass: float,
-            orbit_radius: float, orbit_duration: float, radius: float, rotation_seed: int
+            self, name: str, day_length: float, mass: float,
+            orbit_radius: float, orbit_duration: float, radius: float, rotation_seed: int,
+            displayed_surface_temp: float, base_temp: float, seed_int: int
         ) -> None:
         self.name = name
-        self.surface = surface
         self.day_length = day_length  # seconds
         self.orbit_duration = orbit_duration  # seconds
         self.orbit_radius = orbit_radius  # solar radii
         self.radius = radius  # solar radii
         self.mass = mass  # solar masses
+        self.displayed_surface_temp = displayed_surface_temp  # Kelvin
+        self.base_temp = base_temp  # Kelvin
+        self.seed_int = seed_int  # used for terrain gen
 
         # Rotation seed sets initial rotation phase and direction
         rng = random.Random(rotation_seed)
         self.orbit_phase = rng.uniform(0, 2 * math.pi)
         self.orbit_direction = rng.choice([-1, 1])
 
-        temps = [c.temp for row in self.surface for c in row]
-        self.avg_surface_temp = statistics.mean(temps)
+        self.surface: TerrainSurface | None = None
+
+    def generate_surface(self) -> None:
+        self.surface = generate_terrain_surface(self.seed_int, self.base_temp)
 
 
 def calculate_stellar_flux(luminosity: float, distance_au: float) -> float:
@@ -96,13 +105,17 @@ def generate_planet(seed_int: int, star: StarProfile) -> Planet:
         (star.mass + mass)
     )
 
-    return Planet(
+    p = Planet(
         name="",  # assign names in generation
-        surface=generate_terrain_surface(seed_int=seed_int, base_temp=temp),
         day_length=day_length,
         orbit_radius=orbit_radius,
         orbit_duration=orbit_duration,
         radius=radius,
         mass=mass,
-        rotation_seed=seed_int
+        rotation_seed=seed_int,
+        displayed_surface_temp=temp * ESTIMATED_SURFACE_TEMP_RATIO,
+        base_temp=temp,
+        seed_int=seed_int
     )
+
+    return p

@@ -182,7 +182,7 @@ class BrowseStarState(State):
 
         self.info_vbox = VBox(
             Label(
-                text="surface temperature",
+                text="surface temperature:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
@@ -192,7 +192,7 @@ class BrowseStarState(State):
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="radius",
+                text="radius:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
@@ -206,7 +206,7 @@ class BrowseStarState(State):
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="mass",
+                text="mass:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
@@ -216,7 +216,7 @@ class BrowseStarState(State):
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="luminosity",
+                text="luminosity:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),

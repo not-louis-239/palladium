@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import time
 import random
 from dataclasses import dataclass
 
@@ -63,6 +64,9 @@ def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:
         planet.name = star.name + PLANET_SUFFIXES[i]
 
         planets.append(planet)
+
+        #mean_temp = sum(ts := [c.temp for row in planet.surface for c in row]) / len(ts)
+        #print(f"{mean_temp / planet.base_temp} mean temp : temp ratio for planet '{planet.name}'")
 
     return planets
 
