@@ -145,6 +145,9 @@ class TerrainSurface:
     def __init__(self, cells: list[list[Cell]]) -> None:
         self.cells = cells
 
+    def __getitem__(self, pos: tuple[int, int]) -> Cell:
+        return self.cells[pos[1]][pos[0]]
+
     def __iter__(self):
         for row in self.cells:
             yield row

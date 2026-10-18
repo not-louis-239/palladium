@@ -570,7 +570,6 @@ class BrowseSystemState(State):
 
         # TODO: add star background parallax effect
 
-
         # Draw the star system
 
         # self.game.star_system should not be None if this state was entered properly

@@ -24,12 +24,12 @@ from james import Panel, HBox, VBox, CircleButton, Label, Spacer
 
 from palladium.generators.planet import Planet
 from palladium.generators.terrain_gen import MAP_HEIGHT, MAP_WIDTH, BIOME_COLOURS
-from palladium.core.utils import clamp
+from palladium.core.utils import clamp, map_range
 from palladium.gui.states.base import State, StateID
 from palladium.gui.utils import get_seed_messages, draw_transparent_rect
 from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
 from palladium.gui.renderer import draw_elem
-from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, WN_W, WN_H
+from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, UI_MARGIN_XS, WN_W, WN_H
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -81,6 +81,35 @@ class BrowseTerrainState(State):
         )
 
         self.hover_panel = Panel(
+            child=VBox(
+                hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(text="surface temp", font=self.fonts.text, k_fg=ThemeKey.FG),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_surface_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                ),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(text="altitude", font=self.fonts.text, k_fg=ThemeKey.FG),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_altitude := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                ),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(text="humidity", font=self.fonts.text, k_fg=ThemeKey.FG),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_humidity := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                ),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(text="biome", font=self.fonts.text, k_fg=ThemeKey.FG),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_biome := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                )
+            ),
+            vert_padding=UI_MARGIN_S,
+            horiz_padding=UI_MARGIN_S,
         )
 
         self.seed_hbox = seed_hbox
@@ -88,6 +117,13 @@ class BrowseTerrainState(State):
         self.seed_label = seed_label
         self.offset_label = offset_label
         self.seed_int_label = seed_int_label
+
+        self.hover_location = hover_location
+        self.hover_surface_temp = hover_surface_temp
+        self.hover_altitude = hover_altitude
+        self.hover_humidity = hover_humidity
+        self.hover_altitude = hover_altitude
+        self.hover_biome = hover_biome
 
         self.planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
@@ -123,6 +159,50 @@ class BrowseTerrainState(State):
 
         self._refresh_planet_surface()
 
+    def _refresh_hover_panel(self) -> None:
+        planet = self.current_planet()
+
+        # Get the cell
+        mx, my = pg.mouse.get_pos()
+        cell_x, cell_y = int(MAP_WIDTH * (mx / WN_W)), int(MAP_HEIGHT * (my / WN_H))
+        cell = planet.surface[cell_x, cell_y]
+
+        # Refresh panel information
+        latitude_degs = map_range(my, 0, WN_H, 90, -90)
+        longitude_degs = map_range(mx, 0, WN_W, -180, 180)
+
+        if latitude_degs >= 0:
+            latitude_text = f"{latitude_degs:.2f}°N"
+        else:
+            latitude_text = f"{-latitude_degs:.2f}°S"
+
+        if longitude_degs >= 0:
+            longitude_text = f"{longitude_degs:.2f}°E"
+        else:
+            longitude_text = f"{-longitude_degs:.2f}°W"
+
+        self.hover_location.set_text(f"{latitude_text}, {longitude_text}")
+        self.hover_surface_temp.set_text(f"{cell.temp - 273.15:,.2f}°C")
+        self.hover_altitude.set_text(f"{cell.height:+,.2f} m")
+        self.hover_humidity.set_text(f"{cell.humidity:.2%}")
+        self.hover_biome.set_text(f"{cell.biome.value.title()}")
+
+        # Figure out if the panel should be left or right of, and above or below the mouse
+        hover_w, hover_h = self.hover_panel.preferred_size()
+        right_space, bottom_space = WN_W - mx, WN_H - my
+
+        if right_space >= hover_w + UI_MARGIN_XS:
+            left = mx + UI_MARGIN_XS
+        else:
+            left = mx - hover_w - UI_MARGIN_XS
+
+        if bottom_space >= hover_h + UI_MARGIN_XS:
+            top = my + UI_MARGIN_XS
+        else:
+            top = my - hover_h - UI_MARGIN_XS
+
+        self.hover_panel.layout(pg.Rect(left, top, hover_w, hover_h))
+
     def current_planet(self) -> Planet:
         assert self.game.star_system is not None
         assert self.game.planet_idx is not None
@@ -149,3 +229,8 @@ class BrowseTerrainState(State):
         # Draw overlay panel
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.seed_hbox.rect)
         draw_elem(screen, self.panel, self.game.current_theme())
+
+        if pg.mouse.get_pressed()[0]:
+            self._refresh_hover_panel()
+            draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.hover_panel.rect)
+            draw_elem(screen, self.hover_panel, self.game.current_theme())
