@@ -29,12 +29,10 @@ BORDER_W = 2
 UI_MARGIN_XS = 7
 UI_MARGIN_S = 15
 UI_MARGIN_M = 32
-# UI_MARGIN_L = 48
 
 ICON_SIZE = 64
 
 SCREEN_RECT = pg.Rect(0, 0, WN_W, WN_H)
-
 
 # ugh, pyright, you complained so I added this. happy now?
 class UIKwargs(TypedDict, total=False):
@@ -74,6 +72,7 @@ DEFAULT_INPUT_BOX_ATTRS: UIKwargs = {
     "k_border_active": ThemeKey.BORDER_ACTIVE,
     "inset": UI_MARGIN_S
 }
+
 # blackbody colours in terms of {°K: tuple[int, int, int]}
 KELVIN_COLOURS: dict[float, Colour] = {
     400.0: (0, 0, 0),
@@ -86,4 +85,6 @@ KELVIN_COLOURS: dict[float, Colour] = {
     20000.0: (162, 198, 255),
     40000.0: (143, 184, 255),
 }
+
 CIRCLE_RADIUS_DRAW_LIMIT = 5 * WN_W
+LIGHT_NORMAL = pg.Vector3(1, 0, 1).normalize()  # 45° downwards in a south-easterly direction

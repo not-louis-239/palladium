@@ -25,12 +25,18 @@ from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
-from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.constants import (
+    CIRCLE_RADIUS_DRAW_LIMIT,
+    ICON_SIZE,
+    SCREEN_RECT,
+    UI_MARGIN_M,
+    UI_MARGIN_S,
+)
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
-from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
+from palladium.gui.utils import draw_transparent_rect, get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -352,7 +358,14 @@ class BrowseStarState(State):
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw star
-        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
+        pg.draw.circle(
+            screen, self.game.star_system.star.light_colour,
+            (WN_W // 2, WN_H // 2),
+            min(
+                CIRCLE_RADIUS_DRAW_LIMIT,
+                self.game.star_system.star.radius / self.zoom_level
+            )
+        )
 
         # Draw overlay panel and transparent rects for improved contrast
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.zoom_hbox.rect)

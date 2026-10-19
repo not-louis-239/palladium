@@ -16,14 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
+#import numpy as np
 import random
 from dataclasses import dataclass
 
-from palladium.core.utils import str_to_seed, random_seed
-from palladium.generators.planet import Planet, generate_planet
-from palladium.generators.star_gen import StarProfile, generate_star_profile
-
+from palladium.core.utils import random_seed, str_to_seed
+from palladium.generation.planet import Planet, generate_planet
+from palladium.generation.star_gen import StarProfile, generate_star_profile
 
 PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
 PLANET_SUFFIXES: str = "bcdefghijklmnopqrstuvwxyz"
@@ -65,7 +64,8 @@ def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:
 
         planets.append(planet)
 
-        #mean_temp = sum(ts := [c.temp for row in planet.surface for c in row]) / len(ts)
+        #planet.generate_surface()
+        #mean_temp = np.mean(planet.surface.temps)
         #print(f"{mean_temp / planet.base_temp} mean temp : temp ratio for planet '{planet.name}'")
 
     return planets

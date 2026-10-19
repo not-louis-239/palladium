@@ -16,18 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import statistics
+from __future__ import annotations
+
 import math
+import statistics
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import pygame as pg
 
-from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
+from palladium.core.constants import WN_H, WN_W
+from palladium.gui.constants import UI_MARGIN_S, UI_MARGIN_XS
+from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
 from palladium.gui.utils import draw_transparent_rect
-from palladium.core.constants import WN_W, WN_H
-from palladium.gui.constants import UI_MARGIN_XS, UI_MARGIN_S
 
 if TYPE_CHECKING:
     from palladium.game.game import Game

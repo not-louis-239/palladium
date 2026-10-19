@@ -28,6 +28,7 @@ import james
 import pygame as pg
 
 from palladium.gui.renderer import draw_elem
+
 james.input_box.InputBox.CURSOR_FLASH_INTERVAL = 1.0
 james.set_default_renderer(draw_elem)
 

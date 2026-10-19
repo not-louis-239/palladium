@@ -28,7 +28,7 @@ from palladium.core.constants import WN_H, WN_W
 from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey, CLEAR
+from palladium.gui.themes import CLEAR, ThemeKey
 
 if TYPE_CHECKING:
     from palladium.game.game import Game

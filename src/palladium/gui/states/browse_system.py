@@ -24,29 +24,34 @@ from typing import TYPE_CHECKING
 import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.constants import SOLAR_RADIUS_IN_AU, SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE, Controls
+from palladium.core.constants import (
+    SOLAR_RADIUS_IN_AU,
+    SOLAR_RADIUS_IN_KM,
+    WN_H,
+    WN_W,
+    ZOOM_RATE,
+    Controls,
+)
+from palladium.core.utils import clamp
+from palladium.generation.planet import calculate_habitable_zone
+from palladium.generation.star_system import generate_star_system
 from palladium.gui.constants import (
+    CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
     ICON_SIZE,
-    KELVIN_COLOURS,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
     UI_MARGIN_XS,
-    CIRCLE_RADIUS_DRAW_LIMIT
 )
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey, CLEAR
+from palladium.gui.themes import CLEAR, TRANSLUCENT_BLACK, ThemeKey
 from palladium.gui.utils import (
-    clamp,
     draw_transparent_rect,
     get_seed_messages,
-    lerp_gradient,
 )
-from palladium.generators.planet import calculate_habitable_zone
-from palladium.generators.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -284,10 +289,10 @@ class BrowseSystemState(State):
                     k_fg=ThemeKey.FG
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="est. surface temperature:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="surface temperature:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
-                    hover_label_temperature := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                    hover_label_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
                 Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="radius:"),
@@ -302,7 +307,7 @@ class BrowseSystemState(State):
 
         self.hover_name = hover_name
         self.hover_label_radius = hover_label_radius
-        self.hover_label_temp = hover_label_temperature
+        self.hover_label_temp = hover_label_temp
 
         # Habitable zone setup
         self.hz_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
@@ -610,7 +615,7 @@ class BrowseSystemState(State):
         # Drawing the star at a logarithmic scale so that the system remains visible
         # but it shouldn't go below a minimum size
         x, y, r = self._scaled_body_pos(0, 0, self.game.star_system.star.radius)
-        temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
+        temp_colour = self.game.star_system.star.light_colour
         pg.draw.circle(screen, temp_colour, (x, y), r)
 
         # Draw UI

@@ -20,11 +20,10 @@ import math
 import random
 
 from palladium.core.constants import SOLAR_RADIUS_IN_AU
-from palladium.generators.star_gen import StarProfile
-from palladium.generators.terrain_gen import TerrainSurface, generate_terrain_surface
+from palladium.generation.star_gen import StarProfile
+from palladium.generation.terrain_gen import TerrainSurface, generate_terrain_surface
 
-
-ESTIMATED_SURFACE_TEMP_RATIO = 1.174
+ESTIMATED_SURFACE_TEMP_RATIO = 1.0316
 
 
 class Planet:

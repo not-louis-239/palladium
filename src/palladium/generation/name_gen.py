@@ -18,7 +18,6 @@
 
 import random
 
-
 NAME_PATTERNS = [
     ("prefix", "suffix"),
     ("prefix", "middle", "suffix"),

@@ -16,24 +16,38 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from __future__ import annotations
+
 import time
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pygame as pg
+from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from james import Panel, HBox, VBox, CircleButton, Label, Spacer
-
-from palladium.generators.planet import Planet
-from palladium.generators.terrain_gen import MAP_HEIGHT, MAP_WIDTH, BIOME_COLOURS
-from palladium.core.utils import clamp, map_range
-from palladium.core.custom_types import Colour
 from palladium.core.constants import Controls
-from palladium.gui.states.base import State, StateID
-from palladium.gui.utils import get_seed_messages, draw_transparent_rect, lerp_gradient
-from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
+from palladium.core.custom_types import Colour
+from palladium.core.utils import lerp_gradient_array, map_range
+from palladium.generation.biomes import BIOME_COLOURS, BIOME_PROFILES
+from palladium.generation.planet import Planet
+from palladium.generation.terrain_gen import MAP_HEIGHT, MAP_WIDTH
+from palladium.gui.constants import (
+    ICON_SIZE,
+    SCREEN_RECT,
+    UI_MARGIN_M,
+    UI_MARGIN_S,
+    UI_MARGIN_XS,
+    WN_H,
+    WN_W,
+)
 from palladium.gui.renderer import draw_elem
-from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, UI_MARGIN_XS, WN_W, WN_H, KELVIN_COLOURS
+from palladium.gui.states.base import State, StateID
+from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.utils import (
+    draw_transparent_rect,
+    get_seed_messages,
+)
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -50,7 +64,29 @@ class _ViewMode(IntEnum):
 _NUM_VIEW_MODES = len(_ViewMode)
 
 
-COLOUR_SCHEME_ALTITUDE: dict[float, Colour] = {  # m -> colour
+def _prepare_gradient(gradient: dict[float, Colour]) -> tuple[np.ndarray, np.ndarray]:
+    """Turns a gradient of `float`s and `Colour`s into two `np.ndarrays`,
+    one for the stops and one for the colours. """
+
+    sorted_stops = sorted(gradient)
+
+    stops = np.array(
+        sorted_stops,
+        dtype=np.float32,
+    )
+
+    colours = np.array(
+        [gradient[stop] for stop in sorted_stops],
+        dtype=np.float32,
+    )
+
+    return stops, colours
+
+
+_WHITE_LIGHT = (30, 30, 30)
+_STARLIGHT_STRENGTH_COEFF = 50
+
+_COLOUR_SCHEME_ALTITUDE = _prepare_gradient({  # m -> colour
     -20_000: (0, 0, 0),        # abyssal black
     -10_000: (5, 10, 45),      # very dark blue
     -5_000:  (10, 35, 120),    # deep blue
@@ -65,20 +101,18 @@ COLOUR_SCHEME_ALTITUDE: dict[float, Colour] = {  # m -> colour
     7_000:   (145, 155, 160),  # light slate gray
     10_000:  (205, 220, 220),  # pale cyan-grey snow
     20_000:  (255, 255, 255),  # white
-}
+})
 
-
-COLOUR_SCHEME_HUMIDITY: dict[float, Colour] = {  # % -> colour
+_COLOUR_SCHEME_HUMIDITY = _prepare_gradient({  # % -> colour
     0.0:  (150, 150, 145),  # salt flat grey
     0.15: (215, 195, 145),  # desert beige
     0.3:  (225, 220, 145),  # pale prairie yellow
     0.5:  (100, 190, 90),   # spring green
     0.8:  (135, 215, 225),  # light cyan-blue
     1.0:  (20, 75, 190),    # deep ocean blue
-}
+})
 
-
-COLOUR_SCHEME_TEMPERATURE: dict[float, Colour] = {  # °C -> colour
+_COLOUR_SCHEME_TEMPERATURE = _prepare_gradient({  # °C -> colour
     -273.15: (255, 255, 255),  # absolute zero, white
     -150:    (245, 185, 225),  # pale magenta-pink
     -100:    (195, 165, 220),  # pale purple
@@ -95,15 +129,15 @@ COLOUR_SCHEME_TEMPERATURE: dict[float, Colour] = {  # °C -> colour
     500:     (235, 115, 105),  # pale scarlet red
     2_000:   (250, 200, 195),  # very pale red
     10_000:  (255, 240, 235),  # very slightly red off-white
-}
+})
 
-COLOUR_SCHEME_NORMALS: dict[float, Colour] = {  # dot_product(light, normal) -> colour
+_COLOUR_SCHEME_NORMALS = _prepare_gradient({  # dot_product(light, normal) -> colour
     -1.0: (10, 15, 55),      # midnight blue
     -0.5: (65, 25, 90),      # dark purple
      0.0: (165, 75, 125),    # muted magenta
      0.5: (235, 125, 45),    # orange
      1.0: (255, 240, 165),   # pale sunlight yellow
-}
+})
 
 
 class BrowseTerrainState(State):
@@ -193,63 +227,68 @@ class BrowseTerrainState(State):
         self.hover_altitude = hover_altitude
         self.hover_biome = hover_biome
 
-        self.base_planet_surface = pg.Surface((MAP_WIDTH, MAP_HEIGHT))
         self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
 
-    def _get_square_colour(self, x: int, y: int, light_colour: tuple[float, float, float], planet: Planet) -> Colour:
-        assert planet.surface is not None
-        cell = planet.surface[x, y]
-
-        if self.view_mode == _ViewMode.HUMIDITY:
-            return lerp_gradient(cell.humidity, COLOUR_SCHEME_HUMIDITY)
-
-        if self.view_mode == _ViewMode.TEMPERATURE:
-            return lerp_gradient(cell.temp - 273.15, COLOUR_SCHEME_TEMPERATURE)
-
-        if self.view_mode == _ViewMode.ALTITUDE:
-            return lerp_gradient(cell.height, COLOUR_SCHEME_ALTITUDE)
-
-        if self.view_mode == _ViewMode.NORMALS:
-            dp = planet.surface.dot_products[y][x]
-            return lerp_gradient(dp, COLOUR_SCHEME_NORMALS)
-
-        colour = BIOME_COLOURS[cell.biome]
-
-        # Draw colours based on the dot product between the gradient and the light's normal
-        # Get the normal by getting the gradient between the cell and its neighbours
-        brightness = planet.surface.dot_products[y][x]
-
-        final_colour = (
-            int(clamp(colour[0] + brightness * light_colour[0], 0, 255)),
-            int(clamp(colour[1] + brightness * light_colour[1], 0, 255)),
-            int(clamp(colour[2] + brightness * light_colour[2], 0, 255))
-        )
-
-        return final_colour
-
     def _refresh_planet_surface(self) -> None:
         t_i = time.time()
+
         planet = self.current_planet()
         assert planet.surface is not None
         assert self.game.star_system is not None
 
-        if self.view_mode == _ViewMode.FANCY:
-            r, g, b = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
-            light_colour = (r * 0.2, g * 0.2, b * 0.2)
-        else:
-            light_colour = (30, 30, 30)
+        terrain = planet.surface
 
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
-                self.base_planet_surface.set_at(
-                    (x, y),
-                    self._get_square_colour(x, y, light_colour, self.current_planet())
-                )
+        if self.view_mode == _ViewMode.FANCY:
+            r, g, b = self.game.star_system.star.light_colour
+            light_colour = np.array((r, g, b), dtype=np.float32,)
+            length = np.linalg.norm(light_colour)
+            if length != 0:
+                light_colour = light_colour / length * _STARLIGHT_STRENGTH_COEFF
+
+            biome_colours = BIOME_COLOURS[terrain.biomes]
+            brightness = terrain.dot_products[..., np.newaxis]
+            pixels = (biome_colours + brightness * light_colour)
+            pixels = np.clip(pixels, 0, 255).astype(np.uint8)
+
+        elif self.view_mode == _ViewMode.WHITE:
+            biome_colours = BIOME_COLOURS[terrain.biomes]
+            brightness = terrain.dot_products[..., np.newaxis]
+            pixels = (biome_colours + brightness * _WHITE_LIGHT)
+            pixels = np.clip(pixels, 0, 255).astype(np.uint8)
+
+        elif self.view_mode == _ViewMode.ALTITUDE:
+            pixels = lerp_gradient_array(
+                terrain.heights,
+                _COLOUR_SCHEME_ALTITUDE,
+            )
+
+        elif self.view_mode == _ViewMode.TEMPERATURE:
+            pixels = lerp_gradient_array(
+                terrain.temps - 273.15,
+                _COLOUR_SCHEME_TEMPERATURE,
+            )
+
+        elif self.view_mode == _ViewMode.HUMIDITY:
+            pixels = lerp_gradient_array(
+                terrain.humidities,
+                _COLOUR_SCHEME_HUMIDITY,
+            )
+
+        elif self.view_mode == _ViewMode.NORMALS:
+            pixels = lerp_gradient_array(
+                terrain.dot_products,
+                _COLOUR_SCHEME_NORMALS,
+            )
+
+        else:
+            raise RuntimeError(f"Unknown view mode: {self.view_mode}")
+
+        surface = pg.surfarray.make_surface(pixels.swapaxes(0, 1))
 
         self.scaled_planet_surface = pg.transform.smoothscale(
-            self.base_planet_surface,
-            (WN_W, WN_H)
+            surface,
+            (WN_W, WN_H),
         )
 
         t_f = time.time()
@@ -276,7 +315,7 @@ class BrowseTerrainState(State):
         # Get the cell
         mx, my = pg.mouse.get_pos()
         cell_x, cell_y = int(MAP_WIDTH * (mx / WN_W)), int(MAP_HEIGHT * (my / WN_H))
-        cell = planet.surface[cell_x, cell_y]
+        cell = planet.surface.info_at(cell_x, cell_y)
 
         # Refresh panel information
         latitude_degs = map_range(my, 0, WN_H, 90, -90)
@@ -296,7 +335,7 @@ class BrowseTerrainState(State):
         self.hover_surface_temp.set_text(f"{cell.temp - 273.15:,.2f}°C")
         self.hover_altitude.set_text(f"{cell.height:+,.2f} m")
         self.hover_humidity.set_text(f"{cell.humidity:.2%}")
-        self.hover_biome.set_text(f"{cell.biome.value.title()}")
+        self.hover_biome.set_text(f"{BIOME_PROFILES[cell.biome_id].display_name}")
 
         # Figure out if the panel should be left or right of, and above or below the mouse
         hover_w, hover_h = self.hover_panel.preferred_size()
