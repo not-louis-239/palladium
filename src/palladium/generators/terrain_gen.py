@@ -26,10 +26,12 @@ from palladium.core.utils import clamp
 from palladium.generators.noise_port import snoise2
 
 
-MAP_WIDTH = 180
-MAP_HEIGHT = 90
+MAP_WIDTH = 480
+MAP_HEIGHT = 240
 
 _HALF_MAP_WIDTH = MAP_WIDTH // 2
+
+_TERRAIN_SCALE = 2.5
 
 
 class BiomeType(StrEnum):
@@ -128,6 +130,15 @@ BIOME_COLOURS = {
 }
 
 
+def _spexp(x: int | float, i: int | float = 2) -> float:  # Raise a number to a power and preserve its sign, assume square if index not given
+    sign = 1 if x >= 0 else -1
+    mag = abs(x) ** i
+    return sign * mag
+
+def _sigmoid(value: float, starkness: int | float = 1) -> float:
+    return 1 / (1 + 2.718**(-starkness * value))
+
+
 class Cell:
     def __init__(
             self,
@@ -172,6 +183,9 @@ class TerrainSurface:
         yield below
 
     def get_normal_at(self, x: int, y: int) -> pg.Vector3:
+        """Returns normal vector of surface assuming that
+        pg.Vector3(0, 1, 0) = global up."""
+
         left, right, above, below = self.get_neighbours(x, y)
 
         h_left = self.cells[left[1]][left[0]].height
@@ -182,7 +196,7 @@ class TerrainSurface:
         dx = (h_right - h_left) / 2
         dy = (h_below - h_above) / 2
 
-        return pg.Vector3(-dx, -dy, 1).normalize()
+        return pg.Vector3(dx, 1, dy).normalize()
 
     def get_cell(self, x: int, y: int) -> Cell:
         return self.cells[y][x]
@@ -195,13 +209,19 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
 
     # TODO: this is a stub, finish it later
 
-    for y in range(MAP_HEIGHT):
+    for cell_y in range(MAP_HEIGHT):
         row: list[Cell] = []
 
-        for x in range(MAP_WIDTH):
+        for cell_x in range(MAP_WIDTH):
+            x, y = cell_x / MAP_WIDTH, cell_y / MAP_HEIGHT
+
             # Assign heights - metres
             # seed_int needs to be a small enough seed that `snoise2` doesn't break
-            height = -1000 + 4000 * snoise2(x, y, scale=0.015, octaves=4, base=seed_int % 32_768)
+            base = _sigmoid(snoise2(x, y, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int) % 32_768), 35) - 0.8
+            mount = _spexp(snoise2(x * 0.5, y * 0.5, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int + 1) % 32_768), 4)
+            detail = _spexp(snoise2(x * 4, y * 4, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int + 2) % 32_768), 0.5)
+
+            height = base * 4_000 + mount * 40_000 + detail * 1_000
 
             # Assign temperature - °K
             altitude_penalty = 0.000021 * height  # temperature drops by 0.0021% per metre
@@ -209,7 +229,7 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
             temp = base_temp * latitude_multiplier * max(0, (1 - altitude_penalty))
 
             # Assign humidity - values from 0 to 1
-            base_humidity = 0.65 + 0.15 * snoise2(x, y, scale=0.05, octaves=4, base=(seed_int + 1) % 32_768)
+            base_humidity = 0.65 + 0.15 * snoise2(x, y, scale=_TERRAIN_SCALE * 3, octaves=4, base=(seed_int + 1) % 32_768)
 
             # Coasts and oceans have higher humidity
             if height < 100:
@@ -225,7 +245,7 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
             latitude_abs = abs((y - MAP_HEIGHT // 2) / (MAP_HEIGHT // 2))
             if 0.1 <= latitude_abs <= 0.35:
                 strength = 1 - abs(latitude_abs - 0.225) / 0.125
-                dry_band_factor = 1 - snoise2(x, y, scale=0.05, octaves=4, base=(seed_int + 2) % 32_768) * strength * 2
+                dry_band_factor = 1 - snoise2(x, y, scale=_TERRAIN_SCALE * 3, octaves=4, base=(seed_int + 2) % 32_768) * strength * 2
             else:
                 dry_band_factor = 1
 

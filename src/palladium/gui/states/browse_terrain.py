@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import math
+from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import pygame as pg
@@ -25,23 +27,92 @@ from james import Panel, HBox, VBox, CircleButton, Label, Spacer
 from palladium.generators.planet import Planet
 from palladium.generators.terrain_gen import MAP_HEIGHT, MAP_WIDTH, BIOME_COLOURS
 from palladium.core.utils import clamp, map_range
+from palladium.core.custom_types import Colour
+from palladium.core.constants import Controls
 from palladium.gui.states.base import State, StateID
-from palladium.gui.utils import get_seed_messages, draw_transparent_rect
+from palladium.gui.utils import get_seed_messages, draw_transparent_rect, lerp_gradient
 from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
 from palladium.gui.renderer import draw_elem
-from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, UI_MARGIN_XS, WN_W, WN_H
+from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, UI_MARGIN_XS, WN_W, WN_H, KELVIN_COLOURS
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-LIGHT_NORMAL = pg.Vector3(1, -1, 1).normalize()  # 45° downwards in a south-easterly direction
-BRIGHTNESS_FACTOR = 30  # how much tilt affects terrain brightness
+LIGHT_NORMAL = pg.Vector3(1, 0, 1).normalize()  # 45° downwards in a south-easterly direction
+
+
+class _ViewMode(IntEnum):
+    FANCY = 0
+    WHITE = 1
+    ALTITUDE = 2
+    TEMPERATURE = 3
+    HUMIDITY = 4
+    NORMALS = 5
+
+_NUM_VIEW_MODES = len(_ViewMode)
+
+
+COLOUR_SCHEME_ALTITUDE: dict[float, Colour] = {  # m -> colour
+    -20_000: (0, 0, 0),        # abyssal black
+    -10_000: (5, 10, 45),      # very dark blue
+    -5_000:  (10, 35, 120),    # deep blue
+    -1_000:  (40, 150, 210),   # medium azure
+    -1:      (170, 225, 235),  # pale cyan coast
+    0:       (225, 195, 125),  # beach sand
+    500:     (125, 180, 90),   # light green
+    1_000:   (35, 105, 45),    # dark green
+    2_000:   (75, 55, 35),     # dark brown
+    4_000:   (165, 120, 75),   # light brown
+    5_000:   (70, 80, 85),     # dark slate gray
+    7_000:   (145, 155, 160),  # light slate gray
+    10_000:  (205, 220, 220),  # pale cyan-grey snow
+    20_000:  (255, 255, 255),  # white
+}
+
+
+COLOUR_SCHEME_HUMIDITY: dict[float, Colour] = {  # % -> colour
+    0.0:  (150, 150, 145),  # salt flat grey
+    0.15: (215, 195, 145),  # desert beige
+    0.3:  (225, 220, 145),  # pale prairie yellow
+    0.5:  (100, 190, 90),   # spring green
+    0.8:  (135, 215, 225),  # light cyan-blue
+    1.0:  (20, 75, 190),    # deep ocean blue
+}
+
+
+COLOUR_SCHEME_TEMPERATURE: dict[float, Colour] = {  # °C -> colour
+    -273.15: (255, 255, 255),  # absolute zero, white
+    -150:    (245, 185, 225),  # pale magenta-pink
+    -100:    (195, 165, 220),  # pale purple
+    -50:     (75, 30, 105),    # dark purple
+    -35:     (25, 55, 145),    # dark blue
+    -20:     (145, 205, 240),  # pale blue
+    0:       (220, 250, 250),  # pale cyan-white
+    10:      (100, 210, 175),  # green-cyan
+    20:      (100, 210, 80),   # spring green
+    30:      (245, 225, 45),   # yellow
+    40:      (245, 125, 30),   # orange
+    50:      (245, 25, 30),    # bright red
+    100:     (145, 10, 20),    # deep scarlet
+    500:     (235, 115, 105),  # pale scarlet red
+    2_000:   (250, 200, 195),  # very pale red
+    10_000:  (255, 240, 235),  # very slightly red off-white
+}
+
+COLOUR_SCHEME_NORMALS: dict[float, Colour] = {  # dot_product(light, normal) -> colour
+    -1.0: (10, 15, 55),      # midnight blue
+    -0.5: (65, 25, 90),      # dark purple
+     0.0: (165, 75, 125),    # muted magenta
+     0.5: (235, 125, 45),    # orange
+     1.0: (255, 240, 165),   # pale sunlight yellow
+}
 
 
 class BrowseTerrainState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+        self.view_mode = _ViewMode.FANCY
 
         self.panel = Panel(
             child=VBox(
@@ -128,27 +199,57 @@ class BrowseTerrainState(State):
         self.planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
 
+    def _get_square_colour(self, x: int, y: int) -> Colour:
+        planet = self.current_planet()
+        assert self.game.star_system is not None
+        assert planet.surface is not None
+
+        cell = planet.surface[x, y]
+
+        if self.view_mode == _ViewMode.HUMIDITY:
+            return lerp_gradient(cell.humidity, COLOUR_SCHEME_HUMIDITY)
+
+        if self.view_mode == _ViewMode.TEMPERATURE:
+            return lerp_gradient(cell.temp - 273.15, COLOUR_SCHEME_TEMPERATURE)
+
+        if self.view_mode == _ViewMode.ALTITUDE:
+            return lerp_gradient(cell.height, COLOUR_SCHEME_ALTITUDE)
+
+        if self.view_mode == _ViewMode.NORMALS:
+            normal = planet.surface.get_normal_at(x, y)
+            dp = LIGHT_NORMAL.dot(normal)
+            return lerp_gradient(dp, COLOUR_SCHEME_NORMALS)
+
+        colour = BIOME_COLOURS[cell.biome]
+
+        if self.view_mode == _ViewMode.FANCY:
+            light_colour = pg.Vector3(lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)) * 0.2
+        else:
+            light_colour = (30, 30, 30)
+
+        # Draw colours based on the dot product between the gradient and the light's normal
+        # Get the normal by getting the gradient between the cell and its neighbours
+        normal = planet.surface.get_normal_at(x, y)
+        brightness = normal.dot(LIGHT_NORMAL)
+
+        final_colour = (
+            int(clamp(colour[0] + brightness * light_colour[0], 0, 255)),
+            int(clamp(colour[1] + brightness * light_colour[1], 0, 255)),
+            int(clamp(colour[2] + brightness * light_colour[2], 0, 255))
+        )
+
+        return final_colour
+
     def _refresh_planet_surface(self) -> None:
         planet = self.current_planet()
         assert planet.surface is not None
+        assert self.game.star_system is not None
 
         cell_w, cell_h = WN_W / MAP_WIDTH, WN_H / MAP_HEIGHT
 
-        for y, row in enumerate(planet.surface):
-            for x, cell in enumerate(row):
-                colour = BIOME_COLOURS[cell.biome]
-
-                # Draw colours based on the dot product between the gradient and the light's normal
-                # Get the normal by getting the gradient between the cell and its neighbours
-                normal = planet.surface.get_normal_at(x, y)
-                brightness = normal.dot(LIGHT_NORMAL)
-
-                colour = (
-                    int(clamp(colour[0] + brightness * BRIGHTNESS_FACTOR, 0, 255)),
-                    int(clamp(colour[1] + brightness * BRIGHTNESS_FACTOR, 0, 255)),
-                    int(clamp(colour[2] + brightness * BRIGHTNESS_FACTOR, 0, 255))
-                )
-
+        for y in range(len(planet.surface.cells)):
+            for x in range(len(planet.surface.cells[0])):
+                colour = self._get_square_colour(x, y)
                 pg.draw.rect(self.planet_surface, colour, pg.Rect(x * cell_w, y * cell_h, cell_w + 1, cell_h + 1))
 
     def _refresh_for_new_planet(self) -> None:
@@ -226,6 +327,10 @@ class BrowseTerrainState(State):
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
+
+            if event.type == pg.KEYDOWN and event.key == Controls.CHANGE_VIEW_MODE:
+                self.view_mode = (self.view_mode + 1) % _NUM_VIEW_MODES
+                self._refresh_planet_surface()
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])

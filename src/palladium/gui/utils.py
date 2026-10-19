@@ -37,8 +37,10 @@ def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -
 
 def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
     """Returns a Colour determined by the anchor points in `grad`.
-    If val < grad[0], returns the first anchor.
-    If val > grad[-1], returns the last colour."""
+    If val < min(grad), returns the colour for the lowest anchor.
+    If val > max(grad), returns the colour for the highest anchor.
+    The order of the keys in `grad` doesn't matter, `lerp_gradient`
+    will automatically sort them."""
 
     if not grad:
         raise ValueError("grad requires at least one value-colour pair")
