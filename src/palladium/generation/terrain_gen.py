@@ -144,25 +144,6 @@ class TerrainSurface:
             biome_id=BiomeID(self.biomes[y, x]),
         )
 
-    def get_neighbours(self, x: int, y: int) -> Generator[tuple[int, int], None, None]:
-        left = ((x - 1) % MAP_WIDTH, y)
-        right = ((x + 1) % MAP_WIDTH, y)
-
-        if y == 0:  # top of map
-            above = ((x + _HALF_MAP_WIDTH) % MAP_WIDTH, y)
-            below = (x, 1)
-        elif y == MAP_HEIGHT - 1:  # bottom of map
-            above = (x, MAP_HEIGHT - 2)
-            below = ((x + _HALF_MAP_WIDTH) % MAP_WIDTH, y)
-        else:
-            above = (x, y - 1)
-            below = (x, y + 1)
-
-        yield left
-        yield right
-        yield above
-        yield below
-
     def _calculate_normals(self) -> np.ndarray:
         heights = self.heights
 
