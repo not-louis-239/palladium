@@ -16,10 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
 import math
 import random
-import statistics
 
 from palladium.core.constants import SOLAR_RADIUS_IN_AU
 from palladium.generators.star_gen import StarProfile

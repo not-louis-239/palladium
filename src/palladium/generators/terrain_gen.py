@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import StrEnum
-from typing import Generator
+import time
+from enum import StrEnum, Enum, auto
+from typing import Generator, Callable
 
 import math
 import pygame as pg
+import numpy as np
 
 from palladium.core.utils import clamp
 from palladium.generators.noise_port import snoise2
@@ -32,6 +34,7 @@ MAP_HEIGHT = 240
 _HALF_MAP_WIDTH = MAP_WIDTH // 2
 
 _TERRAIN_SCALE = 2.5
+_NUM_OCTAVES = 4
 
 
 class BiomeType(StrEnum):
@@ -130,13 +133,20 @@ BIOME_COLOURS = {
 }
 
 
-def _spexp(x: int | float, i: int | float = 2) -> float:  # Raise a number to a power and preserve its sign, assume square if index not given
-    sign = 1 if x >= 0 else -1
-    mag = abs(x) ** i
-    return sign * mag
+class NoiseLayers(Enum):
+    BASE = auto()
+    MOUNTAINS = auto()
+    DETAIL = auto()
+    HUMIDITY = auto()
+    DRYNESS = auto()
 
-def _sigmoid(value: float, starkness: int | float = 1) -> float:
-    return 1 / (1 + 2.718**(-starkness * value))
+
+def _signed_pow4(x: float) -> float:
+    return x * x * x * x if x >= 0 else -(x * x * x * x)
+def _signed_sqrt(x: float) -> float:
+    return math.sqrt(abs(x)) * (1 if x >= 0 else -1)
+def _sigmoid(value: float, strength: int | float = 1) -> float:
+    return 1 / (1 + math.exp(-strength * value))
 
 
 class Cell:
@@ -152,9 +162,73 @@ class Cell:
         self.biome = stats_to_biome(height, temperature, humidity, seed=0)
 
 
+class NoiseField:
+    def __init__(
+        self,
+        fidelity: int,
+        generator: Callable[[float, float], float],
+    ):
+        self.fidelity = fidelity
+        self.values = [
+            [
+                generator(x / fidelity, y / fidelity)
+                for x in range(fidelity + 1)
+            ]
+            for y in range(fidelity + 1)
+        ]
+
+    def sample(self, x: float, y: float) -> float:
+        """Bilinearly interpolate at normalized coordinates 0..1."""
+        pos_x = x * self.fidelity
+        pos_y = y * self.fidelity
+
+        x_idx_left = int(pos_x)
+        y_top = int(pos_y)
+
+        x1 = min(x_idx_left + 1, self.fidelity)
+        y1 = min(y_top + 1, self.fidelity)
+
+        tx = pos_x - x_idx_left
+        ty = pos_y - y_top
+
+        top = (
+            self.values[y_top][x_idx_left] * (1 - tx)
+            + self.values[y_top][x1] * tx
+        )
+
+        bottom = (
+            self.values[y1][x_idx_left] * (1 - tx)
+            + self.values[y1][x1] * tx
+        )
+
+        return top * (1 - ty) + bottom * ty
+
+
 class TerrainSurface:
     def __init__(self, cells: list[list[Cell]]) -> None:
         self.cells = cells
+
+        self.heights = np.array(
+            [[cell.height for cell in row] for row in cells],
+            dtype=np.float32,
+        )
+
+        self.temperatures = np.array(
+            [[cell.temp for cell in row] for row in cells],
+            dtype=np.float32,
+        )
+
+        self.humidities = np.array(
+            [[cell.humidity for cell in row] for row in cells],
+            dtype=np.float32,
+        )
+
+        self.normals = self._calculate_normals()
+
+        self.dot_products = self.normals @ np.asarray(
+            LIGHT_NORMAL,
+            dtype=np.float32,
+        )
 
     def __getitem__(self, pos: tuple[int, int]) -> Cell:
         return self.cells[pos[1]][pos[0]]
@@ -182,21 +256,38 @@ class TerrainSurface:
         yield above
         yield below
 
-    def get_normal_at(self, x: int, y: int) -> pg.Vector3:
-        """Returns normal vector of surface assuming that
-        pg.Vector3(0, 1, 0) = global up."""
+    def _calculate_normals(self) -> np.ndarray:
+        heights = self.heights
 
-        left, right, above, below = self.get_neighbours(x, y)
+        left = np.roll(heights, 1, axis=1)
+        right = np.roll(heights, -1, axis=1)
 
-        h_left = self.cells[left[1]][left[0]].height
-        h_right = self.cells[right[1]][right[0]].height
-        h_above = self.cells[above[1]][above[0]].height
-        h_below = self.cells[below[1]][below[0]].height
+        above = np.empty_like(heights)
+        below = np.empty_like(heights)
 
-        dx = (h_right - h_left) / 2
-        dy = (h_below - h_above) / 2
+        # Normal rows
+        above[1:-1] = heights[:-2]
+        below[1:-1] = heights[2:]
 
-        return pg.Vector3(dx, 1, dy).normalize()
+        # North pole
+        above[0] = np.roll(heights[0], _HALF_MAP_WIDTH)
+        below[0] = heights[1]
+
+        # South pole
+        above[-1] = heights[-2]
+        below[-1] = np.roll(heights[-1], _HALF_MAP_WIDTH)
+
+        dx = (right - left) / 2
+        dy = (below - above) / 2
+
+        normals = np.stack(
+            (dx, np.ones_like(dx), dy),
+            axis=-1,
+        )
+
+        length = np.linalg.norm(normals, axis=-1, keepdims=True)
+
+        return normals / length
 
     def get_cell(self, x: int, y: int) -> Cell:
         return self.cells[y][x]
@@ -205,31 +296,70 @@ class TerrainSurface:
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     """Expects base_temp in °K"""
 
+    t_i = time.time()
     grid: list[list[Cell]] = []
 
-    # TODO: this is a stub, finish it later
+    xs = [x / MAP_WIDTH for x in range(MAP_WIDTH)]
+    ys = [y / MAP_HEIGHT for y in range(MAP_HEIGHT)]
 
-    for cell_y in range(MAP_HEIGHT):
+    fields = {
+        NoiseLayers.BASE: NoiseField(
+            fidelity=40,
+            generator=lambda x, y: snoise2(
+                x, y, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE, base=(seed_int) % 32_768
+            )
+        ),
+        NoiseLayers.MOUNTAINS: NoiseField(
+            fidelity=40,
+            generator=lambda x, y: snoise2(
+                x * 0.5, y * 0.5, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE, base=(seed_int + 1) % 32_768
+            )
+        ),
+        NoiseLayers.DETAIL: NoiseField(
+            fidelity=240,
+            generator=lambda x, y: snoise2(
+                x * 4, y * 4, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE, base=(seed_int + 2) % 32_768
+            )
+        ),
+        NoiseLayers.HUMIDITY: NoiseField(
+            fidelity=40,
+            generator=lambda x, y: snoise2(
+                x, y, scale=_TERRAIN_SCALE * 3, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
+            )
+        ),
+        NoiseLayers.DRYNESS: NoiseField(
+            fidelity=40,
+            generator=lambda x, y: snoise2(
+                x, y, scale=_TERRAIN_SCALE * 3, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
+            )
+        )
+    }
+
+    for cell_y, y in enumerate(ys):
         row: list[Cell] = []
+        y = cell_y / MAP_HEIGHT
 
-        for cell_x in range(MAP_WIDTH):
-            x, y = cell_x / MAP_WIDTH, cell_y / MAP_HEIGHT
+        latitude_abs = abs(2 * (y - 0.5))
+        temp_latitude_multiplier = 1.2 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
+        humidity_latitude_multiplier = 1.15 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
+
+        for cell_x, x in enumerate(xs):
+            # x, y in [0..1]
+            x = cell_x / MAP_WIDTH
 
             # Assign heights - metres
             # seed_int needs to be a small enough seed that `snoise2` doesn't break
-            base = _sigmoid(snoise2(x, y, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int) % 32_768), 35) - 0.8
-            mount = _spexp(snoise2(x * 0.5, y * 0.5, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int + 1) % 32_768), 4)
-            detail = _spexp(snoise2(x * 4, y * 4, octaves=4, scale=_TERRAIN_SCALE, base=(seed_int + 2) % 32_768), 0.5)
-
+            base = _sigmoid(fields[NoiseLayers.BASE].sample(x, y), 35) - 0.8
+            mount = _signed_pow4(fields[NoiseLayers.MOUNTAINS].sample(x, y))
+            detail = _signed_sqrt(fields[NoiseLayers.DETAIL].sample(x, y))
             height = base * 4_000 + mount * 40_000 + detail * 1_000
 
             # Assign temperature - °K
             altitude_penalty = 0.000021 * height  # temperature drops by 0.0021% per metre
-            latitude_multiplier = 1.2 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
-            temp = base_temp * latitude_multiplier * max(0, (1 - altitude_penalty))
+            temp = base_temp * temp_latitude_multiplier * max(0, (1 - altitude_penalty))
 
             # Assign humidity - values from 0 to 1
-            base_humidity = 0.65 + 0.15 * snoise2(x, y, scale=_TERRAIN_SCALE * 3, octaves=4, base=(seed_int + 1) % 32_768)
+            base_humidity = 0.65 + 0.15 * fields[NoiseLayers.HUMIDITY].sample(x, y)
 
             # Coasts and oceans have higher humidity
             if height < 100:
@@ -239,23 +369,24 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
                 coast_bonus = 0
 
             # Humidity decreases with latitude - first slowly, then rapid dropoff
-            latitude_multiplier = 1.15 * math.cos((y - MAP_HEIGHT // 2) / MAP_HEIGHT)
-
             # Dry bands around ±30°
-            latitude_abs = abs((y - MAP_HEIGHT // 2) / (MAP_HEIGHT // 2))
             if 0.1 <= latitude_abs <= 0.35:
                 strength = 1 - abs(latitude_abs - 0.225) / 0.125
-                dry_band_factor = 1 - snoise2(x, y, scale=_TERRAIN_SCALE * 3, octaves=4, base=(seed_int + 2) % 32_768) * strength * 2
+                noise = fields[NoiseLayers.DRYNESS].sample(x, y)
+                dry_band_factor = 1 - (noise + 1) * strength * 0.4
             else:
                 dry_band_factor = 1
 
-            humidity = clamp((base_humidity + coast_bonus) * latitude_multiplier * dry_band_factor, 0, 1)
+            humidity = clamp((base_humidity + coast_bonus) * humidity_latitude_multiplier * dry_band_factor, 0, 1)
 
             # Cell assigns itself a biome on creation
             cell = Cell(height, temp, humidity)
             row.append(cell)
 
         grid.append(row)
+
+    t_f = time.time()
+    print(f"Time taken to generate planet: {1000 * (t_f - t_i):.4f} ms")
 
     return TerrainSurface(grid)
 
@@ -439,3 +570,6 @@ def stats_to_biome(height: float, temp: float, humidity: float, seed: int) -> Bi
         return BiomeType.FOREST
 
     return BiomeType.PRAIRIE
+
+
+LIGHT_NORMAL = pg.Vector3(1, 0, 1).normalize()  # 45° downwards in a south-easterly direction

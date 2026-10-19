@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import math
+import time
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
@@ -37,9 +37,6 @@ from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARG
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
-
-
-LIGHT_NORMAL = pg.Vector3(1, 0, 1).normalize()  # 45° downwards in a south-easterly direction
 
 
 class _ViewMode(IntEnum):
@@ -196,14 +193,12 @@ class BrowseTerrainState(State):
         self.hover_altitude = hover_altitude
         self.hover_biome = hover_biome
 
-        self.planet_surface = pg.Surface((WN_W, WN_H))
+        self.base_planet_surface = pg.Surface((MAP_WIDTH, MAP_HEIGHT))
+        self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
 
-    def _get_square_colour(self, x: int, y: int) -> Colour:
-        planet = self.current_planet()
-        assert self.game.star_system is not None
+    def _get_square_colour(self, x: int, y: int, light_colour: tuple[float, float, float], planet: Planet) -> Colour:
         assert planet.surface is not None
-
         cell = planet.surface[x, y]
 
         if self.view_mode == _ViewMode.HUMIDITY:
@@ -216,21 +211,14 @@ class BrowseTerrainState(State):
             return lerp_gradient(cell.height, COLOUR_SCHEME_ALTITUDE)
 
         if self.view_mode == _ViewMode.NORMALS:
-            normal = planet.surface.get_normal_at(x, y)
-            dp = LIGHT_NORMAL.dot(normal)
+            dp = planet.surface.dot_products[y][x]
             return lerp_gradient(dp, COLOUR_SCHEME_NORMALS)
 
         colour = BIOME_COLOURS[cell.biome]
 
-        if self.view_mode == _ViewMode.FANCY:
-            light_colour = pg.Vector3(lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)) * 0.2
-        else:
-            light_colour = (30, 30, 30)
-
         # Draw colours based on the dot product between the gradient and the light's normal
         # Get the normal by getting the gradient between the cell and its neighbours
-        normal = planet.surface.get_normal_at(x, y)
-        brightness = normal.dot(LIGHT_NORMAL)
+        brightness = planet.surface.dot_products[y][x]
 
         final_colour = (
             int(clamp(colour[0] + brightness * light_colour[0], 0, 255)),
@@ -241,16 +229,31 @@ class BrowseTerrainState(State):
         return final_colour
 
     def _refresh_planet_surface(self) -> None:
+        t_i = time.time()
         planet = self.current_planet()
         assert planet.surface is not None
         assert self.game.star_system is not None
 
-        cell_w, cell_h = WN_W / MAP_WIDTH, WN_H / MAP_HEIGHT
+        if self.view_mode == _ViewMode.FANCY:
+            r, g, b = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
+            light_colour = (r * 0.2, g * 0.2, b * 0.2)
+        else:
+            light_colour = (30, 30, 30)
 
-        for y in range(len(planet.surface.cells)):
-            for x in range(len(planet.surface.cells[0])):
-                colour = self._get_square_colour(x, y)
-                pg.draw.rect(self.planet_surface, colour, pg.Rect(x * cell_w, y * cell_h, cell_w + 1, cell_h + 1))
+        for y in range(MAP_HEIGHT):
+            for x in range(MAP_WIDTH):
+                self.base_planet_surface.set_at(
+                    (x, y),
+                    self._get_square_colour(x, y, light_colour, self.current_planet())
+                )
+
+        self.scaled_planet_surface = pg.transform.smoothscale(
+            self.base_planet_surface,
+            (WN_W, WN_H)
+        )
+
+        t_f = time.time()
+        print(f"Refreshed planet surface in {1000 * (t_f - t_i):.4f} ms")
 
     def _refresh_for_new_planet(self) -> None:
         assert self.game.star_system is not None
@@ -336,7 +339,7 @@ class BrowseTerrainState(State):
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw terrain
-        screen.blit(self.planet_surface)
+        screen.blit(self.scaled_planet_surface)
 
         # Draw overlay panel
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.seed_hbox.rect)
