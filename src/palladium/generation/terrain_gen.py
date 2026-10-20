@@ -113,6 +113,9 @@ class TerrainSurface:
         return normals / length
 
 
+FIDELITY_LOW = 40
+FIDELITY_HIGH = 160
+
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     """Expects base_temp in °K"""
 
@@ -126,37 +129,37 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     t_grid = time.time()
     print(f"Time for calculating grid: {1000 * (t_grid - t_i):.4f} ms")  # DEBUG
 
-    axes_f40 = prepare_axes(fidelity=40, xs=xs, ys=ys)
-    axes_f240 = prepare_axes(fidelity=240, xs=xs, ys=ys)
+    axes_f_low = prepare_axes(fidelity=FIDELITY_LOW, xs=xs, ys=ys)
+    axes_f_high = prepare_axes(fidelity=FIDELITY_HIGH, xs=xs, ys=ys)
 
     # Noise fields
     fields = {
         NoiseLayers.BASE: NoiseField(
-            fidelity=40, axes=axes_f40,
+            fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
                 x, y, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int) % 32_768
             ),
         ),
         NoiseLayers.MOUNTAINS: NoiseField(
-            fidelity=40, axes=axes_f40,
+            fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
                 x * 0.5, y * 0.5, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 1) % 32_768
             ),
         ),
         NoiseLayers.DETAIL: NoiseField(
-            fidelity=240, axes=axes_f240,
+            fidelity=FIDELITY_HIGH, axes=axes_f_high,
             generator=lambda x, y: snoise2(
                 x * 4, y * 4, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 2) % 32_768
             ),
         ),
         NoiseLayers.HUMIDITY: NoiseField(
-            fidelity=40, axes=axes_f40,
+            fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
             ),
         ),
         NoiseLayers.DRYNESS: NoiseField(
-            fidelity=40, axes=axes_f40,
+            fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
             ),

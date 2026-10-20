@@ -85,6 +85,8 @@ class NoiseField:
     ):
         self.fidelity = fidelity
         self.axes = axes
+
+
         self.values = np.array([[
             generator(x / fidelity, y / fidelity)
             for x in range(fidelity + 1)
