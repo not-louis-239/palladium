@@ -26,7 +26,7 @@ from noise import snoise2
 
 from palladium.generation.noise_field import NoiseField, prepare_axes
 from palladium.generation.biomes import BiomeID
-from palladium.generation.biome_rules import stats_to_biome_array
+from palladium.generation.biome_classifier import stats_to_biome_array
 from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
@@ -43,6 +43,7 @@ class NoiseLayers(Enum):
     DETAIL = auto()
     HUMIDITY = auto()
     DRYNESS = auto()
+    GEOLOGY = auto()
 
 
 def _signed_pow4_array(x: np.ndarray) -> np.ndarray:
@@ -62,16 +63,17 @@ class CellWrapper:
 
 
 class TerrainSurface:
-    def __init__(self, heights: np.ndarray, temps: np.ndarray, humidities: np.ndarray) -> None:
+    def __init__(self, heights: np.ndarray, temps: np.ndarray, humidities: np.ndarray, geology: np.ndarray) -> None:
         """Expects arrays containing `np.float32` values."""
 
         self.heights = heights
         self.temps = temps
         self.humidities = humidities
+        self.geology = geology
 
         self.normals = self._calculate_normals()
         self.dot_products = self.normals @ np.asarray(LIGHT_NORMAL, dtype=np.float32)
-        self.biomes = stats_to_biome_array(heights=heights, temps=temps, humidities=humidities)
+        self.biomes = stats_to_biome_array(heights=heights, temps=temps, humidities=humidities, geology=geology)
 
     def info_at(self, x: int, y: int) -> CellWrapper:
         return CellWrapper(
@@ -115,8 +117,9 @@ class TerrainSurface:
         return normals / length
 
 
-FIDELITY_LOW = 40
-FIDELITY_HIGH = 160
+_FIDELITY_LOW = 40
+_FIDELITY_HIGH = 160
+_NOISE_SEED_MODULUS = 32_768
 
 @lru_cache(maxsize=16)
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
@@ -132,39 +135,45 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     t_grid = time.time()
     print(f"Time for calculating grid: {1000 * (t_grid - t_i):.4f} ms")  # DEBUG
 
-    axes_f_low = prepare_axes(fidelity=FIDELITY_LOW, xs=xs, ys=ys)
-    axes_f_high = prepare_axes(fidelity=FIDELITY_HIGH, xs=xs, ys=ys)
+    axes_f_low = prepare_axes(fidelity=_FIDELITY_LOW, xs=xs, ys=ys)
+    axes_f_high = prepare_axes(fidelity=_FIDELITY_HIGH, xs=xs, ys=ys)
 
     # Noise fields
     fields = {
         NoiseLayers.BASE: NoiseField(
-            fidelity=FIDELITY_LOW, axes=axes_f_low,
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int) % 32_768
+                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int) % _NOISE_SEED_MODULUS
             ),
         ),
         NoiseLayers.MOUNTAINS: NoiseField(
-            fidelity=FIDELITY_LOW, axes=axes_f_low,
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x * 0.5 * _TERRAIN_SCALE_COEFF, y * 0.5 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
+                x * 0.5 * _TERRAIN_SCALE_COEFF, y * 0.5 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 1) % _NOISE_SEED_MODULUS
             ),
         ),
         NoiseLayers.DETAIL: NoiseField(
-            fidelity=FIDELITY_HIGH, axes=axes_f_high,
+            fidelity=_FIDELITY_HIGH, axes=axes_f_high,
             generator=lambda x, y: snoise2(
-                x * 4 * _TERRAIN_SCALE_COEFF, y * 4 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 2) % 32_768
+                x * 4 * _TERRAIN_SCALE_COEFF, y * 4 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 2) % _NOISE_SEED_MODULUS
             ),
         ),
         NoiseLayers.HUMIDITY: NoiseField(
-            fidelity=FIDELITY_LOW, axes=axes_f_low,
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x * 3 * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
+                x * 3 * _TERRAIN_SCALE_COEFF, y * 3 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 3) % _NOISE_SEED_MODULUS
             ),
         ),
         NoiseLayers.DRYNESS: NoiseField(
-            fidelity=FIDELITY_LOW, axes=axes_f_low,
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x * 3 * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 4) % 32_768
+                x * 3 * _TERRAIN_SCALE_COEFF, y * 3 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 4) % _NOISE_SEED_MODULUS
+            ),
+        ),
+        NoiseLayers.GEOLOGY: NoiseField(
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
+            generator=lambda x, y: snoise2(
+                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 5) % 32_768
             ),
         )
     }
@@ -178,6 +187,7 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     detail_noise = fields[NoiseLayers.DETAIL].sample_array()
     humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array()
     dryness_noise = fields[NoiseLayers.DRYNESS].sample_array()
+    geology_noise = fields[NoiseLayers.GEOLOGY].sample_array()
 
     t_sample = time.time()
     print(f"Time for sampling noise fields: {1000 * (t_sample - t_noise):.4f} ms")  # DEBUG
@@ -233,9 +243,13 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     print(f"Time for terrain sampling + generation: {1000 * (t_f - t_noise):.4f} ms")  # DEBUG
     print(f"Generated terrain surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
 
+    # Geology
+    geology = (geology_noise + 1) * 0.5  # map [-1..1] to [0..1]
+
     # Grid
     return TerrainSurface(
         heights=heights,
         temps=temps,
-        humidities=humidities
+        humidities=humidities,
+        geology=geology,
     )
