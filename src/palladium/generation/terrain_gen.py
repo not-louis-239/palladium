@@ -19,12 +19,13 @@
 import time
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import lru_cache
 
 import numpy as np
+from noise import snoise2
 
 from palladium.generation.noise_field import NoiseField, prepare_axes
 from palladium.generation.biomes import BiomeID, stats_to_biome_array
-from palladium.generation.noise_port import snoise2
 from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
@@ -116,6 +117,7 @@ class TerrainSurface:
 FIDELITY_LOW = 40
 FIDELITY_HIGH = 160
 
+@lru_cache(maxsize=16)
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     """Expects base_temp in °K"""
 
@@ -137,31 +139,31 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
         NoiseLayers.BASE: NoiseField(
             fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x, y, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int) % 32_768
+                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int) % 32_768
             ),
         ),
         NoiseLayers.MOUNTAINS: NoiseField(
             fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x * 0.5, y * 0.5, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 1) % 32_768
+                x * 0.5 * _TERRAIN_SCALE_COEFF, y * 0.5 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
             ),
         ),
         NoiseLayers.DETAIL: NoiseField(
             fidelity=FIDELITY_HIGH, axes=axes_f_high,
             generator=lambda x, y: snoise2(
-                x * 4, y * 4, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 2) % 32_768
+                x * 4 * _TERRAIN_SCALE_COEFF, y * 4 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 2) % 32_768
             ),
         ),
         NoiseLayers.HUMIDITY: NoiseField(
             fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
+                x * 3 * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
             ),
         ),
         NoiseLayers.DRYNESS: NoiseField(
             fidelity=FIDELITY_LOW, axes=axes_f_low,
             generator=lambda x, y: snoise2(
-                x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
+                x * 3 * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 4) % 32_768
             ),
         )
     }
