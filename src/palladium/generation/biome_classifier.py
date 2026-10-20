@@ -17,15 +17,18 @@
 
 
 import numpy as np
+from palladium.generation.biomes import BiomeID
 from palladium.generation.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
 
 
-def classify_terrain(
+def _classify_terrain(
         heights: np.ndarray,
         temps: np.ndarray,
         humidities: np.ndarray,
         geology: np.ndarray,
     ) -> np.ndarray:
+
+    temps_c = temps - 273.15
 
     terrain_classes = np.full(
         heights.shape,
@@ -40,7 +43,7 @@ def classify_terrain(
             remaining
             & rule.condition(
                 heights,
-                temps,
+                temps_c,
                 humidities,
                 geology,
             )
@@ -53,3 +56,59 @@ def classify_terrain(
             break
 
     return terrain_classes
+
+def _classify_biomes(
+        terrain_classes: np.ndarray,
+        heights: np.ndarray,
+        temps: np.ndarray,
+        humidities: np.ndarray,
+        geology: np.ndarray,
+    ) -> np.ndarray:
+
+    temps_c = temps - 273.15
+
+    biomes = np.full(
+        heights.shape,
+        BiomeID.INVALID,
+        dtype=np.uint8,
+    )
+
+    for terrain_class, rules in BIOME_RULES.items():
+        class_mask = terrain_classes == terrain_class
+
+        if not class_mask.any():
+            continue
+
+        remaining = class_mask.copy()
+
+        for rule in rules:
+            matches = (
+                remaining
+                & rule.condition(
+                    heights,
+                    temps_c,
+                    humidities,
+                    geology,
+                )
+            )
+
+            biomes[matches] = rule.biome_id
+            remaining &= ~matches
+
+            if not remaining.any():
+                break
+
+    assert not np.any(biomes == BiomeID.INVALID), "Invalid biome detected due to failure to classify all biomes"
+    return biomes
+
+def stats_to_biome_array(
+        heights: np.ndarray,
+        temps: np.ndarray,
+        humidities: np.ndarray,
+        geology: np.ndarray,
+    ) -> np.ndarray:
+    """Accepts input `np.ndarray`s and returns an `np.ndarray` of `BiomeID`s."""
+
+    classes = _classify_terrain(heights, temps, humidities, geology)
+    biomes = _classify_biomes(classes, heights, temps, humidities, geology)
+    return biomes

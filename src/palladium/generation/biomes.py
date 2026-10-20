@@ -62,7 +62,7 @@ class BiomeID(IntEnum):
     SAVANNA = auto()
     TROPICAL_RAINFOREST = auto()
     SWAMP = auto()
-    PRAIRIE = auto()
+    GRASSLAND = auto()
     TROPICAL_GRASS = auto()
     FOREST = auto()
     RAINFOREST = auto()
@@ -91,22 +91,22 @@ class BiomeID(IntEnum):
 
     # Coastal biomes
     VOLCANIC_BEACH = auto()
-    SULPHUR_COAST = auto()
     TROPICAL_BEACH = auto()
     RED_BEACH = auto()
     BEACH = auto()
     STONY_SHORE = auto()
     SNOWY_BEACH = auto()
-    FROZEN_COAST = auto()
 
     # Ocean biomes - ordered roughly by temp then depth
+    SULPHUR_COAST = auto()
     SULPHUR = auto()
     REEF = auto()
     TROPICAL_OCEAN = auto()
     WARM_SEA = auto()
-    OCEAN = auto()
     COLD_SEA = auto()
+    OCEAN = auto()
     ABYSS = auto()
+    FROZEN_COAST = auto()
     FROZEN_OCEAN = auto()
     NITROGEN_ICE = auto()
     NITROGEN_OCEAN = auto()
@@ -160,7 +160,7 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     BiomeID.SAVANNA: BiomeProfile("Savanna", (198, 218, 117)),
     BiomeID.TROPICAL_RAINFOREST: BiomeProfile("Tropical Rainforest", (0, 69, 0)),
     BiomeID.SWAMP: BiomeProfile("Swamp", (108, 129, 55)),
-    BiomeID.PRAIRIE: BiomeProfile("Prairie", (255, 219, 73)),
+    BiomeID.GRASSLAND: BiomeProfile("Grassland", (255, 219, 73)),
     BiomeID.TROPICAL_GRASS: BiomeProfile("Tropical Grass", (201, 189, 11)),
     BiomeID.FOREST: BiomeProfile("Forest", (83, 220, 23)),
     BiomeID.RAINFOREST: BiomeProfile("Rainforest", (0, 142, 0)),
@@ -189,22 +189,22 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
 
     # Coastal biomes
     BiomeID.VOLCANIC_BEACH: BiomeProfile("Volcanic Beach", (131, 91, 80)),
-    BiomeID.SULPHUR_COAST: BiomeProfile("Sulphur Coast", (226, 255, 153)),
     BiomeID.TROPICAL_BEACH: BiomeProfile("Tropical Beach", (255, 248, 157)),
     BiomeID.RED_BEACH: BiomeProfile("Red Beach", (186, 99, 73)),
     BiomeID.BEACH: BiomeProfile("Beach", (255, 250, 187)),
     BiomeID.STONY_SHORE: BiomeProfile("Stony Shore", (195, 195, 195)),
     BiomeID.SNOWY_BEACH: BiomeProfile("Snowy Beach", (228, 221, 255)),
-    BiomeID.FROZEN_COAST: BiomeProfile("Frozen Coast", (123, 212, 255)),
 
     # Ocean biomes
+    BiomeID.SULPHUR_COAST: BiomeProfile("Sulphur Coast", (226, 255, 153)),
     BiomeID.SULPHUR: BiomeProfile("Sulphur", (208, 255, 84)),
     BiomeID.REEF: BiomeProfile("Reef", (0, 255, 235)),
     BiomeID.TROPICAL_OCEAN: BiomeProfile("Tropical Ocean", (0, 116, 148)),
     BiomeID.WARM_SEA: BiomeProfile("Warm Sea", (0, 214, 255)),
-    BiomeID.OCEAN: BiomeProfile("Ocean", (0, 76, 112)),
     BiomeID.COLD_SEA: BiomeProfile("Cold Sea", (0, 155, 255)),
+    BiomeID.OCEAN: BiomeProfile("Ocean", (0, 76, 112)),
     BiomeID.ABYSS: BiomeProfile("Abyss", (15, 0, 33)),
+    BiomeID.FROZEN_COAST: BiomeProfile("Frozen Coast", (123, 212, 255)),
     BiomeID.FROZEN_OCEAN: BiomeProfile("Frozen Ocean", (177, 230, 255)),
     BiomeID.NITROGEN_ICE: BiomeProfile("Nitrogen Ice", (185, 225, 255)),
     BiomeID.NITROGEN_OCEAN: BiomeProfile("Nitrogen Ocean", (160, 210, 240)),

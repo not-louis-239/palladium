@@ -16,10 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from dataclasses import dataclass
 from typing import Callable
-
-from palladium.generation.biomes import BiomeID
 
 import numpy as np
 
@@ -45,20 +42,25 @@ H_HIGHLANDS = 2_500
 H_ELEVATED = 1_000
 H_LAND = 50
 H_COASTAL = 0
-H_SHALLOW = -1_200
+H_SHALLOW = -500
 H_DEEP = -3_200
 
 
 # Temperature (°C)
 T_NITROGEN_MELTING_PT = -210
+T_NITROGEN_BOILING_PT = -198
 T_METHANE_MELTING_PT = -182
+T_ETHANE_MELTING_PT = -183
+T_METHANE_BOILING_PT = -161
+T_ETHANE_BOILING_PT = -88
 T_C02_MELTING_PT = -80
+
 T_CRYO = -100
 T_PERMAFROST = -50
 T_POLAR = -20
 T_ARCTIC = -13
 T_SUBARCTIC = -7
-T_FREEZING = 0
+T_FREEZING = -2
 T_VERY_COLD = 5
 T_COLD = 10
 T_COOL = 15
@@ -69,6 +71,7 @@ T_VERY_WARM = 35
 T_HOT = 40
 T_VERY_HOT = 50
 T_SCORCHING = 75
+T_BLAZING = 80
 T_VOLCANIC = 100
 T_SUPERHEATED = 250
 
@@ -80,7 +83,7 @@ HUM_HUMID = 0.76
 HUM_SLIGHTLY_HUMID = 0.68
 HUM_SLIGHTLY_DRY = 0.55
 HUM_DRY = 0.46
-HUM_VERY_DRY = 0.3
+HUM_VERY_DRY = 0.32
 HUM_EXTREMELY_DRY = 0.15
 
 
@@ -98,16 +101,38 @@ def rare(g: np.ndarray) -> np.ndarray:
 def super_rare(g: np.ndarray) -> np.ndarray:
     return g >= G_SUPER_RARE
 
+def anti_alternate(g: np.ndarray) -> np.ndarray:
+    return g < (1 - G_ALTERNATE)
+
+def anti_rare(g: np.ndarray) -> np.ndarray:
+    return g < (1 - G_RARE)
+
+def anti_super_rare(g: np.ndarray) -> np.ndarray:
+    return g < (1 - G_SUPER_RARE)
+
 # Composite descriptors
 def boreal(t: np.ndarray, hum: np.ndarray) -> np.ndarray:
     return (
-        ((t <= 10) & (hum >= 0.46))
-        | ((t <= 15) & (hum >= 0.62))
+        ((t <= T_COLD) & (hum >= HUM_DRY))
+        | ((t <= T_COOL) & (hum >= HUM_SLIGHTLY_DRY))
     )
 
 def frozen(t: np.ndarray, hum: np.ndarray) -> np.ndarray:
     return (
-        (t <= -20)
-        | ((t <= -15) & (hum >= 0.25))
-        | ((t <= -10) & (hum >= 0.68))
+        (t <= T_POLAR)
+        | ((t <= T_ARCTIC) & (hum >= HUM_VERY_DRY))
+        | ((t <= T_SUBARCTIC) & (hum >= HUM_SLIGHTLY_HUMID))
     )
+
+def asphalt(t: np.ndarray, hum: np.ndarray, g: np.ndarray) -> np.ndarray:
+    return (
+        (t < T_VOLCANIC) & rare(g)
+    ) & ((
+        (t >= T_BLAZING)
+        & (hum >= HUM_SLIGHTLY_DRY)
+        & (hum <= HUM_HUMID)
+    ) | (
+        (t >= T_SCORCHING)
+        & (hum >= HUM_SLIGHTLY_DRY)
+        & (hum <= HUM_SLIGHTLY_HUMID)
+    ))
