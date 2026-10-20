@@ -17,12 +17,12 @@
 
 
 import time
-from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from enum import Enum, auto
 
 import numpy as np
 
+from palladium.generation.noise_field import NoiseField, prepare_fixed_arrays, prepare_axis
 from palladium.generation.biomes import BiomeID, stats_to_biome_array
 from palladium.generation.noise_port import snoise2
 from palladium.gui.constants import LIGHT_NORMAL
@@ -57,155 +57,6 @@ class CellWrapper:
     temp: float
     humidity: float
     biome_id: BiomeID
-
-
-class NoiseField:
-    def __init__(
-        self,
-        fidelity: int,
-        generator: Callable[[float, float], float],
-    ):
-        self.fidelity = fidelity
-        self.values = np.array([[
-            generator(x / fidelity, y / fidelity)
-            for x in range(fidelity + 1)
-        ] for y in range(fidelity + 1)], dtype=np.float32)
-
-    def sample(self, x: float, y: float) -> float:
-        pos_x = x * self.fidelity
-        pos_y = y * self.fidelity
-
-        x0 = int(pos_x)
-        y0 = int(pos_y)
-
-        tx = pos_x - x0
-        ty = pos_y - y0
-
-        x_indices = (
-            (x0 - 1) % self.fidelity,
-            x0 % self.fidelity,
-            (x0 + 1) % self.fidelity,
-            (x0 + 2) % self.fidelity,
-        )
-
-        y_indices = (
-            (y0 - 1) % self.fidelity,
-            y0 % self.fidelity,
-            (y0 + 1) % self.fidelity,
-            (y0 + 2) % self.fidelity,
-        )
-
-        def cubic(
-            p0: float,
-            p1: float,
-            p2: float,
-            p3: float,
-            t: float,
-        ) -> float:
-            return 0.5 * (
-                2 * p1
-                + (-p0 + p2) * t
-                + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
-                + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-            )
-
-        rows = [
-            cubic(
-                self.values[y, x_indices[0]],
-                self.values[y, x_indices[1]],
-                self.values[y, x_indices[2]],
-                self.values[y, x_indices[3]],
-                tx,
-            )
-            for y in y_indices
-        ]
-
-        return float(
-            cubic(
-                rows[0],
-                rows[1],
-                rows[2],
-                rows[3],
-                ty,
-            )
-        )
-
-    def sample_array(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Batch-bicubically interpolate at normalized coordinates
-        [0..1] for an array of x's and y's."""
-
-        pos_x = x * self.fidelity
-        pos_y = y * self.fidelity
-
-        x0 = np.floor(pos_x).astype(np.intp)
-        y0 = np.floor(pos_y).astype(np.intp)
-
-        tx = pos_x - x0
-        ty = pos_y - y0
-
-        xm1 = (x0 - 1) % self.fidelity
-        xp0 = x0 % self.fidelity
-        xp1 = (x0 + 1) % self.fidelity
-        xp2 = (x0 + 2) % self.fidelity
-
-        ym1 = (y0 - 1) % self.fidelity
-        yp0 = y0 % self.fidelity
-        yp1 = (y0 + 1) % self.fidelity
-        yp2 = (y0 + 2) % self.fidelity
-
-        def cubic(
-            p0: np.ndarray,
-            p1: np.ndarray,
-            p2: np.ndarray,
-            p3: np.ndarray,
-            t: np.ndarray,
-        ) -> np.ndarray:
-            return 0.5 * (
-                2 * p1
-                + (-p0 + p2) * t
-                + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
-                + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-            )
-
-        row0 = cubic(
-            self.values[ym1, xm1],
-            self.values[ym1, xp0],
-            self.values[ym1, xp1],
-            self.values[ym1, xp2],
-            tx,
-        )
-
-        row1 = cubic(
-            self.values[yp0, xm1],
-            self.values[yp0, xp0],
-            self.values[yp0, xp1],
-            self.values[yp0, xp2],
-            tx,
-        )
-
-        row2 = cubic(
-            self.values[yp1, xm1],
-            self.values[yp1, xp0],
-            self.values[yp1, xp1],
-            self.values[yp1, xp2],
-            tx,
-        )
-
-        row3 = cubic(
-            self.values[yp2, xm1],
-            self.values[yp2, xp0],
-            self.values[yp2, xp1],
-            self.values[yp2, xp2],
-            tx,
-        )
-
-        return cubic(
-            row0,
-            row1,
-            row2,
-            row3,
-            ty,
-        )
 
 
 class TerrainSurface:
@@ -265,12 +116,24 @@ class TerrainSurface:
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     """Expects base_temp in °K"""
 
-    t_i = time.time()
+    t_i = time.time()  # DEBUG
 
     # Arrays of x and y where x, y in [0..1]
-    x = np.arange(MAP_WIDTH, dtype=np.float32) / MAP_WIDTH
-    y = np.arange(MAP_HEIGHT, dtype=np.float32) / MAP_HEIGHT
-    x_grid, y_grid = np.meshgrid(x, y)
+    xs = np.arange(MAP_WIDTH, dtype=np.float32) / MAP_WIDTH
+    ys = np.arange(MAP_HEIGHT, dtype=np.float32) / MAP_HEIGHT
+    x_grid, y_grid = np.meshgrid(xs, ys)
+
+    t_grid = time.time()
+    print(f"Time for calculating grid: {1000 * (t_grid - t_i):.4f} ms")  # DEBUG
+
+    arrays_fidelity40 = prepare_fixed_arrays(fidelity=40, xs=x_grid, ys=y_grid)
+    arrays_fidelity240 = prepare_fixed_arrays(fidelity=240, xs=x_grid, ys=y_grid)
+
+    x_axis_fidelity40 = prepare_axis(xs, fidelity=40)
+    y_axis_fidelity40 = prepare_axis(ys, fidelity=40)
+
+    x_axis_fidelity240 = prepare_axis(xs, fidelity=240)
+    y_axis_fidelity240 = prepare_axis(ys, fidelity=240)
 
     # Noise fields
     fields = {
@@ -278,40 +141,51 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
             fidelity=40,
             generator=lambda x, y: snoise2(
                 x, y, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int) % 32_768
-            )
+            ),
+            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.MOUNTAINS: NoiseField(
             fidelity=40,
             generator=lambda x, y: snoise2(
                 x * 0.5, y * 0.5, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 1) % 32_768
-            )
+            ),
+            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.DETAIL: NoiseField(
             fidelity=240,
             generator=lambda x, y: snoise2(
                 x * 4, y * 4, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 2) % 32_768
-            )
+            ),
+            fixed_arrays=arrays_fidelity240
         ),
         NoiseLayers.HUMIDITY: NoiseField(
             fidelity=40,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
-            )
+            ),
+            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.DRYNESS: NoiseField(
             fidelity=40,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
-            )
+            ),
+            fixed_arrays=arrays_fidelity40
         )
     }
 
+    t_noise = time.time()
+    print(f"Time for calculating noise fields: {1000 * (t_noise - t_grid):.4f} ms")  # DEBUG
+
     # Get noise fields
-    base_noise = fields[NoiseLayers.BASE].sample_array(x_grid, y_grid)
-    mount_noise = fields[NoiseLayers.MOUNTAINS].sample_array(x_grid, y_grid)
-    detail_noise = fields[NoiseLayers.DETAIL].sample_array(x_grid, y_grid)
-    humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array(x_grid, y_grid)
-    dryness_noise = fields[NoiseLayers.DRYNESS].sample_array(x_grid, y_grid)
+    base_noise = fields[NoiseLayers.BASE].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
+    mount_noise = fields[NoiseLayers.MOUNTAINS].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
+    detail_noise = fields[NoiseLayers.DETAIL].sample_array(x_axis=x_axis_fidelity240, y_axis=y_axis_fidelity240)
+    humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
+    dryness_noise = fields[NoiseLayers.DRYNESS].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
+
+    t_sample = time.time()
+    print(f"Time for sampling noise fields: {1000 * (t_sample - t_noise):.4f} ms")  # DEBUG
 
     # Height layer
     base = _sigmoid_array(base_noise, 35) - 0.8
@@ -361,7 +235,8 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     humidities = np.clip((base_humidity + coast_bonus) * humidity_latitude_multiplier * dry_band_factor, 0, 1)
 
     t_f = time.time()
-    print(f"Generated terrain surface in {1000 * (t_f - t_i):.4f} ms")
+    print(f"Time for terrain sampling + generation: {1000 * (t_f - t_noise):.4f} ms")  # DEBUG
+    print(f"Generated terrain surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
 
     # Grid
     return TerrainSurface(

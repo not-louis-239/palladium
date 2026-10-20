@@ -251,7 +251,7 @@ class BrowseTerrainState(State):
         self.panel.layout(SCREEN_RECT)
 
     def _refresh_planet_surface(self) -> None:
-        t_i = time.time()
+        t_i = time.time()  # DEBUG
 
         planet = self.current_planet()
         assert planet.surface is not None
@@ -312,7 +312,7 @@ class BrowseTerrainState(State):
         )
 
         t_f = time.time()
-        print(f"Refreshed planet surface in {1000 * (t_f - t_i):.4f} ms")
+        print(f"Refreshed planet surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
 
     def _refresh_for_new_planet(self) -> None:
         assert self.game.star_system is not None
