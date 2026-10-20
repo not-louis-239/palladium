@@ -27,22 +27,33 @@ from palladium.core.custom_types import Colour
 class BiomeID(IntEnum):
     INVALID = 0
 
-    # Height-restricted biomes
-    VOLCANO = auto()
-    FROZEN_PEAKS = auto()
-    ALPINE = auto()
-    EXTREME_HILLS = auto()
+    # Superheated / liquid biomes
+    SUPER_PLASMA = auto()
+    PLASMA = auto()
+    VAPOUR = auto()
+    MOLTEN = auto()
 
-    # Super hot biomes
+    # Very hot biomes
     PYRO = auto()
     LAVA = auto()
     MAGMA = auto()
+    SCORCHED_MOUNTAINS = auto()
+    SCORCHED_SLOPES = auto()
+    SCORCHED_DESERT = auto()
+    ASH_FOREST = auto()
+    SULPHUR_MOUNTAINS = auto()
+    SULPHUR_SLOPES = auto()
+    SULPHUR_PLAINS = auto()
+    VOLCANO = auto()
+    VOLCANIC_PLAINS = auto()
+    VOLCANIC_WASTES = auto()
 
     # Warm biomes
     SALT_FLATS = auto()
     HOT_DESERT = auto()
     DESERT = auto()
     COLD_DESERT = auto()
+    TAR_PEAKS = auto()
     ASPHALT = auto()
     GEYSER = auto()
     HOT_SPRING = auto()
@@ -57,8 +68,25 @@ class BiomeID(IntEnum):
     # Cold biomes
     PINE_FOREST = auto()
     BOREAL_FOREST = auto()
+    EXTREME_HILLS = auto()
     TUNDRA = auto()
     FROZEN_PLAINS = auto()
+    FROZEN_PEAKS = auto()
+    ALPINE = auto()
+
+    # Cryogenic biomes
+    CRYO_DESERT = auto()
+    CRYO_PLAINS = auto()
+    CRYO_SLOPES = auto()
+    CRYO_PEAKS = auto()
+    NITROGEN_ICE = auto()
+    METHANE_ICE = auto()
+    ETHANE_OCEAN = auto()
+    PERMAFROST_PLAINS = auto()
+    SNOW_PLAINS = auto()
+    ICY_SLOPES = auto()
+    GLACIAL_MOUNTAINS = auto()
+    GLACIER = auto()
 
     # Ocean biomes
     VOLCANIC_BEACH = auto()
@@ -87,24 +115,35 @@ class BiomeProfile:
 BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     BiomeID.INVALID: BiomeProfile("Invalid", (255, 0, 0)),
 
-    # Height-restricted biomes
-    BiomeID.VOLCANO: BiomeProfile("Volcano", (128, 0, 0)),
-    BiomeID.FROZEN_PEAKS: BiomeProfile("Frozen Peaks", (227, 220, 255)),
-    BiomeID.ALPINE: BiomeProfile("Alpine", (167, 197, 209)),
-    BiomeID.EXTREME_HILLS: BiomeProfile("Extreme Hills", (149, 166, 158)),
+    # Superheated biomes
+    BiomeID.SUPER_PLASMA: BiomeProfile("Super Plasma", (255, 255, 230)),
+    BiomeID.PLASMA: BiomeProfile("Plasma", (255, 252, 199)),
+    BiomeID.VAPOUR: BiomeProfile("Vapour", (255, 242, 175)),
+    BiomeID.MOLTEN: BiomeProfile("Molten", (255, 226, 110)),
 
-    # Super hot biomes
+    # Very hot biomes
     BiomeID.PYRO: BiomeProfile("Pyro", (255, 207, 76)),
     BiomeID.LAVA: BiomeProfile("Lava", (255, 170, 23)),
     BiomeID.MAGMA: BiomeProfile("Magma", (255, 105, 0)),
+    BiomeID.SCORCHED_MOUNTAINS: BiomeProfile("Scorched Mountains", (29, 26, 26)),
+    BiomeID.SCORCHED_SLOPES: BiomeProfile("Scorched Slopes", (52, 47, 45)),
+    BiomeID.SCORCHED_DESERT: BiomeProfile("Scorched Desert", (188, 170, 137)),
+    BiomeID.ASH_FOREST: BiomeProfile("Ash Forest", (53, 50, 44)),
+    BiomeID.SULPHUR_MOUNTAINS: BiomeProfile("Sulphur Mountains", (116, 91, 44)),
+    BiomeID.SULPHUR_SLOPES: BiomeProfile("Sulphur Slopes", (139, 116, 54)),
+    BiomeID.SULPHUR_PLAINS: BiomeProfile("Sulphur Plains", (161, 142, 68)),
+    BiomeID.VOLCANO: BiomeProfile("Volcano", (128, 0, 0)),
+    BiomeID.VOLCANIC_PLAINS: BiomeProfile("Volcanic Plains", (137, 77, 77)),
+    BiomeID.VOLCANIC_WASTES: BiomeProfile("Volcanic Wastes", (83, 47, 25)),
 
     # Warm biomes
     BiomeID.SALT_FLATS: BiomeProfile("Salt Flats", (192, 192, 192)),
     BiomeID.HOT_DESERT: BiomeProfile("Hot Desert", (255, 210, 127)),
     BiomeID.DESERT: BiomeProfile("Desert", (255, 234, 198)),
     BiomeID.COLD_DESERT: BiomeProfile("Cold Desert", (255, 250, 239)),
+    BiomeID.TAR_PEAKS: BiomeProfile("Tar Peaks", (66, 62, 59)),
     BiomeID.ASPHALT: BiomeProfile("Asphalt", (45, 45, 45)),
-    BiomeID.GEYSER: BiomeProfile("Geyser", (255, 101, 166)),
+    BiomeID.GEYSER: BiomeProfile("Geyser", (255, 101, 211)),
     BiomeID.HOT_SPRING: BiomeProfile("Hot Spring", (0, 255, 172)),
     BiomeID.SAVANNA: BiomeProfile("Savanna", (198, 218, 117)),
     BiomeID.TROPICAL_RAINFOREST: BiomeProfile("Tropical Rainforest", (0, 69, 0)),
@@ -117,8 +156,25 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     # Cold biomes
     BiomeID.PINE_FOREST: BiomeProfile("Pine Forest", (88, 175, 141)),
     BiomeID.BOREAL_FOREST: BiomeProfile("Boreal Forest", (156, 217, 192)),
+    BiomeID.EXTREME_HILLS: BiomeProfile("Extreme Hills", (149, 166, 158)),
     BiomeID.TUNDRA: BiomeProfile("Tundra", (207, 255, 255)),
     BiomeID.FROZEN_PLAINS: BiomeProfile("Frozen Plains", (207, 200, 255)),
+    BiomeID.FROZEN_PEAKS: BiomeProfile("Frozen Peaks", (227, 220, 255)),
+    BiomeID.ALPINE: BiomeProfile("Alpine", (167, 197, 209)),
+
+    # Cryogenic biomes
+    BiomeID.CRYO_DESERT: BiomeProfile("Cryo Desert", (180, 190, 200)),
+    BiomeID.CRYO_PLAINS: BiomeProfile("Cryo Plains", (210, 225, 235)),
+    BiomeID.CRYO_SLOPES: BiomeProfile("Cryo Slopes", (155, 180, 195)),
+    BiomeID.CRYO_PEAKS: BiomeProfile("Cryo Peaks", (125, 155, 180)),
+    BiomeID.NITROGEN_ICE: BiomeProfile("Nitrogen Ice", (185, 225, 255)),
+    BiomeID.METHANE_ICE: BiomeProfile("Methane Ice", (150, 190, 230)),
+    BiomeID.ETHANE_OCEAN: BiomeProfile("Ethane Ocean", (163, 255, 212)),
+    BiomeID.PERMAFROST_PLAINS: BiomeProfile("Permafrost Plains", (224, 207, 179)),
+    BiomeID.SNOW_PLAINS: BiomeProfile("Snow Plains", (247, 254, 255)),
+    BiomeID.ICY_SLOPES: BiomeProfile("Icy Slopes", (207, 236, 255)),
+    BiomeID.GLACIAL_MOUNTAINS: BiomeProfile("Glacial Mountains", (200, 189, 206)),
+    BiomeID.GLACIER: BiomeProfile("Glacier", (143, 212, 255)),
 
     # Ocean biomes
     BiomeID.VOLCANIC_BEACH: BiomeProfile("Volcanic Beach", (131, 91, 80)),
@@ -137,6 +193,10 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     BiomeID.FROZEN_COAST: BiomeProfile("Frozen Coast", (123, 212, 255)),
     BiomeID.FROZEN_OCEAN: BiomeProfile("Frozen Ocean", (177, 230, 255)),
 }
+
+if len(BIOME_PROFILES) != len(BiomeID):
+    missing = set(BiomeID) - set(BIOME_PROFILES.keys())
+    raise RuntimeError(f"The following BiomeIDs are missing profiles:{"".join(f"\n  - {m.name}" for m in missing)}")
 
 
 BIOME_COLOURS = np.array([
@@ -272,7 +332,7 @@ def stats_to_biome_array(heights: np.ndarray, temps: np.ndarray, humidities: np.
         BiomeID.VOLCANIC_BEACH,
     )
 
-    # Frozen plains
+    # Super cold biomes
     frozen = (
         (temps_c <= -20)
         | ((temps_c <= -15) & (humidities >= 0.25))
