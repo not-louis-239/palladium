@@ -26,7 +26,7 @@ from noise import snoise2
 
 from palladium.generation.noise_field import NoiseField, prepare_axes
 from palladium.generation.biomes import BiomeID
-from palladium.generation.biome_classifier import stats_to_biome_array
+from palladium.generation.biome_classifier import classify_terrain
 from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
@@ -73,7 +73,7 @@ class TerrainSurface:
 
         self.normals = self._calculate_normals()
         self.dot_products = self.normals @ np.asarray(LIGHT_NORMAL, dtype=np.float32)
-        self.biomes = stats_to_biome_array(heights=heights, temps=temps, humidities=humidities, geology=geology)
+        self.biomes = classify_terrain(heights=heights, temps=temps, humidities=humidities, geology=geology)
 
     def info_at(self, x: int, y: int) -> CellWrapper:
         return CellWrapper(
