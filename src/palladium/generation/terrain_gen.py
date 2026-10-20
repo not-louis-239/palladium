@@ -25,7 +25,8 @@ import numpy as np
 from noise import snoise2
 
 from palladium.generation.noise_field import NoiseField, prepare_axes
-from palladium.generation.biomes import BiomeID, stats_to_biome_array
+from palladium.generation.biomes import BiomeID
+from palladium.generation.biome_rules import stats_to_biome_array
 from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
