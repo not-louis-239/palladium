@@ -22,7 +22,7 @@ from enum import Enum, auto
 
 import numpy as np
 
-from palladium.generation.noise_field import NoiseField, prepare_fixed_arrays, prepare_axis
+from palladium.generation.noise_field import NoiseField, prepare_axes
 from palladium.generation.biomes import BiomeID, stats_to_biome_array
 from palladium.generation.noise_port import snoise2
 from palladium.gui.constants import LIGHT_NORMAL
@@ -121,68 +121,57 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     # Arrays of x and y where x, y in [0..1]
     xs = np.arange(MAP_WIDTH, dtype=np.float32) / MAP_WIDTH
     ys = np.arange(MAP_HEIGHT, dtype=np.float32) / MAP_HEIGHT
-    x_grid, y_grid = np.meshgrid(xs, ys)
+    x_grid, y_grid = np.meshgrid(xs, ys)  # TODO: eliminate x_grid
 
     t_grid = time.time()
     print(f"Time for calculating grid: {1000 * (t_grid - t_i):.4f} ms")  # DEBUG
 
-    arrays_fidelity40 = prepare_fixed_arrays(fidelity=40, xs=x_grid, ys=y_grid)
-    arrays_fidelity240 = prepare_fixed_arrays(fidelity=240, xs=x_grid, ys=y_grid)
-
-    x_axis_fidelity40 = prepare_axis(xs, fidelity=40)
-    y_axis_fidelity40 = prepare_axis(ys, fidelity=40)
-
-    x_axis_fidelity240 = prepare_axis(xs, fidelity=240)
-    y_axis_fidelity240 = prepare_axis(ys, fidelity=240)
+    axes_f40 = prepare_axes(fidelity=40, xs=xs, ys=ys)
+    axes_f240 = prepare_axes(fidelity=240, xs=xs, ys=ys)
 
     # Noise fields
     fields = {
         NoiseLayers.BASE: NoiseField(
-            fidelity=40,
+            fidelity=40, axes=axes_f40,
             generator=lambda x, y: snoise2(
                 x, y, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int) % 32_768
             ),
-            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.MOUNTAINS: NoiseField(
-            fidelity=40,
+            fidelity=40, axes=axes_f40,
             generator=lambda x, y: snoise2(
                 x * 0.5, y * 0.5, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 1) % 32_768
             ),
-            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.DETAIL: NoiseField(
-            fidelity=240,
+            fidelity=240, axes=axes_f240,
             generator=lambda x, y: snoise2(
                 x * 4, y * 4, octaves=_NUM_OCTAVES, scale=_TERRAIN_SCALE_COEFF, base=(seed_int + 2) % 32_768
             ),
-            fixed_arrays=arrays_fidelity240
         ),
         NoiseLayers.HUMIDITY: NoiseField(
-            fidelity=40,
+            fidelity=40, axes=axes_f40,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 1) % 32_768
             ),
-            fixed_arrays=arrays_fidelity40
         ),
         NoiseLayers.DRYNESS: NoiseField(
-            fidelity=40,
+            fidelity=40, axes=axes_f40,
             generator=lambda x, y: snoise2(
                 x, y, scale=_TERRAIN_SCALE_COEFF * 3, octaves=_NUM_OCTAVES, base=(seed_int + 3) % 32_768
             ),
-            fixed_arrays=arrays_fidelity40
         )
     }
 
     t_noise = time.time()
     print(f"Time for calculating noise fields: {1000 * (t_noise - t_grid):.4f} ms")  # DEBUG
 
-    # Get noise fields
-    base_noise = fields[NoiseLayers.BASE].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
-    mount_noise = fields[NoiseLayers.MOUNTAINS].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
-    detail_noise = fields[NoiseLayers.DETAIL].sample_array(x_axis=x_axis_fidelity240, y_axis=y_axis_fidelity240)
-    humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
-    dryness_noise = fields[NoiseLayers.DRYNESS].sample_array(x_axis=x_axis_fidelity40, y_axis=y_axis_fidelity40)
+    # Get noise fields - fidelity of axes must match fidelity of fields
+    base_noise = fields[NoiseLayers.BASE].sample_array()
+    mount_noise = fields[NoiseLayers.MOUNTAINS].sample_array()
+    detail_noise = fields[NoiseLayers.DETAIL].sample_array()
+    humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array()
+    dryness_noise = fields[NoiseLayers.DRYNESS].sample_array()
 
     t_sample = time.time()
     print(f"Time for sampling noise fields: {1000 * (t_sample - t_noise):.4f} ms")  # DEBUG
