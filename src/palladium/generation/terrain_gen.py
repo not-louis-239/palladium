@@ -78,50 +78,134 @@ class NoiseField:
         x0 = int(pos_x)
         y0 = int(pos_y)
 
-        x1 = min(x0 + 1, self.fidelity)
-        y1 = min(y0 + 1, self.fidelity)
-
         tx = pos_x - x0
         ty = pos_y - y0
 
-        top = (
-            self.values[y0, x0] * (1 - tx)
-            + self.values[y0, x1] * tx
+        x_indices = (
+            (x0 - 1) % self.fidelity,
+            x0 % self.fidelity,
+            (x0 + 1) % self.fidelity,
+            (x0 + 2) % self.fidelity,
         )
 
-        bottom = (
-            self.values[y1, x0] * (1 - tx)
-            + self.values[y1, x1] * tx
+        y_indices = (
+            (y0 - 1) % self.fidelity,
+            y0 % self.fidelity,
+            (y0 + 1) % self.fidelity,
+            (y0 + 2) % self.fidelity,
         )
 
-        return float(top * (1 - ty) + bottom * ty)
+        def cubic(
+            p0: float,
+            p1: float,
+            p2: float,
+            p3: float,
+            t: float,
+        ) -> float:
+            return 0.5 * (
+                2 * p1
+                + (-p0 + p2) * t
+                + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
+            )
+
+        rows = [
+            cubic(
+                self.values[y, x_indices[0]],
+                self.values[y, x_indices[1]],
+                self.values[y, x_indices[2]],
+                self.values[y, x_indices[3]],
+                tx,
+            )
+            for y in y_indices
+        ]
+
+        return float(
+            cubic(
+                rows[0],
+                rows[1],
+                rows[2],
+                rows[3],
+                ty,
+            )
+        )
 
     def sample_array(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Batch-bilinearly interpolate at normalized coordinates
+        """Batch-bicubically interpolate at normalized coordinates
         [0..1] for an array of x's and y's."""
+
         pos_x = x * self.fidelity
         pos_y = y * self.fidelity
 
         x0 = np.floor(pos_x).astype(np.intp)
         y0 = np.floor(pos_y).astype(np.intp)
 
-        x1 = np.minimum(x0 + 1, self.fidelity)
-        y1 = np.minimum(y0 + 1, self.fidelity)
-
         tx = pos_x - x0
         ty = pos_y - y0
 
-        top = (
-            self.values[y0, x0] * (1 - tx)
-            + self.values[y0, x1] * tx
+        xm1 = (x0 - 1) % self.fidelity
+        xp0 = x0 % self.fidelity
+        xp1 = (x0 + 1) % self.fidelity
+        xp2 = (x0 + 2) % self.fidelity
+
+        ym1 = (y0 - 1) % self.fidelity
+        yp0 = y0 % self.fidelity
+        yp1 = (y0 + 1) % self.fidelity
+        yp2 = (y0 + 2) % self.fidelity
+
+        def cubic(
+            p0: np.ndarray,
+            p1: np.ndarray,
+            p2: np.ndarray,
+            p3: np.ndarray,
+            t: np.ndarray,
+        ) -> np.ndarray:
+            return 0.5 * (
+                2 * p1
+                + (-p0 + p2) * t
+                + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
+                + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
+            )
+
+        row0 = cubic(
+            self.values[ym1, xm1],
+            self.values[ym1, xp0],
+            self.values[ym1, xp1],
+            self.values[ym1, xp2],
+            tx,
         )
 
-        bottom = (
-            self.values[y1, x0] * (1 - tx)
-            + self.values[y1, x1] * tx
+        row1 = cubic(
+            self.values[yp0, xm1],
+            self.values[yp0, xp0],
+            self.values[yp0, xp1],
+            self.values[yp0, xp2],
+            tx,
         )
 
-        return top * (1 - ty) + bottom * ty
+        row2 = cubic(
+            self.values[yp1, xm1],
+            self.values[yp1, xp0],
+            self.values[yp1, xp1],
+            self.values[yp1, xp2],
+            tx,
+        )
+
+        row3 = cubic(
+            self.values[yp2, xm1],
+            self.values[yp2, xp0],
+            self.values[yp2, xp1],
+            self.values[yp2, xp2],
+            tx,
+        )
+
+        return cubic(
+            row0,
+            row1,
+            row2,
+            row3,
+            ty,
+        )
 
 
 class TerrainSurface:

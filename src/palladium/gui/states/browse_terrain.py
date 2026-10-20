@@ -34,6 +34,7 @@ from palladium.generation.planet import Planet
 from palladium.generation.terrain_gen import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
     ICON_SIZE,
+    BORDER_W,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -144,6 +145,25 @@ class BrowseTerrainState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
         self.view_mode = _ViewMode.FANCY
+
+        self.loading_overlay_panel = Panel(
+            child=VBox(
+                Spacer(),
+                HBox(
+                    Spacer(),
+                    loading_label := Label(
+                        text="Generating planet terrain...",
+                        font=self.fonts.ui,
+                        k_fg=ThemeKey.FG,
+                        inset=UI_MARGIN_S
+                    ),
+                    Spacer()
+                ),
+                Spacer()
+            )
+        )
+        self.loading_label = loading_label
+        self.loading_overlay_panel.layout(SCREEN_RECT)
 
         self.panel = Panel(
             child=VBox(

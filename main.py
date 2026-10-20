@@ -39,10 +39,10 @@ from palladium.game.game import Game
 def main():
     pg.init()
 
-    game = Game()
     screen = pg.display.set_mode((WN_W, WN_H))
     pg.display.set_caption("Palladium")
     clock = pg.time.Clock()
+    game = Game()
 
     running = True
 
