@@ -16,14 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+#import numpy as np
 import random
 from dataclasses import dataclass
 
-from palladium.core.utils import str_to_seed, random_seed
-from palladium.terrain.planet import Planet, generate_planet
-from palladium.terrain.star_gen import StarProfile, generate_star_profile
+from palladium.core.utils import random_seed, str_to_seed
+from palladium.generation.planet import Planet, generate_planet
+from palladium.generation.star_gen import StarProfile, generate_star_profile
 
 PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
+PLANET_SUFFIXES: str = "bcdefghijklmnopqrstuvwxyz"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -41,7 +43,7 @@ class StarSystem:
         self.seed_metadata = seed_metadata
 
 
-def _generate_planets(seed_int: int, star_profile: StarProfile) -> list[Planet]:
+def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:
     # Spawn planets - decide on a number of planets from a weighted distribution
     rng = random.Random(seed_int)
     num_planets = rng.choices(
@@ -55,9 +57,16 @@ def _generate_planets(seed_int: int, star_profile: StarProfile) -> list[Planet]:
     # determined by the master seed
     planet_seed_rng = random.Random(seed_int)
 
-    for _ in range(num_planets):
+    for i in range(num_planets):
         planet_seed = random_seed(planet_seed_rng)
-        planets.append(generate_planet(planet_seed, star_profile))
+        planet = generate_planet(planet_seed, star)
+        planet.name = star.name + PLANET_SUFFIXES[i]
+
+        planets.append(planet)
+
+        #planet.generate_surface()
+        #mean_temp = np.mean(planet.surface.temps)
+        #print(f"{mean_temp / planet.base_temp} mean temp : temp ratio for planet '{planet.name}'")
 
     return planets
 

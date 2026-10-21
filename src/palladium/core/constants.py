@@ -22,9 +22,16 @@ import pygame as pg
 
 
 class Controls(IntEnum):
+    # System browser
     SEED_MINUS_ONE = pg.K_j
     SEED_PLUS_ONE = pg.K_l
     PAUSE_SIMULATION = pg.K_SPACE
+
+    # Terrain browser
+    CHANGE_VIEW_MODE = pg.K_v
+
+    # Debug
+    PROFILER_TOGGLE = pg.K_F1
 
 
 WN_W, WN_H = 1280, 720

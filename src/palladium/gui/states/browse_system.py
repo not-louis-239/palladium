@@ -24,28 +24,34 @@ from typing import TYPE_CHECKING
 import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.constants import SOLAR_RADIUS_IN_AU, WN_H, WN_W, ZOOM_RATE, Controls
+from palladium.core.constants import (
+    SOLAR_RADIUS_IN_AU,
+    SOLAR_RADIUS_IN_KM,
+    WN_H,
+    WN_W,
+    ZOOM_RATE,
+    Controls,
+)
+from palladium.core.utils import clamp
+from palladium.generation.planet import calculate_habitable_zone
+from palladium.generation.star_system import generate_star_system
 from palladium.gui.constants import (
+    CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
     ICON_SIZE,
-    KELVIN_COLOURS,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
     UI_MARGIN_XS,
-    CIRCLE_RADIUS_DRAW_LIMIT
 )
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.themes import CLEAR, TRANSLUCENT_BLACK, ThemeKey
 from palladium.gui.utils import (
-    clamp,
     draw_transparent_rect,
     get_seed_messages,
-    lerp_gradient,
 )
-from palladium.terrain.star_system import generate_star_system
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -58,6 +64,7 @@ MAX_SIZE = 7
 
 PER_PIXELS = 50
 SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
+    0.001, 0.002, 0.005,
     0.01, 0.02, 0.05,
     0.1, 0.2, 0.5,
     1, 2, 5,
@@ -68,7 +75,7 @@ SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
 ]
 
 # astronomical units per pixel
-INNER_ZOOM_LIMIT = 0.002
+INNER_ZOOM_LIMIT = 0.00002
 OUTER_ZOOM_LIMIT = 100
 
 CENTRE_POS = (WN_W // 2, WN_H // 2)
@@ -90,7 +97,7 @@ SCROLL_SENSITIVITY = 15
 SCROLL_SPEED = 800  # pix/s
 SCROLL_FRICTION = 0.9  # fraction of scroll velocity dissipated per second
 
-DISTANCE_RINGS: list[float] = [0.1, 1, 10, 100, 1_000, 10_000]   # astronomical units
+DISTANCE_RINGS: list[float] = [0.001, 0.01, 0.1, 1, 10, 100, 1_000, 10_000]   # astronomical units
 INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this to avoid overcrowding
 
 
@@ -111,6 +118,8 @@ def _format_speed_value(val: float) -> str:
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         # astronomical units
         self.scroll_disp = pg.Vector2(0, 0)
@@ -159,11 +168,9 @@ class BrowseSystemState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL
                         ),
-                        renderer=draw_elem,
                         padding=UI_MARGIN_S
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
                 HBox(
@@ -210,10 +217,8 @@ class BrowseSystemState(State):
                         ),
                         padding=UI_MARGIN_S,
                         gap=UI_MARGIN_S,
-                        renderer=draw_elem
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 HBox(
                     speed_label := HBox(
@@ -226,10 +231,8 @@ class BrowseSystemState(State):
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
                         padding=UI_MARGIN_S,
-                        renderer=draw_elem
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 HBox(
                     scale_bar := ScaleBar(
@@ -247,20 +250,17 @@ class BrowseSystemState(State):
                         inset=UI_MARGIN_S,
                         k_fg=ThemeKey.FG
                     ),
-                    renderer=draw_elem
                 ),
 
                 # TODO: add buttons: re-centre, 'click and drag' instruction
 
                 gap=UI_MARGIN_S,
-                renderer=draw_elem
             ),
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
-            renderer=draw_elem
         )
 
-        # Bind UI components to `self`
+        # Bind UI components from the main panel to `self`
         self.back_button = back_button
         self.scale_bar = scale_bar
         self.buttons_hbox = buttons_hbox
@@ -280,6 +280,37 @@ class BrowseSystemState(State):
 
         # planet buttons
         self.planet_buttons: list[CircleButton] = []
+
+        # Star/planet hover boxes
+        self.hover_box = Panel(
+            child=VBox(
+                hover_name := Label(
+                    font=self.fonts.ui,
+                    k_fg=ThemeKey.FG
+                ),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="surface temperature:"),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_label_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                ),
+                Spacer(flex=0, min_h=UI_MARGIN_XS),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="radius:"),
+                HBox(
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    hover_label_radius := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
+                ),
+            ),
+            horiz_padding=UI_MARGIN_S,
+            vert_padding=UI_MARGIN_S
+        )
+
+        self.hover_name = hover_name
+        self.hover_label_radius = hover_label_radius
+        self.hover_label_temp = hover_label_temp
+
+        # Habitable zone setup
+        self.hz_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         # refresh labels
         self._adjust_zoom(self.zoom_level)
@@ -407,6 +438,38 @@ class BrowseSystemState(State):
             button.r = r
             button.layout(pg.Rect(x - r, y - r, 2 * r, 2 * r))
 
+    def _refresh_hover_labels(self, name: str, temp: float, radius: float) -> None:
+        """
+        Expects:
+
+        name
+        temp in °K
+        radius in solar radii
+        """
+
+        self.hover_name.set_text(name)
+        self.hover_label_temp.set_text(f"{temp - 273.15:.2f}°C")
+        self.hover_label_radius.set_text(f"{radius * SOLAR_RADIUS_IN_KM:,.0f} km")
+
+        hover_w, hover_h = self.hover_box.preferred_size()
+
+        # Evaluate whether the hover panel needs to be left or right of, and above or below the cursor
+        # Prefer bottom and right, unless there isn't enough space
+        mx, my = pg.mouse.get_pos()
+        right_space, bottom_space = WN_W - mx, WN_H - my
+
+        if right_space >= hover_w + UI_MARGIN_XS:
+            left = mx + UI_MARGIN_XS
+        else:
+            left = mx - hover_w - UI_MARGIN_XS
+
+        if bottom_space >= hover_h + UI_MARGIN_XS:
+            top = my + UI_MARGIN_XS
+        else:
+            top = my - hover_h - UI_MARGIN_XS
+
+        self.hover_box.layout(pg.Rect(left, top, hover_w, hover_h))
+
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
         self._refresh_ui_for_new_system()
@@ -441,6 +504,11 @@ class BrowseSystemState(State):
                 if self.star_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_STAR)
                     return
+                for i, button in enumerate(self.planet_buttons):
+                    if button.check_overlaps(event.pos):
+                        self.game.planet_idx = i
+                        self.game.enter_state(StateID.BROWSE_TERRAIN)
+                        return
                 if self.recentre_button.check_overlaps(event.pos):
                     self.scroll_disp.update(0, 0)
 
@@ -488,10 +556,24 @@ class BrowseSystemState(State):
                 button.k_fg_active = ThemeKey.FG_ACTIVE
 
     def draw(self, screen: pg.Surface) -> None:
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        assert self.game.star_system is not None
+
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
+
+        # Draw the habitable zone
+        centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level
+        centre_y = CENTRE_POS[1] - self.scroll_disp.y / self.zoom_level
+
+        inner, outer = calculate_habitable_zone(self.game.star_system.star.luminosity)
+        inner_r, outer_r = inner / self.zoom_level, outer / self.zoom_level
+
+        if outer_r < CIRCLE_RADIUS_DRAW_LIMIT:
+            self.hz_surface.fill(CLEAR)
+            pg.draw.circle(self.hz_surface, self.game.current_theme()[ThemeKey.FG_HABITABLE_ZONE], (centre_x, centre_y), outer_r)
+            pg.draw.circle(self.hz_surface, CLEAR, (centre_x, centre_y), inner_r)
+            screen.blit(self.hz_surface)
 
         # TODO: add star background parallax effect
-
 
         # Draw the star system
 
@@ -499,19 +581,20 @@ class BrowseSystemState(State):
         assert self.game.star_system is not None
 
         # Draw star and planet buttons
-        draw_elem(screen, self.star_button, self.game.current_theme())
-
+        self.work_surface.fill((0, 0, 0, 0))
+        draw_elem(self.work_surface, self.star_button, self.game.current_theme())
         for button in self.planet_buttons:
-            draw_elem(screen, button, self.game.current_theme())
+            draw_elem(self.work_surface, button, self.game.current_theme())
+
+        screen.blit(self.work_surface)
 
         # Draw distance rings
-        centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level
-        centre_y = CENTRE_POS[1] - self.scroll_disp.y / self.zoom_level
         for distance in DISTANCE_RINGS:
             radius = distance / self.zoom_level
             if INNER_RING_DRAW_LIMIT < radius < CIRCLE_RADIUS_DRAW_LIMIT:
                 # TODO: eventually use pg.draw.arc hopefully so that I can draw the rings at any distance
                 # without compromising performance
+                # or just blit a portion of a larger circle
                 pg.draw.circle(screen, self.game.current_theme()[ThemeKey.FG_SENTINEL], (centre_x, centre_y), radius, 1)
 
                 text_bottom = centre_y - radius - UI_MARGIN_XS
@@ -532,13 +615,34 @@ class BrowseSystemState(State):
         # Drawing the star at a logarithmic scale so that the system remains visible
         # but it shouldn't go below a minimum size
         x, y, r = self._scaled_body_pos(0, 0, self.game.star_system.star.radius)
-        temp_colour = lerp_gradient(self.game.star_system.star.temp, KELVIN_COLOURS)
+        temp_colour = self.game.star_system.star.light_colour
         pg.draw.circle(screen, temp_colour, (x, y), r)
 
         # Draw UI
+        self.work_surface.fill((0, 0, 0, 0))
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.speed_label.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.not_to_scale_label.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.buttons_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
-        draw_elem(screen, self.overlay_panel, self.game.current_theme())
+        draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
+        screen.blit(self.work_surface)
+
+        # Draw hover boxes over planets or stars
+        if self.star_button.check_hovered():
+            self._refresh_hover_labels(
+                name=self.game.star_system.star.name,
+                temp=self.game.star_system.star.temp,
+                radius=self.game.star_system.star.radius
+            )
+            draw_elem(screen, self.hover_box, self.game.current_theme())
+        else:
+            for planet, button in zip(self.game.star_system.planets, self.planet_buttons):
+                if button.check_hovered():
+                    self._refresh_hover_labels(
+                        name=planet.name,
+                        temp=planet.displayed_surface_temp,
+                        radius=planet.radius
+                    )
+                    draw_elem(screen, self.hover_box, self.game.current_theme())
+                    break

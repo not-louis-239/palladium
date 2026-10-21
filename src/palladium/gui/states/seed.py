@@ -34,7 +34,9 @@ from james import (
     VBox,
 )
 
+from palladium.core.constants import WN_H, WN_W
 from palladium.core.utils import random_seed, safe_convert
+from palladium.generation.star_system import generate_star_system
 from palladium.gui.constants import (
     BORDER_W,
     DEFAULT_ATTRS,
@@ -47,8 +49,7 @@ from palladium.gui.constants import (
 )
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey
-from palladium.terrain.star_system import generate_star_system
+from palladium.gui.themes import CLEAR, ThemeKey
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -58,6 +59,7 @@ class SeedState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
         self.is_valid = True
+        self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
@@ -97,7 +99,6 @@ class SeedState(State):
         )
 
         self.panel = Panel(
-            renderer=draw_elem,
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
             child=VBox(
@@ -110,7 +111,6 @@ class SeedState(State):
                         k_fg=ThemeKey.FG
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(min_h=UI_MARGIN_S, flex=0.0),
                 Table(
@@ -121,11 +121,9 @@ class SeedState(State):
                                 font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
-                            renderer=draw_elem
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
                         self.seed_input_box,
-                        renderer=draw_elem
                     ),
                     HBox(
                         SBox(
@@ -134,11 +132,9 @@ class SeedState(State):
                                 font=self.fonts.text,
                                 k_fg=ThemeKey.FG
                             ),
-                            renderer=draw_elem
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
                         self.offset_input_box,
-                        renderer=draw_elem
                     ),
                     column_flexes=[0, 0, 1],
                     cell_renderer=draw_elem,
@@ -149,10 +145,8 @@ class SeedState(State):
                     Spacer(),
                     self.proceed_button,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 gap=UI_MARGIN_S,
-                renderer=draw_elem
             )
         )
 
@@ -194,7 +188,6 @@ class SeedState(State):
             offset = 0
 
         self.game.star_system = generate_star_system(seed, offset)
-
         self.game.enter_state(StateID.BROWSE_SYSTEM)
 
     def on_entered(self) -> None:
@@ -216,5 +209,8 @@ class SeedState(State):
             self._validate()
 
     def draw(self, screen: pg.Surface) -> None:
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
-        draw_elem(screen, self.panel, self.game.current_theme())
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
+
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.panel, self.game.current_theme())
+        screen.blit(self.work_surface)

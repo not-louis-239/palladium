@@ -19,6 +19,7 @@
 
 
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -26,19 +27,22 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 import james
 import pygame as pg
 
-from palladium.core.constants import WN_H, WN_W
-from palladium.game.game import Game
+from palladium.gui.renderer import draw_elem
 
 james.input_box.InputBox.CURSOR_FLASH_INTERVAL = 1.0
+james.set_default_renderer(draw_elem)
+
+from palladium.core.constants import WN_H, WN_W
+from palladium.game.game import Game
 
 
 def main():
     pg.init()
 
-    game = Game()
     screen = pg.display.set_mode((WN_W, WN_H))
     pg.display.set_caption("Palladium")
     clock = pg.time.Clock()
+    game = Game()
 
     running = True
 
@@ -51,10 +55,16 @@ def main():
             if event.type == pg.QUIT:
                 running = False
 
+        t_i = time.time()
         game.update(dt_s)
+        t_update = time.time()
         game.take_input(keys=keys, events=events, dt_s=dt_s)
+        t_input = time.time()
         game.draw(screen)
         pg.display.flip()
+        t_draw = time.time()
+
+        game.profiler.record_snapshot(t_i=t_i, t_update=t_update, t_input=t_input, t_draw=t_draw)
 
     pg.quit()
 

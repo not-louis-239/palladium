@@ -17,8 +17,11 @@
 
 
 import random
-from dataclasses import dataclass
 from enum import StrEnum
+
+from palladium.generation.name_gen import generate_star_name
+from palladium.gui.constants import KELVIN_COLOURS
+from palladium.core.utils import lerp_gradient
 
 SUN_TEMP = 5778.0  # °K
 
@@ -43,21 +46,31 @@ STAR_WEIGHTS: dict[StarType, float] = {
 }
 
 
-@dataclass
 class StarProfile:
-    mass: float  # solar masses
-    radius: float  # solar radii
-    temp: float  # °K
+    def __init__(self, name: str, mass: float, radius: float, temp: float):
+        """
+        Expects:
+            name: str
+            mass: float (solar masses)
+            radius: float (solar radii)
+            temp: float (°K)
+        """
 
-    @property
-    def luminosity(self) -> float:
-        # crude approximation using Stefan-Boltzmann law
-        # returns a luminosity expressed in terms of the Sun
-        return (self.radius ** 2) * ((self.temp / SUN_TEMP) ** 4)
+        self.name = name
+        self.mass = mass
+        self.radius = radius
+        self.temp = temp
+
+        # Calculate light colour.
+        self.light_colour = lerp_gradient(self.temp, KELVIN_COLOURS)
+
+        # Crude approximation using Stefan-Boltzmann law.
+        # Luminosity is expressed in terms of the Sun.
+        self.luminosity = (self.radius ** 2) * ((self.temp / SUN_TEMP) ** 4)
 
 
-def generate_star_profile(seed: int) -> StarProfile:
-    inst = random.Random(seed)
+def generate_star_profile(seed_int: int) -> StarProfile:
+    inst = random.Random(seed_int)
 
     population = list(STAR_WEIGHTS.keys())
     weights = list(STAR_WEIGHTS.values())
@@ -102,7 +115,10 @@ def generate_star_profile(seed: int) -> StarProfile:
             mass = radius * inst.uniform(50, 75)
             temp = 10 ** inst.uniform(3.9, 4.3)
 
-    return StarProfile(mass=mass, radius=radius, temp=temp)
+    # Generate name
+    name = generate_star_name(seed_int)
+
+    return StarProfile(name=name, mass=mass, radius=radius, temp=temp)
 
 
 def _test():
@@ -110,12 +126,12 @@ def _test():
     # using 0 as a placeholder for mass since the Stefan-Boltzmann law doesn't actually seem
     # to care about it.
     test_cases = [
-        StarProfile(0, 0.01, 40_000),  # white dwarf
-        StarProfile(0, 0.5, 2_300),  # red dwarf
-        StarProfile(0, 0.7, 3_900),  # yellow dwarf
-        StarProfile(0, 1, 6000),  # sun
-        StarProfile(0, 1.8, 10_000),  # giant
-        StarProfile(0, 6.6, 33_000)  # supergiant
+        StarProfile("Dummy", 0, 0.01, 40_000),  # white dwarf
+        StarProfile("Dummy", 0, 0.5, 2_300),  # red dwarf
+        StarProfile("Dummy", 0, 0.7, 3_900),  # yellow dwarf
+        StarProfile("Dummy", 0, 1, 6000),  # sun
+        StarProfile("Dummy", 0, 1.8, 10_000),  # giant
+        StarProfile("Dummy", 0, 6.6, 33_000)  # supergiant
     ]
 
     column_widths = (10, 10, 10)

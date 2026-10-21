@@ -13,16 +13,11 @@
 # limitations under the License.
 
 
-from itertools import pairwise
 
 import pygame as pg
 
-from palladium.core.custom_types import AColour, Colour
-from palladium.core.utils import clamp
-from palladium.gui.constants import CIRCLE_RADIUS_DRAW_LIMIT
-from palladium.gui.constants import KELVIN_COLOURS
-from palladium.terrain.star_gen import StarProfile
-from palladium.terrain.star_system import SeedMetadata
+from palladium.core.custom_types import AColour
+from palladium.generation.star_system import SeedMetadata
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:
@@ -33,34 +28,6 @@ def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -
     rect_surface = pg.Surface(rect.size, pg.SRCALPHA)
     rect_surface.fill(colour)
     surface.blit(rect_surface, rect)
-
-
-def lerp_gradient(val: float, grad: dict[float, Colour]) -> Colour:
-    """Returns a Colour determined by the anchor points in `grad`.
-    If val < grad[0], returns the first anchor.
-    If val > grad[-1], returns the last colour."""
-
-    if not grad:
-        raise ValueError("grad requires at least one value-colour pair")
-
-    keys = sorted(grad)
-    if val <= keys[0]:
-        return grad[keys[0]]
-    if val >= keys[-1]:
-        return grad[keys[-1]]
-
-    for k1, k2 in pairwise(keys):
-        if k1 <= val <= k2:
-            t = (val - k1) / (k2 - k1)
-            c1, c2 = grad[k1], grad[k2]
-            return lerp_colours(c1, c2, t)
-
-    return grad[keys[-1]]
-
-
-def draw_star(screen: pg.Surface, star: StarProfile, zoom_level: float, pos: tuple[int, int]) -> None:
-    temp_colour = lerp_gradient(star.temp, KELVIN_COLOURS)
-    pg.draw.circle(screen, temp_colour, pos, min(CIRCLE_RADIUS_DRAW_LIMIT, star.radius / zoom_level))
 
 
 def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:
@@ -86,10 +53,3 @@ def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:
         seed_int_label = ""
 
     return (seed_str, offset_text, seed_int_label)
-
-
-def lerp_colours(c1: Colour, c2: Colour, t: float) -> Colour:
-    t = clamp(t, 0, 1)
-    return tuple(
-        int(c1[x] + t * (c2[x] - c1[x])) for x in range(len(c1))  # type: ignore
-    )

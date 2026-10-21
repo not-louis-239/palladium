@@ -28,7 +28,7 @@ from palladium.core.constants import WN_H, WN_W
 from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey
+from palladium.gui.themes import CLEAR, ThemeKey
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -47,6 +47,8 @@ LAYERS = [(
 class TitleState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
+
+        self.work_surface = pg.Surface(SCREEN_RECT.size, pg.SRCALPHA)
 
         star_rng = random.Random(STAR_BG_SEED)
         star_positions = [
@@ -70,7 +72,6 @@ class TitleState(State):
         )
 
         self.panel = Panel(
-            renderer=draw_elem,
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
             child=VBox(
@@ -83,17 +84,14 @@ class TitleState(State):
                         k_fg=ThemeKey.FG,
                     ),
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
                 HBox(
                     Spacer(),
                     self.begin_button,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 Spacer(),
-                renderer=draw_elem
             ),
         )
 
@@ -112,6 +110,9 @@ class TitleState(State):
                     self.game.enter_state(StateID.ENTER_SEED)
 
     def draw(self, screen: pg.Surface) -> None:
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
         screen.blit(self.star_overlay_surface)
-        draw_elem(screen, self.panel, self.game.current_theme())
+
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.panel, self.game.current_theme())
+        screen.blit(self.work_surface)

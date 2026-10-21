@@ -25,12 +25,18 @@ from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
-from palladium.gui.constants import ICON_SIZE, SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S
+from palladium.gui.constants import (
+    CIRCLE_RADIUS_DRAW_LIMIT,
+    ICON_SIZE,
+    SCREEN_RECT,
+    UI_MARGIN_M,
+    UI_MARGIN_S,
+)
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
-from palladium.gui.utils import draw_star, draw_transparent_rect, get_seed_messages
+from palladium.gui.utils import draw_transparent_rect, get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -177,61 +183,54 @@ class BrowseStarState(State):
             self.seed_label,
             self.offset_label,
             self.seed_int_label,
-            renderer=draw_elem,
             padding=UI_MARGIN_S
         )
 
         self.info_vbox = VBox(
             Label(
-                text="surface temperature",
+                text="surface temperature:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.temp_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="radius",
+                text="radius:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.radius_label,
-                renderer=draw_elem
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.radius_km_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="mass",
+                text="mass:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.mass_label,
-                renderer=draw_elem
             ),
             Spacer(flex=0.0, min_h=UI_MARGIN_S),
             Label(
-                text="luminosity",
+                text="luminosity:",
                 font=self.fonts.text,
                 k_fg=ThemeKey.FG
             ),
             HBox(
                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
                 self.luminosity_label,
-                renderer=draw_elem
             ),
             padding=UI_MARGIN_S,
-            renderer=draw_elem
         )
 
         self.zoom_hbox = HBox(
@@ -239,7 +238,6 @@ class BrowseStarState(State):
             self.zoom_out_button,
             padding=UI_MARGIN_S,
             gap=UI_MARGIN_S,
-            renderer=draw_elem
         )
 
         # TODO: fix potential text overflow in some places
@@ -250,34 +248,27 @@ class BrowseStarState(State):
                     HBox(
                         self.header_hbox,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     Spacer(),
                     HBox(
                         self.zoom_hbox,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     HBox(
                         self.scale_bar,
                         Spacer(),
-                        renderer=draw_elem
                     ),
                     gap=UI_MARGIN_S,
-                    renderer=draw_elem,
                 ),
                 Spacer(),
                 VBox(
                     self.info_vbox,
                     Spacer(),
-                    renderer=draw_elem
                 ),
                 gap=UI_MARGIN_M,
-                renderer=draw_elem
             ),
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
-            renderer=draw_elem
         )
 
         # Initialise the scale bar
@@ -364,10 +355,17 @@ class BrowseStarState(State):
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
 
-        screen.fill(self.game.current_theme()[ThemeKey.BG])
+        screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
         # Draw star
-        draw_star(screen, self.game.star_system.star, self.zoom_level, (WN_W // 2, WN_H // 2))
+        pg.draw.circle(
+            screen, self.game.star_system.star.light_colour,
+            (WN_W // 2, WN_H // 2),
+            min(
+                CIRCLE_RADIUS_DRAW_LIMIT,
+                self.game.star_system.star.radius / self.zoom_level
+            )
+        )
 
         # Draw overlay panel and transparent rects for improved contrast
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.zoom_hbox.rect)
