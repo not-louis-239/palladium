@@ -30,7 +30,8 @@ UI_MARGIN_XS = 7
 UI_MARGIN_S = 15
 UI_MARGIN_M = 32
 
-ICON_SIZE = 64
+ICON_SIZE_L = 64
+ICON_SIZE_S = 32
 
 SCREEN_RECT = pg.Rect(0, 0, WN_W, WN_H)
 
@@ -48,10 +49,10 @@ class UIKwargs(TypedDict, total=False):
     inset: int
 
 DEFAULT_ATTRS: UIKwargs = {
-    "k_bg_colour": ThemeKey.BG,
+    "k_bg_colour": ThemeKey.BG_ELEMS,
     "k_bg_hovered": ThemeKey.BG_HOVERED,
     "k_bg_active": ThemeKey.BG_ACTIVE,
-    "k_fg_colour": ThemeKey.FG,
+    "k_fg_colour": ThemeKey.FG_ELEMS,
     "k_fg_hovered": ThemeKey.FG_HOVERED,
     "k_fg_active": ThemeKey.FG_ACTIVE,
     "k_border_colour": ThemeKey.BORDER,
@@ -61,7 +62,7 @@ DEFAULT_ATTRS: UIKwargs = {
 }
 
 DEFAULT_INPUT_BOX_ATTRS: UIKwargs = {
-    "k_bg_colour": ThemeKey.BG,
+    "k_bg_colour": ThemeKey.BG_ELEMS,
     "k_bg_hovered": ThemeKey.BG_HOVERED,
     "k_bg_active": ThemeKey.BG_ACTIVE,
     "k_fg_colour": ThemeKey.FG_INPUT_TEXT,

@@ -81,7 +81,7 @@ class TitleState(State):
                     Label(
                         text="palladium",
                         font=self.fonts.title,
-                        k_fg=ThemeKey.FG,
+                        k_fg=ThemeKey.FG_ELEMS,
                     ),
                     Spacer(),
                 ),

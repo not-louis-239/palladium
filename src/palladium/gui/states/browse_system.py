@@ -38,7 +38,8 @@ from palladium.generation.star_system import generate_star_system
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
-    ICON_SIZE,
+    ICON_SIZE_L,
+    ICON_SIZE_S,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -131,8 +132,8 @@ class BrowseSystemState(State):
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
-            r=0 + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG,
-            k_bg_colour=ThemeKey.BG,
+            r=0 + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG_ELEMS,
+            k_bg_colour=ThemeKey.BG_ELEMS,
             k_bg_hovered=ThemeKey.BG_HOVERED,
             k_bg_active=ThemeKey.BG_ACTIVE
         )
@@ -142,7 +143,7 @@ class BrowseSystemState(State):
                 HBox(
                     back_button := CircleButton(
                         **DEFAULT_ATTRS,
-                        r=ICON_SIZE // 2,
+                        r=ICON_SIZE_L // 2,
                         img_path=self.images.back,
                         font=self.fonts.ui
                     ),
@@ -151,7 +152,7 @@ class BrowseSystemState(State):
                         Label(
                             text="star system ",
                             font=self.fonts.text,
-                            k_fg=ThemeKey.FG
+                            k_fg=ThemeKey.FG_ELEMS
                         ),
                         seed_label := Label(
                             text="",
@@ -176,42 +177,42 @@ class BrowseSystemState(State):
                 HBox(
                     buttons_hbox := HBox(
                         zoom_in_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             img_path=self.images.zoom_in,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
                         zoom_out_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             img_path=self.images.zoom_out,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
                         slow_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             img_path=self.images.backward,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
                         fast_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             img_path=self.images.forward,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
                         recentre_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             img_path=self.images.recentre,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
@@ -224,7 +225,7 @@ class BrowseSystemState(State):
                     speed_label := HBox(
                         speed_text_label := Label(
                             font=self.fonts.text,
-                            k_fg=ThemeKey.FG,
+                            k_fg=ThemeKey.FG_ELEMS,
                         ),
                         speed_mult_label := Label(
                             font=self.fonts.text,
@@ -236,7 +237,7 @@ class BrowseSystemState(State):
                 ),
                 HBox(
                     scale_bar := ScaleBar(
-                        k_fg=ThemeKey.FG,
+                        k_fg=ThemeKey.FG_ELEMS,
                         bar_width=round(1 / self.zoom_level),
                         text="",
                         font=self.fonts.text,
@@ -248,7 +249,7 @@ class BrowseSystemState(State):
                         text="star and planet sizes not to scale",
                         font=self.fonts.text,
                         inset=UI_MARGIN_S,
-                        k_fg=ThemeKey.FG
+                        k_fg=ThemeKey.FG_ELEMS
                     ),
                 ),
 
@@ -286,16 +287,16 @@ class BrowseSystemState(State):
             child=VBox(
                 hover_name := Label(
                     font=self.fonts.ui,
-                    k_fg=ThemeKey.FG
+                    k_fg=ThemeKey.FG_ELEMS
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="surface temperature:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS, text="surface temperature:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="radius:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS, text="radius:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_radius := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -401,8 +402,8 @@ class BrowseSystemState(State):
         for i in range(len(self.game.star_system.planets)):
             self.planet_buttons.append(CircleButton(
                 r=0, font=self.fonts.text,
-                k_bg_colour=ThemeKey.BG, k_bg_hovered=ThemeKey.BG_HOVERED, k_bg_active=ThemeKey.BG_ACTIVE,
-                k_fg_colour=ThemeKey.FG
+                k_bg_colour=ThemeKey.BG_ELEMS, k_bg_hovered=ThemeKey.BG_HOVERED, k_bg_active=ThemeKey.BG_ACTIVE,
+                k_fg_colour=ThemeKey.FG_ELEMS
             ))
 
         self._refresh_body_buttons()
@@ -551,7 +552,7 @@ class BrowseSystemState(State):
                 button.k_fg_hovered = ThemeKey.FG_SENTINEL
                 button.k_fg_active = ThemeKey.FG_SENTINEL
             else:
-                button.k_fg_colour = ThemeKey.FG
+                button.k_fg_colour = ThemeKey.FG_ELEMS
                 button.k_fg_hovered = ThemeKey.FG_HOVERED
                 button.k_fg_active = ThemeKey.FG_ACTIVE
 

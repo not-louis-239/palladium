@@ -31,11 +31,11 @@ TRANSLUCENT_BLACK: AColour = (0, 0, 0, 170)
 class ThemeKey(StrEnum):
     BG_SCREEN = "BG_SCREEN"  # this is screen background
 
-    BG = "BG"
+    BG_ELEMS = "BG"
     BG_HOVERED = "BG_HOVERED"
     BG_ACTIVE = "BG_ACTIVE"
 
-    FG = "FG"
+    FG_ELEMS = "FG"
     FG_HOVERED = "FG_HOVERED"
     FG_ACTIVE = "FG_ACTIVE"
 
@@ -77,11 +77,11 @@ THEMES = [
     Theme("Dark", {
         ThemeKey.BG_SCREEN: (12, 12, 24),
 
-        ThemeKey.BG: (0, 0, 0, 0),
+        ThemeKey.BG_ELEMS: (0, 0, 0, 0),
         ThemeKey.BG_HOVERED: (210, 210, 255, 20),
         ThemeKey.BG_ACTIVE: (210, 210, 255, 30),
 
-        ThemeKey.FG: (210, 210, 255),
+        ThemeKey.FG_ELEMS: (210, 210, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),
         ThemeKey.FG_ACTIVE: (255, 255, 255),
 

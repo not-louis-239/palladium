@@ -33,7 +33,7 @@ from palladium.generation.biomes import BIOME_COLOURS, BIOME_PROFILES
 from palladium.generation.planet import Planet
 from palladium.generation.terrain_gen import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
-    ICON_SIZE,
+    ICON_SIZE_S,
     BORDER_W,
     SCREEN_RECT,
     UI_MARGIN_M,
@@ -154,7 +154,7 @@ class BrowseTerrainState(State):
                     loading_label := Label(
                         text="Generating planet terrain...",
                         font=self.fonts.ui,
-                        k_fg=ThemeKey.FG,
+                        k_fg=ThemeKey.FG_ELEMS,
                         inset=UI_MARGIN_S
                     ),
                     Spacer()
@@ -170,10 +170,10 @@ class BrowseTerrainState(State):
                 HBox(
                     seed_hbox := HBox(
                         back_button := CircleButton(
-                            r=ICON_SIZE // 4,
+                            r=ICON_SIZE_S // 2,
                             font=self.fonts.text,
                             img_path=self.images.back,
-                            k_fg_colour=ThemeKey.FG,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
                             k_fg_hovered=ThemeKey.FG_HOVERED,
                             k_fg_active=ThemeKey.FG_ACTIVE
                         ),
@@ -197,6 +197,26 @@ class BrowseTerrainState(State):
                     ),
                     Spacer(),
                 ),
+                Spacer(),
+                HBox(
+                    info_hbox := HBox(
+                        info_button := CircleButton(
+                            r=ICON_SIZE_S // 2,
+                            font=self.fonts.ui,
+                            k_fg_colour=ThemeKey.FG_ELEMS,
+                            k_fg_hovered=ThemeKey.FG_HOVERED,
+                            k_fg_active=ThemeKey.FG_ACTIVE,
+                            img_path=self.images.info
+                        ),
+                        planet_name_label := Label(
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ELEMS,
+                        ),
+                        padding=UI_MARGIN_S,
+                        gap=UI_MARGIN_S
+                    ),
+                    Spacer()
+                )
             ),
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
@@ -204,27 +224,27 @@ class BrowseTerrainState(State):
 
         self.hover_panel = Panel(
             child=VBox(
-                hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG),
+                hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="surface temperature:", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="surface temperature:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_surface_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="altitude:", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="altitude:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_altitude := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="humidity:", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="humidity:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_humidity := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="biome:", font=self.fonts.text, k_fg=ThemeKey.FG),
+                Label(text="biome:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_biome := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -247,13 +267,17 @@ class BrowseTerrainState(State):
         self.hover_altitude = hover_altitude
         self.hover_biome = hover_biome
 
+        self.info_hbox = info_hbox
+        self.info_button = info_button
+        self.planet_name_label = planet_name_label
+
         self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
 
     def _refresh_planet_surface(self) -> None:
         t_i = time.time()  # DEBUG
 
-        planet = self.current_planet()
+        planet = self.game.current_planet()
         assert planet.surface is not None
         assert self.game.star_system is not None
 
@@ -317,19 +341,26 @@ class BrowseTerrainState(State):
     def _refresh_for_new_planet(self) -> None:
         assert self.game.star_system is not None
 
+        # Update labels
         seed_str, offset_text, seed_int_str = get_seed_messages(self.game.star_system.seed_metadata)
         self.seed_label.set_text(seed_str)
         self.seed_int_label.set_text(seed_int_str)
         self.offset_label.set_text(offset_text)
+
+        self.planet_name_label.set_text(self.game.current_planet().name)
+
+        # Layout
         self.panel.layout(SCREEN_RECT)
 
-        if self.current_planet().surface is None:
-            self.current_planet().generate_surface()
+        # Generate planet surface if not present
+        if self.game.current_planet().surface is None:
+            self.game.current_planet().generate_surface()
 
+        # Refresh planet surface view
         self._refresh_planet_surface()
 
     def _refresh_hover_panel(self) -> None:
-        planet = self.current_planet()
+        planet = self.game.current_planet()
         assert planet.surface is not None
 
         # Get the cell
@@ -373,11 +404,6 @@ class BrowseTerrainState(State):
 
         self.hover_panel.layout(pg.Rect(left, top, hover_w, hover_h))
 
-    def current_planet(self) -> Planet:
-        assert self.game.star_system is not None
-        assert self.game.planet_idx is not None
-        return self.game.star_system.planets[self.game.planet_idx]
-
     def on_entered(self) -> None:
         self._refresh_for_new_planet()
 
@@ -389,6 +415,9 @@ class BrowseTerrainState(State):
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if self.back_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
+                    return
+                if self.info_button.check_overlaps(event.pos):
+                    self.game.enter_state(StateID.PLANET_INFO)
 
             if event.type == pg.KEYDOWN and event.key == Controls.CHANGE_VIEW_MODE:
                 self.view_mode = (self.view_mode + 1) % _NUM_VIEW_MODES
@@ -402,9 +431,10 @@ class BrowseTerrainState(State):
 
         # Draw overlay panel
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.seed_hbox.rect)
+        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_hbox.rect)
         draw_elem(screen, self.panel, self.game.current_theme())
 
-        if pg.mouse.get_pressed()[0]:
+        if pg.mouse.get_pressed()[0] and not self.info_button.check_hovered():
             self._refresh_hover_panel()
             draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.hover_panel.rect)
             draw_elem(screen, self.hover_panel, self.game.current_theme())

@@ -21,6 +21,7 @@ from . import (
     browse_star,
     browse_system,
     browse_terrain,
+    planet_info,
     prefs,
     saved_seeds,
     seed,
@@ -35,5 +36,6 @@ SeedState = seed.SeedState
 BrowseSystemState = browse_system.BrowseSystemState
 BrowseStarState = browse_star.BrowseStarState
 BrowseTerrainState = browse_terrain.BrowseTerrainState
+PlanetInfoState = planet_info.PlanetInfoState
 SavedSeedsState = saved_seeds.SavedSeedsState
 PreferencesState = prefs.PreferencesState

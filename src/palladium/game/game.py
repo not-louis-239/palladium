@@ -26,6 +26,7 @@ from palladium.gui.states import (
     BrowseStarState,
     BrowseSystemState,
     BrowseTerrainState,
+    PlanetInfoState,
     PreferencesState,
     SavedSeedsState,
     SeedState,
@@ -34,6 +35,7 @@ from palladium.gui.states import (
     TitleState,
 )
 from palladium.gui.themes import THEMES, Theme
+from palladium.generation.planet import Planet
 
 
 class Game:
@@ -49,6 +51,7 @@ class Game:
             StateID.BROWSE_SYSTEM: BrowseSystemState(self),
             StateID.BROWSE_STAR: BrowseStarState(self),
             StateID.BROWSE_TERRAIN: BrowseTerrainState(self),
+            StateID.PLANET_INFO: PlanetInfoState(self),
             StateID.SAVED_SEEDS: SavedSeedsState(self),
             StateID.PREFS: PreferencesState(self)
         }
@@ -57,12 +60,18 @@ class Game:
         self.theme_idx = 0
         self.profiler = Profiler(self)
 
+    def current_theme(self) -> Theme:
+        return THEMES[self.theme_idx]
+
+    def current_planet(self) -> Planet:
+        """Do not call this until a star system and planet has been selected."""
+        assert self.star_system is not None
+        assert self.planet_idx is not None
+        return self.star_system.planets[self.planet_idx]
+
     def enter_state(self, state: StateID) -> None:
         self.state = state
         self.states[self.state].on_entered()
-
-    def current_theme(self) -> Theme:
-        return THEMES[self.theme_idx]
 
     def update(self, dt_s: float) -> None:
         self.states[self.state].update(dt_s)

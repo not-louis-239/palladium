@@ -30,6 +30,7 @@ class Images:
         self.zoom_out = IMAGES_DIR / "zoom_out.png"
         self.forward = IMAGES_DIR / "forward.png"
         self.backward = IMAGES_DIR / "backward.png"
+        self.info = IMAGES_DIR / "info.png"
 
 
 class Fonts:

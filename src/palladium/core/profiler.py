@@ -72,11 +72,11 @@ class Profiler:
 
         # Draw markers on the front overlay surface
         font = self.game.assets.fonts.tips
-        font_colour = self.game.current_theme()[ThemeKey.FG]
+        font_colour = self.game.current_theme()[ThemeKey.FG_ELEMS]
 
         for marker in FPS_MARKERS:
             marker_h = WN_H - int(PIXELS_PER_SECOND / marker)
-            pg.draw.line(self.front_overlay_surface, self.game.current_theme()[ThemeKey.FG], (0, marker_h), (WN_W, marker_h))
+            pg.draw.line(self.front_overlay_surface, self.game.current_theme()[ThemeKey.FG_ELEMS], (0, marker_h), (WN_W, marker_h))
             text_left, text_top = UI_MARGIN_XS, marker_h + UI_MARGIN_XS
             text = f"{marker:.0f} fps"
             self.front_overlay_surface.blit(font.render(text, True, font_colour), (text_left, text_top))
@@ -130,7 +130,7 @@ class Profiler:
 
         # Show aggregate statistics
         font = self.game.assets.fonts.tips
-        colour = self.game.current_theme()[ThemeKey.FG]
+        colour = self.game.current_theme()[ThemeKey.FG_ELEMS]
         graph_top = WN_H - int(PIXELS_PER_SECOND / min(FPS_MARKERS))
 
         total_times = [snap.t_draw - snap.t_i for snap in self.snapshots]
@@ -166,6 +166,6 @@ class Profiler:
 
         # FPS summary
         surface.blit(
-            s := font.render(f"{self.fps():.2f} fps", True, self.game.current_theme()[ThemeKey.FG]),
+            s := font.render(f"{self.fps():.2f} fps", True, self.game.current_theme()[ThemeKey.FG_ELEMS]),
             s.get_rect(bottom=bottom, left=UI_MARGIN_XS)
         )

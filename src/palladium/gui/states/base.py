@@ -34,6 +34,7 @@ class StateID(StrEnum):
     BROWSE_SYSTEM = "browse_system"
     BROWSE_STAR = "browse_star"
     BROWSE_TERRAIN = "browse_terrain"
+    PLANET_INFO = "planet_info"
     SAVED_SEEDS = "saved_seeds"
     PREFS = "prefs"
 

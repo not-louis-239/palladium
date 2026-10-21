@@ -41,7 +41,7 @@ from palladium.gui.constants import (
     BORDER_W,
     DEFAULT_ATTRS,
     DEFAULT_INPUT_BOX_ATTRS,
-    ICON_SIZE,
+    ICON_SIZE_L,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -63,7 +63,7 @@ class SeedState(State):
 
         self.back_button = CircleButton(
             **DEFAULT_ATTRS,
-            r=ICON_SIZE // 2,
+            r=ICON_SIZE_L // 2,
             font=game.assets.fonts.ui,
             img_path=game.assets.images.back
         )
@@ -108,7 +108,7 @@ class SeedState(State):
                     Label(
                         text="generation",
                         font=self.fonts.heading,
-                        k_fg=ThemeKey.FG
+                        k_fg=ThemeKey.FG_ELEMS
                     ),
                     Spacer(),
                 ),
@@ -119,7 +119,7 @@ class SeedState(State):
                             Label(
                                 text="seed",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG
+                                k_fg=ThemeKey.FG_ELEMS
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
@@ -130,7 +130,7 @@ class SeedState(State):
                             Label(
                                 text="offset",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG
+                                k_fg=ThemeKey.FG_ELEMS
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
@@ -174,7 +174,7 @@ class SeedState(State):
             self.proceed_button.k_fg_active = ThemeKey.FG_SENTINEL
         else:
             self.proceed_button.disabled = False
-            self.proceed_button.k_fg_colour = ThemeKey.FG
+            self.proceed_button.k_fg_colour = ThemeKey.FG_ELEMS
             self.proceed_button.k_fg_hovered = ThemeKey.FG_HOVERED
             self.proceed_button.k_fg_active = ThemeKey.FG_ACTIVE
 
