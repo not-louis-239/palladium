@@ -41,7 +41,7 @@ from palladium.gui.constants import (
     BORDER_W,
     DEFAULT_ATTRS,
     DEFAULT_INPUT_BOX_ATTRS,
-    ICON_SIZE_L,
+    ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -68,7 +68,7 @@ class SeedState(State):
                 HBox(
                     back_button := CircleButton(
                         **DEFAULT_ATTRS,
-                        r=ICON_SIZE_L // 2,
+                        r=ICON_SIZE // 2,
                         font=game.assets.fonts.ui,
                         img_path=game.assets.images.back
                     ),

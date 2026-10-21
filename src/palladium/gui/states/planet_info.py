@@ -27,10 +27,10 @@ from pygame.key import ScancodeWrapper
 from james import Panel, ScrollableDisplay, CircleButton, Spacer, VBox, HBox, Label
 
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey, TRANSLUCENT_BLACK
-from palladium.gui.utils import get_seed_messages, draw_transparent_rect
+from palladium.gui.themes import ThemeKey, CLEAR
+from palladium.gui.utils import get_seed_messages
 from palladium.gui.renderer import draw_elem
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, ICON_SIZE_S
+from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, ICON_SIZE, DEFAULT_ATTRS_DARK_BG
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -40,6 +40,11 @@ class PlanetInfoState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
+        self.work_surface = pg.Surface(SCREEN_RECT.size, pg.SRCALPHA)
+
+        self._setup_ui()
+
+    def _setup_ui(self) -> None:
         self.info_panel = Panel(
             child=ScrollableDisplay(
                 child=VBox()
@@ -51,16 +56,14 @@ class PlanetInfoState(State):
         self.overlay_panel = Panel(
             child=VBox(
                 HBox(
+                    back_button := CircleButton(
+                        r=ICON_SIZE // 2,
+                        font=self.fonts.text,
+                        img_path=self.images.back,
+                        **DEFAULT_ATTRS_DARK_BG,
+                    ),
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
                     seed_hbox := HBox(
-                        back_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
-                            font=self.fonts.text,
-                            img_path=self.images.back,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
-                        ),
-                        Spacer(flex=0, min_w=UI_MARGIN_S),
                         seed_label := Label(
                             text="",
                             font=self.fonts.text,
@@ -77,6 +80,7 @@ class PlanetInfoState(State):
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
                         padding=UI_MARGIN_S,
+                        k_bg_colour=ThemeKey.BG_DARK,
                     ),
                     Spacer(),
                 ),
@@ -125,6 +129,10 @@ class PlanetInfoState(State):
     def draw(self, screen: Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.seed_hbox.rect)
-        draw_elem(screen, self.info_panel, self.game.current_theme())
-        draw_elem(screen, self.overlay_panel, self.game.current_theme())
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.info_panel, self.game.current_theme())
+        screen.blit(self.work_surface)
+
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
+        screen.blit(self.work_surface)

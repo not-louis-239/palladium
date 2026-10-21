@@ -27,8 +27,8 @@ from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
-    ICON_SIZE_L,
-    ICON_SIZE_S,
+    DEFAULT_ATTRS_DARK_BG,
+    ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -36,8 +36,8 @@ from palladium.gui.constants import (
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
-from palladium.gui.utils import draw_transparent_rect, get_seed_messages
+from palladium.gui.themes import CLEAR, ThemeKey
+from palladium.gui.utils import get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -91,6 +91,8 @@ class BrowseStarState(State):
         super().__init__(game)
 
         self.zoom_level = 0.015  # solar radii per pixel
+        self.work_surface = pg.Surface(SCREEN_RECT.size, pg.SRCALPHA)
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -100,61 +102,58 @@ class BrowseStarState(State):
             child=HBox(
                 VBox(
                     HBox(
-                        header_hbox := HBox(
+                        HBox(
                             back_button := CircleButton(
-                                r=ICON_SIZE_S // 2,
+                                r=ICON_SIZE // 2,
                                 img_path=self.images.back,
                                 font=self.fonts.heading,
-                                k_fg_colour=ThemeKey.FG_ELEMS,
-                                k_fg_hovered=ThemeKey.FG_HOVERED,
-                                k_fg_active=ThemeKey.FG_ACTIVE
+                                **DEFAULT_ATTRS_DARK_BG,
                             ),
                             Spacer(min_w=UI_MARGIN_S),
-                            seed_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT,
+                            HBox(
+                                seed_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT,
+                                ),
+                                offset_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT2,
+                                ),
+                                seed_int_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_SENTINEL,
+                                ),
+                                k_bg_colour=ThemeKey.BG_DARK,
+                                padding=UI_MARGIN_S
                             ),
-                            offset_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT2,
-                            ),
-                            seed_int_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_SENTINEL,
-                            ),
-                            padding=UI_MARGIN_S
                         ),
                         Spacer(),
                     ),
                     Spacer(),
                     HBox(
-                        zoom_hbox := HBox(
+                        HBox(
                             zoom_in_button := CircleButton(
-                                r=ICON_SIZE_S // 2,
+                                r=ICON_SIZE // 2,
                                 img_path=self.images.zoom_in,
                                 font=self.fonts.heading,
-                                k_fg_colour=ThemeKey.FG_ELEMS,
-                                k_fg_hovered=ThemeKey.FG_HOVERED,
-                                k_fg_active=ThemeKey.FG_ACTIVE
+                                **DEFAULT_ATTRS_DARK_BG,
                             ),
                             zoom_out_button := CircleButton(
-                                r=ICON_SIZE_S // 2,
+                                r=ICON_SIZE // 2,
                                 img_path=self.images.zoom_out,
                                 font=self.fonts.heading,
-                                k_fg_colour=ThemeKey.FG_ELEMS,
-                                k_fg_hovered=ThemeKey.FG_HOVERED,
-                                k_fg_active=ThemeKey.FG_ACTIVE
+                                **DEFAULT_ATTRS_DARK_BG,
                             ),
-                            padding=UI_MARGIN_S,
                             gap=UI_MARGIN_S,
                         ),
                         Spacer(),
                     ),
                     HBox(
                         scale_bar := ScaleBar(
+                            k_bg=ThemeKey.BG_DARK,
                             k_fg=ThemeKey.FG_ELEMS,
                             bar_width=round(1 / self.zoom_level),
                             text="",
@@ -233,6 +232,7 @@ class BrowseStarState(State):
                             ),
                         ),
                         padding=UI_MARGIN_S,
+                        k_bg_colour=ThemeKey.BG_DARK
                     ),
                     Spacer(),
                 ),
@@ -254,7 +254,6 @@ class BrowseStarState(State):
         self.back_button = back_button
         self.zoom_in_button = zoom_in_button
         self.zoom_out_button = zoom_out_button
-        self.header_hbox = header_hbox
         self.info_vbox = info_vbox
 
         # Initialise the scale bar
@@ -353,8 +352,7 @@ class BrowseStarState(State):
             )
         )
 
-        # Draw overlay panel and transparent rects for improved contrast
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_vbox.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
-        draw_elem(screen, self.overlay_panel, self.game.current_theme())
+        # Draw overlay panel
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
+        screen.blit(self.work_surface)

@@ -30,10 +30,9 @@ from palladium.core.constants import Controls
 from palladium.core.custom_types import Colour
 from palladium.core.utils import lerp_gradient_array, map_range
 from palladium.generation.biomes import BIOME_COLOURS, BIOME_PROFILES
-from palladium.generation.planet import Planet
 from palladium.generation.terrain_gen import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
-    ICON_SIZE_S,
+    ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -43,9 +42,9 @@ from palladium.gui.constants import (
 )
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.themes import CLEAR, ThemeKey
+from palladium.gui.constants import DEFAULT_ATTRS_DARK_BG
 from palladium.gui.utils import (
-    draw_transparent_rect,
     get_seed_messages,
 )
 
@@ -144,39 +143,22 @@ class BrowseTerrainState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
         self.view_mode = _ViewMode.FANCY
+        self.work_surface = pg.Surface(SCREEN_RECT.size, pg.SRCALPHA)
 
-        self.loading_overlay_panel = Panel(
-            child=VBox(
-                Spacer(),
-                HBox(
-                    Spacer(),
-                    loading_label := Label(
-                        text="Generating planet terrain...",
-                        font=self.fonts.ui,
-                        k_fg=ThemeKey.FG_ELEMS,
-                        inset=UI_MARGIN_S
-                    ),
-                    Spacer()
-                ),
-                Spacer()
-            )
-        )
-        self.loading_label = loading_label
-        self.loading_overlay_panel.layout(SCREEN_RECT)
+        self._setup_ui()
 
+    def _setup_ui(self) -> None:
         self.panel = Panel(
             child=VBox(
                 HBox(
-                    seed_hbox := HBox(
-                        back_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
-                            font=self.fonts.text,
-                            img_path=self.images.back,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
-                        ),
-                        Spacer(flex=0, min_w=UI_MARGIN_S),
+                    back_button := CircleButton(
+                        r=ICON_SIZE // 2,
+                        font=self.fonts.text,
+                        img_path=self.images.back,
+                        **DEFAULT_ATTRS_DARK_BG,
+                    ),
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    HBox(
                         seed_label := Label(
                             text="",
                             font=self.fonts.text,
@@ -192,29 +174,35 @@ class BrowseTerrainState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
+                        k_bg_colour=ThemeKey.BG_DARK,
                         padding=UI_MARGIN_S,
                     ),
                     Spacer(),
+                    hide_terrain_button := CircleButton(
+                        r=ICON_SIZE // 2,
+                        font=self.fonts.text,
+                        **DEFAULT_ATTRS_DARK_BG,
+                        img_path=self.images.eye_crossed_out,
+                    )
                 ),
                 Spacer(),
                 HBox(
-                    info_hbox := HBox(
+                    HBox(
                         info_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             font=self.fonts.ui,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE,
+                            **DEFAULT_ATTRS_DARK_BG,
                             img_path=self.images.info
                         ),
                         planet_name_label := Label(
-                            font=self.fonts.text,
+                            k_bg=ThemeKey.BG_DARK,
                             k_fg=ThemeKey.FG_ELEMS,
+                            font=self.fonts.text,
+                            inset=UI_MARGIN_S
                         ),
-                        padding=UI_MARGIN_S,
-                        gap=UI_MARGIN_S
+                        gap=UI_MARGIN_S,
                     ),
-                    Spacer()
+                    Spacer(),
                 )
             ),
             horiz_padding=UI_MARGIN_M,
@@ -222,6 +210,7 @@ class BrowseTerrainState(State):
         )
 
         self.hover_panel = Panel(
+            k_bg=ThemeKey.BG_DARK,
             child=VBox(
                 hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
@@ -253,8 +242,8 @@ class BrowseTerrainState(State):
             horiz_padding=UI_MARGIN_S,
         )
 
-        self.seed_hbox = seed_hbox
         self.back_button = back_button
+        self.hide_terrain_button = hide_terrain_button
         self.seed_label = seed_label
         self.offset_label = offset_label
         self.seed_int_label = seed_int_label
@@ -266,7 +255,6 @@ class BrowseTerrainState(State):
         self.hover_altitude = hover_altitude
         self.hover_biome = hover_biome
 
-        self.info_hbox = info_hbox
         self.info_button = info_button
         self.planet_name_label = planet_name_label
 
@@ -429,11 +417,17 @@ class BrowseTerrainState(State):
         screen.blit(self.scaled_planet_surface)
 
         # Draw overlay panel
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.seed_hbox.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_hbox.rect)
-        draw_elem(screen, self.panel, self.game.current_theme())
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.panel, self.game.current_theme())
+        screen.blit(self.work_surface)
 
-        if pg.mouse.get_pressed()[0] and not self.info_button.check_hovered():
+        if (
+            pg.mouse.get_pressed()[0]
+            and not self.info_button.check_hovered()
+            and not self.back_button.check_hovered()
+            and not self.hide_terrain_button.check_hovered()
+        ):
             self._refresh_hover_panel()
-            draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.hover_panel.rect)
-            draw_elem(screen, self.hover_panel, self.game.current_theme())
+            self.work_surface.fill(CLEAR)
+            draw_elem(self.work_surface, self.hover_panel, self.game.current_theme())
+            screen.blit(self.work_surface)

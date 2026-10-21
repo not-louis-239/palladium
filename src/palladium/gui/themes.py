@@ -35,6 +35,10 @@ class ThemeKey(StrEnum):
     BG_HOVERED = "BG_HOVERED"
     BG_ACTIVE = "BG_ACTIVE"
 
+    BG_DARK = "BG_DARK"
+    BG_DARK_HOVERED = "BG_DARK_HOVERED"
+    BG_DARK_ACTIVE = "BG_DARK_ACTIVE"
+
     FG_ELEMS = "FG"
     FG_HOVERED = "FG_HOVERED"
     FG_ACTIVE = "FG_ACTIVE"
@@ -80,6 +84,10 @@ THEMES = [
         ThemeKey.BG_ELEMS: (0, 0, 0, 0),
         ThemeKey.BG_HOVERED: (210, 210, 255, 20),
         ThemeKey.BG_ACTIVE: (210, 210, 255, 30),
+
+        ThemeKey.BG_DARK: TRANSLUCENT_BLACK,
+        ThemeKey.BG_DARK_HOVERED: (30, 30, 38, 170),
+        ThemeKey.BG_DARK_ACTIVE: (45, 45, 58, 170),
 
         ThemeKey.FG_ELEMS: (210, 210, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),

@@ -38,8 +38,9 @@ from palladium.generation.star_system import generate_star_system
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
-    ICON_SIZE_L,
-    ICON_SIZE_S,
+    DEFAULT_ATTRS_DARK_BG,
+    ICON_SIZE,
+    ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
@@ -132,23 +133,21 @@ class BrowseSystemState(State):
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
-            r=0 + UI_MARGIN_S, font=self.fonts.ui, k_fg_colour=ThemeKey.FG_ELEMS,
-            k_bg_colour=ThemeKey.BG_ELEMS,
-            k_bg_hovered=ThemeKey.BG_HOVERED,
-            k_bg_active=ThemeKey.BG_ACTIVE
+            r=0 + UI_MARGIN_S, font=self.fonts.ui,
+            **DEFAULT_ATTRS,
         )
 
         self.overlay_panel = Panel(
             child=VBox(
                 HBox(
                     back_button := CircleButton(
-                        **DEFAULT_ATTRS,
-                        r=ICON_SIZE_L // 2,
+                        **DEFAULT_ATTRS_DARK_BG,
+                        r=ICON_SIZE // 2,
                         img_path=self.images.back,
                         font=self.fonts.ui
                     ),
                     Spacer(),
-                    header_hbox := HBox(
+                    HBox(
                         Label(
                             text="star system ",
                             font=self.fonts.text,
@@ -169,6 +168,7 @@ class BrowseSystemState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL
                         ),
+                        k_bg_colour=ThemeKey.BG_DARK,
                         padding=UI_MARGIN_S
                     ),
                     Spacer(),
@@ -177,52 +177,41 @@ class BrowseSystemState(State):
                 HBox(
                     buttons_hbox := HBox(
                         zoom_in_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             img_path=self.images.zoom_in,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
                         zoom_out_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             img_path=self.images.zoom_out,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
                         slow_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             img_path=self.images.backward,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
                         fast_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             img_path=self.images.forward,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
                         recentre_button := CircleButton(
-                            r=ICON_SIZE_S // 2,
+                            r=ICON_SIZE // 2,
                             img_path=self.images.recentre,
                             font=self.fonts.heading,
-                            k_fg_colour=ThemeKey.FG_ELEMS,
-                            k_fg_hovered=ThemeKey.FG_HOVERED,
-                            k_fg_active=ThemeKey.FG_ACTIVE
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
-                        padding=UI_MARGIN_S,
                         gap=UI_MARGIN_S,
                     ),
                     Spacer(),
                 ),
                 HBox(
-                    speed_label := HBox(
+                    HBox(
                         speed_text_label := Label(
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_ELEMS,
@@ -231,12 +220,14 @@ class BrowseSystemState(State):
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_SENTINEL,
                         ),
+                        k_bg_colour=ThemeKey.BG_DARK,
                         padding=UI_MARGIN_S,
                     ),
                     Spacer(),
                 ),
                 HBox(
                     scale_bar := ScaleBar(
+                        k_bg=ThemeKey.BG_DARK,
                         k_fg=ThemeKey.FG_ELEMS,
                         bar_width=round(1 / self.zoom_level),
                         text="",
@@ -245,10 +236,11 @@ class BrowseSystemState(State):
                         gap=UI_MARGIN_S
                     ),
                     Spacer(),
-                    not_to_scale_label := Label(
+                    Label(
                         text="star and planet sizes not to scale",
                         font=self.fonts.text,
                         inset=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK,
                         k_fg=ThemeKey.FG_ELEMS
                     ),
                 ),
@@ -270,11 +262,8 @@ class BrowseSystemState(State):
         self.slow_button = slow_button
         self.fast_button = fast_button
         self.recentre_button = recentre_button
-        self.speed_label = speed_label
         self.speed_text_label = speed_text_label
         self.speed_mult_label = speed_mult_label
-        self.not_to_scale_label = not_to_scale_label
-        self.header_hbox = header_hbox
         self.seed_label = seed_label
         self.offset_label = offset_label
         self.seed_int_label = seed_int_label
@@ -401,9 +390,7 @@ class BrowseSystemState(State):
         self.planet_buttons.clear()
         for i in range(len(self.game.star_system.planets)):
             self.planet_buttons.append(CircleButton(
-                r=0, font=self.fonts.text,
-                k_bg_colour=ThemeKey.BG_ELEMS, k_bg_hovered=ThemeKey.BG_HOVERED, k_bg_active=ThemeKey.BG_ACTIVE,
-                k_fg_colour=ThemeKey.FG_ELEMS
+                r=0, font=self.fonts.text, **DEFAULT_ATTRS,
             ))
 
         self._refresh_body_buttons()
@@ -582,7 +569,7 @@ class BrowseSystemState(State):
         assert self.game.star_system is not None
 
         # Draw star and planet buttons
-        self.work_surface.fill((0, 0, 0, 0))
+        self.work_surface.fill(CLEAR)
         draw_elem(self.work_surface, self.star_button, self.game.current_theme())
         for button in self.planet_buttons:
             draw_elem(self.work_surface, button, self.game.current_theme())
@@ -620,12 +607,7 @@ class BrowseSystemState(State):
         pg.draw.circle(screen, temp_colour, (x, y), r)
 
         # Draw UI
-        self.work_surface.fill((0, 0, 0, 0))
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.speed_label.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.not_to_scale_label.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.buttons_hbox.rect)
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)
+        self.work_surface.fill(CLEAR)
         draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
         screen.blit(self.work_surface)
 

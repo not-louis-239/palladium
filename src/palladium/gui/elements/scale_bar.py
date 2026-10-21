@@ -32,12 +32,14 @@ class ScaleBar(james.Element):
             self, *, flex: float = 0,
             draw_attrs: dict[str, Any] | None = None,
             colours: dict[str, Colour] | None = None,
+            k_bg: str | None = None,
             k_fg: str, bar_width: int,
             text: str, font: pg.font.Font,
             inset: int = 0, gap: int = 0,
             bar_height: int = 4
         ) -> None:
         super().__init__(flex=flex, draw_attrs=draw_attrs, colours=colours)
+        self.k_bg = k_bg
         self.k_fg = k_fg
         self.bar_width = bar_width
         self.bar_height = bar_height
@@ -55,6 +57,9 @@ class ScaleBar(james.Element):
         self.rect = rect
 
     def draw_default(self, surface: pg.Surface, theme: SupportsGetItemColour) -> None:
+        if self.k_bg is not None:
+            pg.draw.rect(surface, theme[self.k_bg], self.rect)
+
         bar_left, bar_top = self.rect.left + self.inset, self.rect.centery - self.bar_height // 2
 
         p1 = (bar_left, bar_top)
