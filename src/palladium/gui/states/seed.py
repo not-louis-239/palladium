@@ -61,49 +61,17 @@ class SeedState(State):
         self.is_valid = True
         self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
-        self.back_button = CircleButton(
-            **DEFAULT_ATTRS,
-            r=ICON_SIZE_L // 2,
-            font=game.assets.fonts.ui,
-            img_path=game.assets.images.back
-        )
-
-        self.proceed_button = RectButton(
-            **DEFAULT_ATTRS,
-            font=self.fonts.ui,
-            text="proceed",
-            border_w=BORDER_W
-        )
-
-        self.seed_input_box = InputBox(
-            flex=1.0,
-            font=self.fonts.text,
-            k_sentinel=ThemeKey.FG_SENTINEL,
-            border_w=BORDER_W,
-            sentinel_text="enter text or leave blank for random",
-            k_cursor=ThemeKey.CURSOR,
-            **DEFAULT_INPUT_BOX_ATTRS,
-        )
-
-        self.offset_input_box = InputBox(
-            flex=1.0,
-            font=self.fonts.text,
-            k_sentinel=ThemeKey.FG_SENTINEL,
-            border_w=BORDER_W,
-            sentinel_text="0",
-            tooltip_font=self.fonts.tips,
-            k_cursor=ThemeKey.CURSOR,
-            k_tooltip=ThemeKey.FG_ERROR,
-            tooltip_inset=UI_MARGIN_XS,
-            **DEFAULT_INPUT_BOX_ATTRS,
-        )
-
         self.panel = Panel(
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
             child=VBox(
                 HBox(
-                    self.back_button,
+                    back_button := CircleButton(
+                        **DEFAULT_ATTRS,
+                        r=ICON_SIZE_L // 2,
+                        font=game.assets.fonts.ui,
+                        img_path=game.assets.images.back
+                    ),
                     Spacer(),
                     Label(
                         text="generation",
@@ -123,7 +91,15 @@ class SeedState(State):
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
-                        self.seed_input_box,
+                        seed_input_box := InputBox(
+                            flex=1.0,
+                            font=self.fonts.text,
+                            k_sentinel=ThemeKey.FG_SENTINEL,
+                            border_w=BORDER_W,
+                            sentinel_text="enter text or leave blank for random",
+                            k_cursor=ThemeKey.CURSOR,
+                            **DEFAULT_INPUT_BOX_ATTRS,
+                        ),
                     ),
                     HBox(
                         SBox(
@@ -134,7 +110,18 @@ class SeedState(State):
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
-                        self.offset_input_box,
+                        offset_input_box := InputBox(
+                            flex=1.0,
+                            font=self.fonts.text,
+                            k_sentinel=ThemeKey.FG_SENTINEL,
+                            border_w=BORDER_W,
+                            sentinel_text="0",
+                            tooltip_font=self.fonts.tips,
+                            k_cursor=ThemeKey.CURSOR,
+                            k_tooltip=ThemeKey.FG_ERROR,
+                            tooltip_inset=UI_MARGIN_XS,
+                            **DEFAULT_INPUT_BOX_ATTRS,
+                        ),
                     ),
                     column_flexes=[0, 0, 1],
                     cell_renderer=draw_elem,
@@ -143,12 +130,22 @@ class SeedState(State):
                 Spacer(),
                 HBox(
                     Spacer(),
-                    self.proceed_button,
+                    proceed_button := RectButton(
+                        **DEFAULT_ATTRS,
+                        font=self.fonts.ui,
+                        text="proceed",
+                        border_w=BORDER_W
+                    ),
                     Spacer(),
                 ),
                 gap=UI_MARGIN_S,
             )
         )
+
+        self.back_button = back_button
+        self.proceed_button = proceed_button
+        self.seed_input_box = seed_input_box
+        self.offset_input_box = offset_input_box
 
         self.panel.layout(SCREEN_RECT)
 

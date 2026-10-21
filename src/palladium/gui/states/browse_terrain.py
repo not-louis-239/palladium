@@ -34,7 +34,6 @@ from palladium.generation.planet import Planet
 from palladium.generation.terrain_gen import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
     ICON_SIZE_S,
-    BORDER_W,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,

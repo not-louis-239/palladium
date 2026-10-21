@@ -94,176 +94,146 @@ class BrowseStarState(State):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        self.scale_bar = ScaleBar(
-            k_fg=ThemeKey.FG_ELEMS,
-            bar_width=round(1 / self.zoom_level),
-            text="",
-            font=self.fonts.text,
-            inset=UI_MARGIN_S,
-            gap=UI_MARGIN_S
-        )
-
-        self.back_button = CircleButton(
-            r=ICON_SIZE_S // 2,
-            img_path=self.images.back,
-            font=self.fonts.heading,
-            k_fg_colour=ThemeKey.FG_ELEMS,
-            k_fg_hovered=ThemeKey.FG_HOVERED,
-            k_fg_active=ThemeKey.FG_ACTIVE
-        )
-
-        self.zoom_in_button = CircleButton(
-            r=ICON_SIZE_S // 2,
-            img_path=self.images.zoom_in,
-            font=self.fonts.heading,
-            k_fg_colour=ThemeKey.FG_ELEMS,
-            k_fg_hovered=ThemeKey.FG_HOVERED,
-            k_fg_active=ThemeKey.FG_ACTIVE
-        )
-
-        self.zoom_out_button = CircleButton(
-            r=ICON_SIZE_S // 2,
-            img_path=self.images.zoom_out,
-            font=self.fonts.heading,
-            k_fg_colour=ThemeKey.FG_ELEMS,
-            k_fg_hovered=ThemeKey.FG_HOVERED,
-            k_fg_active=ThemeKey.FG_ACTIVE
-        )
-
-        self.seed_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT,
-        )
-
-        self.offset_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT2,
-        )
-
-        self.seed_int_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_SENTINEL,
-        )
-
-        self.temp_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT
-        )
-
-        self.radius_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT
-        )
-
-        self.radius_km_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_SENTINEL
-        )
-
-        self.mass_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT
-        )
-
-        self.luminosity_label = Label(
-            text="",
-            font=self.fonts.text,
-            k_fg=ThemeKey.FG_ACCENT
-        )
-
-        self.header_hbox = HBox(
-            self.back_button,
-            Spacer(min_w=UI_MARGIN_S),
-            self.seed_label,
-            self.offset_label,
-            self.seed_int_label,
-            padding=UI_MARGIN_S
-        )
-
-        self.info_vbox = VBox(
-            Label(
-                text="surface temperature:",
-                font=self.fonts.text,
-                k_fg=ThemeKey.FG_ELEMS
-            ),
-            HBox(
-                Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                self.temp_label,
-            ),
-            Spacer(flex=0.0, min_h=UI_MARGIN_S),
-            Label(
-                text="radius:",
-                font=self.fonts.text,
-                k_fg=ThemeKey.FG_ELEMS
-            ),
-            HBox(
-                Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                self.radius_label,
-            ),
-            HBox(
-                Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                self.radius_km_label,
-            ),
-            Spacer(flex=0.0, min_h=UI_MARGIN_S),
-            Label(
-                text="mass:",
-                font=self.fonts.text,
-                k_fg=ThemeKey.FG_ELEMS
-            ),
-            HBox(
-                Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                self.mass_label,
-            ),
-            Spacer(flex=0.0, min_h=UI_MARGIN_S),
-            Label(
-                text="luminosity:",
-                font=self.fonts.text,
-                k_fg=ThemeKey.FG_ELEMS
-            ),
-            HBox(
-                Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                self.luminosity_label,
-            ),
-            padding=UI_MARGIN_S,
-        )
-
-        self.zoom_hbox = HBox(
-            self.zoom_in_button,
-            self.zoom_out_button,
-            padding=UI_MARGIN_S,
-            gap=UI_MARGIN_S,
-        )
-
         # TODO: fix potential text overflow in some places
 
         self.overlay_panel = Panel(
             child=HBox(
                 VBox(
                     HBox(
-                        self.header_hbox,
+                        header_hbox := HBox(
+                            back_button := CircleButton(
+                                r=ICON_SIZE_S // 2,
+                                img_path=self.images.back,
+                                font=self.fonts.heading,
+                                k_fg_colour=ThemeKey.FG_ELEMS,
+                                k_fg_hovered=ThemeKey.FG_HOVERED,
+                                k_fg_active=ThemeKey.FG_ACTIVE
+                            ),
+                            Spacer(min_w=UI_MARGIN_S),
+                            seed_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT,
+                            ),
+                            offset_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT2,
+                            ),
+                            seed_int_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL,
+                            ),
+                            padding=UI_MARGIN_S
+                        ),
                         Spacer(),
                     ),
                     Spacer(),
                     HBox(
-                        self.zoom_hbox,
+                        zoom_hbox := HBox(
+                            zoom_in_button := CircleButton(
+                                r=ICON_SIZE_S // 2,
+                                img_path=self.images.zoom_in,
+                                font=self.fonts.heading,
+                                k_fg_colour=ThemeKey.FG_ELEMS,
+                                k_fg_hovered=ThemeKey.FG_HOVERED,
+                                k_fg_active=ThemeKey.FG_ACTIVE
+                            ),
+                            zoom_out_button := CircleButton(
+                                r=ICON_SIZE_S // 2,
+                                img_path=self.images.zoom_out,
+                                font=self.fonts.heading,
+                                k_fg_colour=ThemeKey.FG_ELEMS,
+                                k_fg_hovered=ThemeKey.FG_HOVERED,
+                                k_fg_active=ThemeKey.FG_ACTIVE
+                            ),
+                            padding=UI_MARGIN_S,
+                            gap=UI_MARGIN_S,
+                        ),
                         Spacer(),
                     ),
                     HBox(
-                        self.scale_bar,
+                        scale_bar := ScaleBar(
+                            k_fg=ThemeKey.FG_ELEMS,
+                            bar_width=round(1 / self.zoom_level),
+                            text="",
+                            font=self.fonts.text,
+                            inset=UI_MARGIN_S,
+                            gap=UI_MARGIN_S
+                        ),
                         Spacer(),
                     ),
                     gap=UI_MARGIN_S,
                 ),
                 Spacer(),
                 VBox(
-                    self.info_vbox,
+                    info_vbox := VBox(
+                        Label(
+                            text="surface temperature:",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ELEMS
+                        ),
+                        HBox(
+                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                            temp_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT
+                            ),
+                        ),
+                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                        Label(
+                            text="radius:",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ELEMS
+                        ),
+                        HBox(
+                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                            radius_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT
+                            ),
+                        ),
+                        HBox(
+                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                            radius_km_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL
+                            ),
+                        ),
+                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                        Label(
+                            text="mass:",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ELEMS
+                        ),
+                        HBox(
+                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                            mass_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT
+                            ),
+                        ),
+                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                        Label(
+                            text="luminosity:",
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ELEMS
+                        ),
+                        HBox(
+                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                            luminosity_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT
+                            ),
+                        ),
+                        padding=UI_MARGIN_S,
+                    ),
                     Spacer(),
                 ),
                 gap=UI_MARGIN_M,
@@ -271,6 +241,21 @@ class BrowseStarState(State):
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
         )
+
+        self.scale_bar = scale_bar
+        self.seed_label = seed_label
+        self.offset_label = offset_label
+        self.seed_int_label = seed_int_label
+        self.temp_label = temp_label
+        self.radius_label = radius_label
+        self.radius_km_label = radius_km_label
+        self.mass_label = mass_label
+        self.luminosity_label = luminosity_label
+        self.back_button = back_button
+        self.zoom_in_button = zoom_in_button
+        self.zoom_out_button = zoom_out_button
+        self.header_hbox = header_hbox
+        self.info_vbox = info_vbox
 
         # Initialise the scale bar
         self._adjust_zoom(self.zoom_level)
@@ -369,7 +354,6 @@ class BrowseStarState(State):
         )
 
         # Draw overlay panel and transparent rects for improved contrast
-        draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.zoom_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.header_hbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.info_vbox.rect)
         draw_transparent_rect(screen, TRANSLUCENT_BLACK, self.scale_bar.rect)

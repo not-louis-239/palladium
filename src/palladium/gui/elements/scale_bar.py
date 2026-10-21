@@ -21,7 +21,7 @@ from typing import Any
 import james
 import pygame as pg
 from james import Colour, SupportsGetItemColour
-from james.utils import get_text_surf
+from james.helpers.utils import get_text_surf
 from pygame import Rect
 
 from palladium.gui.constants import BORDER_W

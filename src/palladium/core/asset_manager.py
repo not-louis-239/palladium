@@ -25,12 +25,27 @@ class Images:
     def __init__(self) -> None:
         self.back = IMAGES_DIR / "back.png"
         self.proceed = IMAGES_DIR / "proceed.png"
+
         self.recentre = IMAGES_DIR / "recentre.png"
+
         self.zoom_in = IMAGES_DIR / "zoom_in.png"
         self.zoom_out = IMAGES_DIR / "zoom_out.png"
+
         self.forward = IMAGES_DIR / "forward.png"
         self.backward = IMAGES_DIR / "backward.png"
+
         self.info = IMAGES_DIR / "info.png"
+
+        self.eye = IMAGES_DIR / "eye.png"
+        self.eye_crossed_out = IMAGES_DIR / "eye_crossed_out.png"
+
+        # View modes
+        self.trees = IMAGES_DIR / "trees.png"
+        self.sun = IMAGES_DIR / "sun.png"
+        self.height = IMAGES_DIR / "height.png"
+        self.flame = IMAGES_DIR / "flame.png"
+        self.water = IMAGES_DIR / "water.png"
+        self.shading = IMAGES_DIR / "shading.png"
 
 
 class Fonts:

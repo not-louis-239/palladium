@@ -64,13 +64,6 @@ class TitleState(State):
                 self.star_overlay_surface.blit(surface, (star[0] - radius, star[1] - radius))
             pg.draw.circle(self.star_overlay_surface, (255, 255, 255, 255), star, 2)
 
-        self.begin_button = RectButton(
-            text="begin",
-            font=self.fonts.ui,
-            **DEFAULT_ATTRS,
-            border_w=BORDER_W
-        )
-
         self.panel = Panel(
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
@@ -88,12 +81,19 @@ class TitleState(State):
                 Spacer(),
                 HBox(
                     Spacer(),
-                    self.begin_button,
+                    begin_button := RectButton(
+                        text="begin",
+                        font=self.fonts.ui,
+                        **DEFAULT_ATTRS,
+                        border_w=BORDER_W
+                    ),
                     Spacer(),
                 ),
                 Spacer(),
             ),
         )
+
+        self.begin_button = begin_button
 
         self.panel.layout(SCREEN_RECT)
 
