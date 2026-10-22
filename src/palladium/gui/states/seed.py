@@ -130,15 +130,13 @@ class SeedState(State):
                     cell_inset=UI_MARGIN_S // 2
                 ),
                 Spacer(),
-                HBox(
-                    Spacer(),
+                SBox(
                     proceed_button := RectButton(
                         **DEFAULT_ATTRS,
                         font=self.fonts.ui,
                         text="proceed",
                         border_w=BORDER_W
                     ),
-                    Spacer(),
                 ),
                 gap=UI_MARGIN_S,
             )

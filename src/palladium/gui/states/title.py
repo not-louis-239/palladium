@@ -22,7 +22,7 @@ import random
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import HBox, Label, Panel, RectButton, Spacer, VBox
+from james import SBox, Label, Panel, RectButton, Spacer, VBox
 
 from palladium.core.constants import WN_H, WN_W
 from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M
@@ -69,25 +69,21 @@ class TitleState(State):
             horiz_padding=UI_MARGIN_M,
             child=VBox(
                 Spacer(flex=0.5),
-                HBox(
-                    Spacer(),
+                SBox(
                     Label(
                         text="palladium",
                         font=self.fonts.title,
                         k_fg=ThemeKey.FG_ELEMS,
                     ),
-                    Spacer(),
                 ),
                 Spacer(),
-                HBox(
-                    Spacer(),
+                SBox(
                     begin_button := RectButton(
                         text="begin",
                         font=self.fonts.ui,
                         **DEFAULT_ATTRS,
                         border_w=BORDER_W
                     ),
-                    Spacer(),
                 ),
                 Spacer(),
             ),

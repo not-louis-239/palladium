@@ -1,4 +1,4 @@
-james @ git+https://github.com/not-louis-239/james@0a02c4c02d61e8bf9b104755ab8dd49a3e08a956
+james @ git+https://github.com/not-louis-239/james@a92d0d94170c41063c87897c75ede1eca5520363
 noise==1.2.2
 numpy==2.4.6
 pygame-ce==2.5.8

@@ -178,7 +178,7 @@ class BrowseTerrainState(State):
                         k_bg_colour=ThemeKey.BG_DARK,
                         padding=UI_MARGIN_S,
                     ),
-                    Spacer(flex=0.0, min_w=UI_MARGIN_S),
+                    Spacer(min_w=UI_MARGIN_S),
                     hide_terrain_button := CircleButton(
                         r=ICON_SIZE // 2,
                         font=self.fonts.text,

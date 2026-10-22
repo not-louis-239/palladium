@@ -96,8 +96,6 @@ class BrowseStarState(State):
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        # TODO: fix potential text overflow in some places
-
         self.overlay_panel = Panel(
             child=HBox(
                 VBox(
@@ -166,7 +164,7 @@ class BrowseStarState(State):
                     ),
                     gap=UI_MARGIN_S,
                 ),
-                Spacer(flex=0.0, min_w=UI_MARGIN_S),
+                Spacer(min_w=UI_MARGIN_S),
                 VBox(
                     info_vbox := VBox(
                         Label(
