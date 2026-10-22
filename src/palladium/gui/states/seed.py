@@ -94,6 +94,7 @@ class SeedState(State):
                         seed_input_box := InputBox(
                             flex=1.0,
                             font=self.fonts.text,
+                            k_bg_selection=ThemeKey.FG_SELECTION,
                             k_sentinel=ThemeKey.FG_SENTINEL,
                             border_w=BORDER_W,
                             sentinel_text="enter text or leave blank for random",
@@ -113,6 +114,7 @@ class SeedState(State):
                         offset_input_box := InputBox(
                             flex=1.0,
                             font=self.fonts.text,
+                            k_bg_selection=ThemeKey.FG_SELECTION,
                             k_sentinel=ThemeKey.FG_SENTINEL,
                             border_w=BORDER_W,
                             sentinel_text="0",

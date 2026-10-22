@@ -60,7 +60,7 @@ class ThemeKey(StrEnum):
     BORDER_ACTIVE = "BORDER_ACTIVE"
 
     CURSOR = "CURSOR"
-
+    FG_SELECTION = "FG_SELECTION"
     FG_HABITABLE_ZONE = "FG_HABITABLE_ZONE"
 
     FG_PROFILER_UPDATE = "FG_PROFILER_UPDATE"
@@ -110,7 +110,7 @@ THEMES = [
         ThemeKey.BORDER_ACTIVE: (240, 240, 255),
 
         ThemeKey.CURSOR: (255, 255, 255),
-
+        ThemeKey.FG_SELECTION: (75, 126, 166),
         ThemeKey.FG_HABITABLE_ZONE: (0, 50, 0),
 
         ThemeKey.FG_PROFILER_UPDATE: (100, 255, 255),

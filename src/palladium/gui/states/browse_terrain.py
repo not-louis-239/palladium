@@ -261,6 +261,13 @@ class BrowseTerrainState(State):
         self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
         self.panel.layout(SCREEN_RECT)
 
+    def _toggle_gui_visibility(self) -> None:
+        self.panel.visible = not self.panel.visible
+        if self.panel.visible:
+            self.hide_terrain_button.img_path = self.images.eye_crossed_out
+        else:
+            self.hide_terrain_button.img_path = self.images.eye
+
     def _refresh_planet_surface(self) -> None:
         t_i = time.time()  # DEBUG
 
@@ -405,6 +412,9 @@ class BrowseTerrainState(State):
                     return
                 if self.info_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.PLANET_INFO)
+                    return
+                if self.hide_terrain_button.check_overlaps(event.pos):
+                    self._toggle_gui_visibility()
 
             if event.type == pg.KEYDOWN and event.key == Controls.CHANGE_VIEW_MODE:
                 self.view_mode = (self.view_mode + 1) % _NUM_VIEW_MODES
@@ -417,9 +427,14 @@ class BrowseTerrainState(State):
         screen.blit(self.scaled_planet_surface)
 
         # Draw overlay panel
-        self.work_surface.fill(CLEAR)
-        draw_elem(self.work_surface, self.panel, self.game.current_theme())
-        screen.blit(self.work_surface)
+        if self.panel.visible:
+            self.work_surface.fill(CLEAR)
+            draw_elem(self.work_surface, self.panel, self.game.current_theme())
+            screen.blit(self.work_surface)
+        else:
+            self.work_surface.fill(CLEAR)
+            draw_elem(self.work_surface, self.hide_terrain_button, self.game.current_theme())
+            screen.blit(self.work_surface)
 
         if (
             pg.mouse.get_pressed()[0]

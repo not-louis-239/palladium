@@ -38,6 +38,7 @@ from palladium.game.game import Game
 
 def main():
     pg.init()
+    pg.key.set_repeat(500, 30)
 
     screen = pg.display.set_mode((WN_W, WN_H))
     pg.display.set_caption("Palladium")
