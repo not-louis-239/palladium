@@ -157,12 +157,13 @@ class BrowseTerrainState(State):
                         img_path=self.images.back,
                         **DEFAULT_ATTRS_DARK_BG,
                     ),
-                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    Spacer(flex=0.0, min_w=UI_MARGIN_S),
                     HBox(
                         seed_label := Label(
                             text="",
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_ACCENT,
+                            shrink=1.0,
                         ),
                         offset_label := Label(
                             text="",
@@ -177,13 +178,13 @@ class BrowseTerrainState(State):
                         k_bg_colour=ThemeKey.BG_DARK,
                         padding=UI_MARGIN_S,
                     ),
-                    Spacer(),
+                    Spacer(flex=0.0, min_w=UI_MARGIN_S),
                     hide_terrain_button := CircleButton(
                         r=ICON_SIZE // 2,
                         font=self.fonts.text,
                         **DEFAULT_ATTRS_DARK_BG,
                         img_path=self.images.eye_crossed_out,
-                    )
+                    ),
                 ),
                 Spacer(),
                 HBox(

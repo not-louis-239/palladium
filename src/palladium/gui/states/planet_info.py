@@ -68,6 +68,7 @@ class PlanetInfoState(State):
                             text="",
                             font=self.fonts.text,
                             k_fg=ThemeKey.FG_ACCENT,
+                            shrink=1.0,
                         ),
                         offset_label := Label(
                             text="",

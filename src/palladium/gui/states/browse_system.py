@@ -156,7 +156,8 @@ class BrowseSystemState(State):
                         seed_label := Label(
                             text="",
                             font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT
+                            k_fg=ThemeKey.FG_ACCENT,
+                            shrink=1.0,
                         ),
                         offset_label := Label(
                             text="",
@@ -169,7 +170,7 @@ class BrowseSystemState(State):
                             k_fg=ThemeKey.FG_SENTINEL
                         ),
                         k_bg_colour=ThemeKey.BG_DARK,
-                        padding=UI_MARGIN_S
+                        padding=UI_MARGIN_S,
                     ),
                     Spacer(),
                 ),
@@ -397,6 +398,9 @@ class BrowseSystemState(State):
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
+
+        # DEBUG
+        print(self.seed_label.rect)
 
     def _refresh_with_seed_offset(self, offset: int) -> None:
         assert self.game.star_system is not None

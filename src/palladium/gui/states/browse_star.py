@@ -115,6 +115,7 @@ class BrowseStarState(State):
                                     text="",
                                     font=self.fonts.text,
                                     k_fg=ThemeKey.FG_ACCENT,
+                                    shrink=1.0,
                                 ),
                                 offset_label := Label(
                                     text="",
@@ -165,7 +166,7 @@ class BrowseStarState(State):
                     ),
                     gap=UI_MARGIN_S,
                 ),
-                Spacer(),
+                Spacer(flex=0.0, min_w=UI_MARGIN_S),
                 VBox(
                     info_vbox := VBox(
                         Label(
@@ -236,7 +237,6 @@ class BrowseStarState(State):
                     ),
                     Spacer(),
                 ),
-                gap=UI_MARGIN_M,
             ),
             vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
