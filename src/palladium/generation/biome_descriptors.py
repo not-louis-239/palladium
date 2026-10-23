@@ -20,17 +20,19 @@ from typing import Callable
 
 import numpy as np
 
+from palladium.generation.field_types import FieldType
+
 
 type BiomeCondition = Callable[
-    # height, temperature, humidity, geology
-    [np.ndarray, np.ndarray, np.ndarray, np.ndarray],
-    # truth mask
+    # input: input fields, e.g. height, temp, etc.
+    [dict[FieldType, np.ndarray]],
+    # output: truth mask
     np.ndarray,
 ]
 
 
 # The universal condition
-all_remaining: BiomeCondition = lambda h, t, hum, g: np.ones(h.shape, dtype=bool)
+all_remaining: BiomeCondition = lambda fields: np.ones(fields[FieldType.HEIGHT].shape, dtype=bool)
 
 
 ## Descriptors
@@ -111,28 +113,28 @@ def anti_super_rare(g: np.ndarray) -> np.ndarray:
     return g < (1 - G_SUPER_RARE)
 
 # Composite descriptors
-def boreal(t: np.ndarray, hum: np.ndarray) -> np.ndarray:
+def boreal(fields: dict[FieldType, np.ndarray]) -> np.ndarray:
     return (
-        ((t <= T_COLD) & (hum >= HUM_DRY))
-        | ((t <= T_COOL) & (hum >= HUM_SLIGHTLY_DRY))
+        ((fields[FieldType.TEMP] <= T_COLD) & (fields[FieldType.HUMIDITY] >= HUM_DRY))
+        | ((fields[FieldType.TEMP] <= T_COOL) & (fields[FieldType.HUMIDITY] >= HUM_SLIGHTLY_DRY))
     )
 
-def frozen(t: np.ndarray, hum: np.ndarray) -> np.ndarray:
+def frozen(fields: dict[FieldType, np.ndarray]) -> np.ndarray:
     return (
-        (t <= T_POLAR)
-        | ((t <= T_ARCTIC) & (hum >= HUM_VERY_DRY))
-        | ((t <= T_SUBARCTIC) & (hum >= HUM_SLIGHTLY_HUMID))
+        (fields[FieldType.TEMP] <= T_POLAR)
+        | ((fields[FieldType.TEMP] <= T_ARCTIC) & (fields[FieldType.HUMIDITY] >= HUM_VERY_DRY))
+        | ((fields[FieldType.TEMP] <= T_SUBARCTIC) & (fields[FieldType.HUMIDITY] >= HUM_SLIGHTLY_HUMID))
     )
 
-def asphalt(t: np.ndarray, hum: np.ndarray, g: np.ndarray) -> np.ndarray:
+def asphalt(fields: dict[FieldType, np.ndarray]) -> np.ndarray:
     return (
-        (t < T_VOLCANIC) & rare(g)
+        (fields[FieldType.TEMP] < T_VOLCANIC) & rare(fields[FieldType.SPECIAL_1])
     ) & ((
-        (t >= T_BLAZING)
-        & (hum >= HUM_SLIGHTLY_DRY)
-        & (hum <= HUM_HUMID)
+        (fields[FieldType.TEMP] >= T_BLAZING)
+        & (fields[FieldType.HUMIDITY] >= HUM_SLIGHTLY_DRY)
+        & (fields[FieldType.HUMIDITY] <= HUM_HUMID)
     ) | (
-        (t >= T_SCORCHING)
-        & (hum >= HUM_SLIGHTLY_DRY)
-        & (hum <= HUM_SLIGHTLY_HUMID)
+        (fields[FieldType.TEMP] >= T_SCORCHING)
+        & (fields[FieldType.HUMIDITY] >= HUM_SLIGHTLY_DRY)
+        & (fields[FieldType.HUMIDITY] <= HUM_SLIGHTLY_HUMID)
     ))

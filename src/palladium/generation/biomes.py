@@ -52,7 +52,10 @@ class BiomeID(IntEnum):
     ASH_FOREST = auto()
 
     # Warm biomes
+    WASTELAND = auto()
     SALT_FLATS = auto()
+    ROCKY_DESERT = auto()
+    BADLANDS = auto()
     HOT_DESERT = auto()
     DESERT = auto()
     COLD_DESERT = auto()
@@ -151,7 +154,10 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     BiomeID.ASH_FOREST: BiomeProfile("Ash Forest", (53, 50, 44)),
 
     # Warm biomes
+    BiomeID.WASTELAND: BiomeProfile("Wasteland", (189, 172, 155)),
     BiomeID.SALT_FLATS: BiomeProfile("Salt Flats", (192, 192, 192)),
+    BiomeID.ROCKY_DESERT: BiomeProfile("Rocky Desert", (204, 195, 186)),
+    BiomeID.BADLANDS: BiomeProfile("Badlands", (176, 71, 26)),
     BiomeID.HOT_DESERT: BiomeProfile("Hot Desert", (255, 210, 127)),
     BiomeID.DESERT: BiomeProfile("Desert", (255, 234, 198)),
     BiomeID.COLD_DESERT: BiomeProfile("Cold Desert", (255, 250, 239)),

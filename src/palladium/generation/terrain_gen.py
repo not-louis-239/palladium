@@ -17,22 +17,17 @@
 
 
 import time
-from dataclasses import dataclass
 from enum import Enum, auto
 from functools import lru_cache
 
 import numpy as np
 from noise import snoise2
 
+from palladium.generation.field_types import FieldType
+from palladium.generation.terrain_surface import TerrainSurface, MAP_WIDTH, MAP_HEIGHT
 from palladium.generation.noise_field import NoiseField, prepare_axes
-from palladium.generation.biomes import BiomeID
-from palladium.generation.biome_classifier import stats_to_biome_array
-from palladium.gui.constants import LIGHT_NORMAL
 
-MAP_WIDTH = 1280
-MAP_HEIGHT = 720
 
-_HALF_MAP_WIDTH = MAP_WIDTH // 2
 _TERRAIN_SCALE_COEFF = 2.5
 _NUM_OCTAVES = 4
 
@@ -43,83 +38,22 @@ class NoiseLayers(Enum):
     DETAIL = auto()
     HUMIDITY = auto()
     DRYNESS = auto()
-    GEOLOGY = auto()
 
 
 def _signed_pow4_array(x: np.ndarray) -> np.ndarray:
     return np.sign(x) * np.abs(x) ** 4
+
 def _signed_sqrt_array(x: np.ndarray) -> np.ndarray:
     return np.sign(x) * np.sqrt(np.abs(x))
+
 def _sigmoid_array(value: np.ndarray, strength: float) -> np.ndarray:
     return 1 / (1 + np.exp(-strength * value))
-
-
-@dataclass
-class CellWrapper:
-    height: float
-    temp: float
-    humidity: float
-    biome_id: BiomeID
-
-
-class TerrainSurface:
-    def __init__(self, heights: np.ndarray, temps: np.ndarray, humidities: np.ndarray, geology: np.ndarray) -> None:
-        """Expects arrays containing `np.float32` values."""
-
-        self.heights = heights
-        self.temps = temps
-        self.humidities = humidities
-        self.geology = geology
-
-        self.normals = self._calculate_normals()
-        self.dot_products = self.normals @ np.asarray(LIGHT_NORMAL, dtype=np.float32)
-        self.biomes = stats_to_biome_array(heights=heights, temps=temps, humidities=humidities, geology=geology)
-
-    def info_at(self, x: int, y: int) -> CellWrapper:
-        return CellWrapper(
-            height=float(self.heights[y, x]),
-            temp=float(self.temps[y, x]),
-            humidity=float(self.humidities[y, x]),
-            biome_id=BiomeID(self.biomes[y, x]),
-        )
-
-    def _calculate_normals(self) -> np.ndarray:
-        heights = self.heights
-
-        left = np.roll(heights, 1, axis=1)
-        right = np.roll(heights, -1, axis=1)
-
-        above = np.empty_like(heights)
-        below = np.empty_like(heights)
-
-        # Normal rows
-        above[1:-1] = heights[:-2]
-        below[1:-1] = heights[2:]
-
-        # North pole
-        above[0] = np.roll(heights[0], _HALF_MAP_WIDTH)
-        below[0] = heights[1]
-
-        # South pole
-        above[-1] = heights[-2]
-        below[-1] = np.roll(heights[-1], _HALF_MAP_WIDTH)
-
-        dx = (right - left) / 2
-        dy = (below - above) / 2
-
-        normals = np.stack(
-            (dx, np.ones_like(dx), dy),
-            axis=-1,
-        )
-
-        length = np.linalg.norm(normals, axis=-1, keepdims=True)
-
-        return normals / length
 
 
 _FIDELITY_LOW = 40
 _FIDELITY_HIGH = 160
 _NOISE_SEED_MODULUS = 32_768
+
 
 @lru_cache(maxsize=16)
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
@@ -170,12 +104,6 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
                 x * 3 * _TERRAIN_SCALE_COEFF, y * 3 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 4) % _NOISE_SEED_MODULUS
             ),
         ),
-        NoiseLayers.GEOLOGY: NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 5) % 32_768
-            ),
-        )
     }
 
     t_noise = time.time()
@@ -187,7 +115,6 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     detail_noise = fields[NoiseLayers.DETAIL].sample_array()
     humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array()
     dryness_noise = fields[NoiseLayers.DRYNESS].sample_array()
-    geology_noise = fields[NoiseLayers.GEOLOGY].sample_array()
 
     t_sample = time.time()
     print(f"Time for sampling noise fields: {1000 * (t_sample - t_noise):.4f} ms")  # DEBUG
@@ -234,7 +161,7 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     strength[dry_band] = 1 - np.abs(latitude_abs[dry_band] - 0.225) / 0.125
 
     dry_band_factor = np.ones_like(latitude_abs)
-    dry_band_factor[dry_band] = 1 - (dryness_noise[dry_band] + 1) * strength[dry_band] * 0.4
+    dry_band_factor[dry_band] = 1 - (dryness_noise[dry_band] + 1) * strength[dry_band] * 0.55
 
     # Humidity
     humidities = np.clip((base_humidity + coast_bonus) * humidity_latitude_multiplier * dry_band_factor, 0, 1)
@@ -243,13 +170,26 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     print(f"Time for terrain sampling + generation: {1000 * (t_f - t_noise):.4f} ms")  # DEBUG
     print(f"Generated terrain surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
 
-    # Geology
-    geology = (geology_noise + 1) * 0.5  # map [-1..1] to [0..1]
+    # Special fields
+    specials: list[np.ndarray] = []
+
+    for _ in range(2):
+        field = NoiseField(
+            fidelity=_FIDELITY_LOW, axes=axes_f_low,
+            generator=lambda x, y: snoise2(
+                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 5) % 32_768
+            ),
+        )
+
+        noise = field.sample_array()
+        noise_norm = (noise + 1) * 0.5  # map [-1..1] to [0..1]
+        specials.append(noise_norm)
 
     # Grid
-    return TerrainSurface(
-        heights=heights,
-        temps=temps,
-        humidities=humidities,
-        geology=geology,
-    )
+    return TerrainSurface({
+        FieldType.HEIGHT: heights,
+        FieldType.TEMP: temps,
+        FieldType.HUMIDITY: humidities,
+        FieldType.SPECIAL_0: specials[0],
+        FieldType.SPECIAL_1: specials[1],
+    })

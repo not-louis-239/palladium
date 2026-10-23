@@ -18,37 +18,21 @@
 
 import numpy as np
 from palladium.generation.biomes import BiomeID
+from palladium.generation.field_types import FieldType
 from palladium.generation.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
 
 
-def _classify_terrain(
-        heights: np.ndarray,
-        temps: np.ndarray,
-        humidities: np.ndarray,
-        geology: np.ndarray,
-    ) -> np.ndarray:
-
-    temps_c = temps - 273.15
-
+def _classify_terrain(fields: dict[FieldType, np.ndarray]) -> np.ndarray:
     terrain_classes = np.full(
-        heights.shape,
+        fields[FieldType.HEIGHT].shape,
         TerrainClass.UNASSIGNED,
         dtype=np.uint8,
     )
 
-    remaining = np.ones(heights.shape, dtype=bool)
+    remaining = np.ones(fields[FieldType.HEIGHT].shape, dtype=bool)
 
     for rule in CLASS_RULES:
-        matches = (
-            remaining
-            & rule.condition(
-                heights,
-                temps_c,
-                humidities,
-                geology,
-            )
-        )
-
+        matches = remaining & rule.condition(fields)
         terrain_classes[matches] = rule.class_id
         remaining &= ~matches
 
@@ -57,18 +41,9 @@ def _classify_terrain(
 
     return terrain_classes
 
-def _classify_biomes(
-        terrain_classes: np.ndarray,
-        heights: np.ndarray,
-        temps: np.ndarray,
-        humidities: np.ndarray,
-        geology: np.ndarray,
-    ) -> np.ndarray:
-
-    temps_c = temps - 273.15
-
+def _classify_biomes(terrain_classes: np.ndarray, fields: dict[FieldType, np.ndarray]) -> np.ndarray:
     biomes = np.full(
-        heights.shape,
+        fields[FieldType.HEIGHT].shape,
         BiomeID.INVALID,
         dtype=np.uint8,
     )
@@ -82,15 +57,7 @@ def _classify_biomes(
         remaining = class_mask.copy()
 
         for rule in rules:
-            matches = (
-                remaining
-                & rule.condition(
-                    heights,
-                    temps_c,
-                    humidities,
-                    geology,
-                )
-            )
+            matches = remaining & rule.condition(fields)
 
             biomes[matches] = rule.biome_id
             remaining &= ~matches
@@ -101,14 +68,12 @@ def _classify_biomes(
     assert not np.any(biomes == BiomeID.INVALID), "Invalid biome detected due to failure to classify all biomes"
     return biomes
 
-def stats_to_biome_array(
-        heights: np.ndarray,
-        temps: np.ndarray,
-        humidities: np.ndarray,
-        geology: np.ndarray,
-    ) -> np.ndarray:
+def stats_to_biome_array(fields: dict[FieldType, np.ndarray])  -> np.ndarray:
     """Accepts input `np.ndarray`s and returns an `np.ndarray` of `BiomeID`s."""
 
-    classes = _classify_terrain(heights, temps, humidities, geology)
-    biomes = _classify_biomes(classes, heights, temps, humidities, geology)
+    fields = fields.copy()
+    fields[FieldType.TEMP] -= 273.15
+
+    classes = _classify_terrain(fields)
+    biomes = _classify_biomes(classes, fields)
     return biomes
