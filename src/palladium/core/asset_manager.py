@@ -35,6 +35,7 @@ class Images:
         self.backward = IMAGES_DIR / "backward.png"
 
         self.info = IMAGES_DIR / "info.png"
+        self.view_modes = IMAGES_DIR / "view_modes.png"
 
         self.eye = IMAGES_DIR / "eye.png"
         self.eye_crossed_out = IMAGES_DIR / "eye_crossed_out.png"

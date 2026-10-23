@@ -30,6 +30,7 @@ from palladium.core.constants import (
     WN_H,
     WN_W,
     ZOOM_RATE,
+    SECONDS_PER_YEAR,
     Controls,
 )
 from palladium.core.utils import clamp
@@ -49,9 +50,8 @@ from palladium.gui.constants import (
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import CLEAR, TRANSLUCENT_BLACK, ThemeKey
+from palladium.gui.themes import CLEAR, ThemeKey
 from palladium.gui.utils import (
-    draw_transparent_rect,
     get_seed_messages,
 )
 
@@ -83,11 +83,11 @@ OUTER_ZOOM_LIMIT = 100
 CENTRE_POS = (WN_W // 2, WN_H // 2)
 
 SPEED_ADJUST_RATE = 10  # factor per second
-MAX_SPEED = 3_153_600_000  # multiplier
+MAX_SPEED = SECONDS_PER_YEAR * 1_000_000  # multiplier
 MIN_SPEED = 1
 
 DURATION_UNITS = (
-    ("year", 365 * 24 * 60 * 60),
+    ("year", SECONDS_PER_YEAR),
     ("week", 7 * 24 * 60 * 60),
     ("day", 24 * 60 * 60),
     ("hour", 60 * 60),
@@ -107,13 +107,25 @@ def _format_zoom_value(val: float) -> str:
     return f"{round(val):,.0f}" if val > 1 else str(val)
 
 
+_SUFFIXES: list[tuple[str, int]] = [
+    ("Dc", 1_000_000_000_000_000_000_000_000_000_000_000),
+    ("No", 1_000_000_000_000_000_000_000_000_000_000),
+    ("Oc", 1_000_000_000_000_000_000_000_000_000),
+    ("Sp", 1_000_000_000_000_000_000_000_000),
+    ("Sx", 1_000_000_000_000_000_000_000),
+    ("Qi", 1_000_000_000_000_000_000),
+    ("Qa", 1_000_000_000_000_000),
+    ("T", 1_000_000_000_000),
+    ("B", 1_000_000_000),
+    ("M", 1_000_000),
+    ("k", 1_000),
+]
+
+
 def _format_speed_value(val: float) -> str:
-    if val >= 1_000_000_000:
-        return f"{val / 1_000_000_000:.2f}B"
-    if val >= 1_000_000:
-        return f"{val / 1_000_000:.2f}M"
-    if val >= 1_000:
-        return f"{val / 1_000:.2f}k"
+    for suffix, min_val in _SUFFIXES:
+        if val >= min_val:
+            return f"{val / min_val:.2f}{suffix}"
     return f"{val:.2f}"
 
 
@@ -365,7 +377,7 @@ class BrowseSystemState(State):
                 name, num_seconds = unit
                 if (num_units := self.run_speed / num_seconds) >= 1:
 
-                    text = f"{num_units:.2f} {name}{'' if 1 <= num_units <= 1.005 else 's'}"
+                    text = f"{num_units:,.2f} {name}{'' if 1 <= num_units < 1.005 else 's'}"
                     speed_text = f"1 second = {text}"
                     break
             else:
@@ -440,7 +452,7 @@ class BrowseSystemState(State):
         """
 
         self.hover_name.set_text(name)
-        self.hover_label_temp.set_text(f"{temp - 273.15:.2f}°C")
+        self.hover_label_temp.set_text(f"{temp - 273.15:,.2f}°C")
         self.hover_label_radius.set_text(f"{radius * SOLAR_RADIUS_IN_KM:,.0f} km")
 
         hover_w, hover_h = self.hover_box.preferred_size()

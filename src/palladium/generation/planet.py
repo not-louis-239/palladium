@@ -19,11 +19,12 @@
 import math
 import random
 
-from palladium.core.constants import SOLAR_RADIUS_IN_AU
+from palladium.core.constants import SOLAR_RADIUS_IN_AU, SECONDS_PER_YEAR
 from palladium.generation.star_gen import StarProfile
 from palladium.generation.terrain_gen import TerrainSurface, generate_terrain_surface
 
-ESTIMATED_SURFACE_TEMP_RATIO = 1.0316
+_ESTIMATED_SURFACE_TEMP_RATIO = 1.0316
+KG_PER_M3_TO_MSUN_PER_RSUN3 = 0.0016928997
 
 
 class Planet:
@@ -95,12 +96,10 @@ def generate_planet(seed_int: int, star: StarProfile) -> Planet:
     # 1 R☉ = approx. 6.957e+8
     # 1 kg/m^3 = 0.00016928997 M☉/R☉^3
     volume = 1.3333 * math.pi * radius ** 3  # solar radii cubed
-    mass = 2_700 * 0.0016928997 * volume  # solar masses
+    mass = 2_700 * KG_PER_M3_TO_MSUN_PER_RSUN3 * volume  # solar masses
 
-    orbit_duration = 2 * math.pi * math.sqrt(
-        orbit_radius ** 3 /
-        (star.mass + mass)
-    )
+    # Using Kepler's Law
+    orbit_duration = math.sqrt(orbit_au ** 3 / (star.mass + mass)) * SECONDS_PER_YEAR
 
     p = Planet(
         name="",  # assign names in generation
@@ -110,7 +109,7 @@ def generate_planet(seed_int: int, star: StarProfile) -> Planet:
         radius=radius,
         mass=mass,
         rotation_seed=seed_int,
-        displayed_surface_temp=temp * ESTIMATED_SURFACE_TEMP_RATIO,
+        displayed_surface_temp=temp * _ESTIMATED_SURFACE_TEMP_RATIO,
         base_temp=temp,
         seed_int=seed_int
     )

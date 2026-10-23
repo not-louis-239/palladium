@@ -146,6 +146,10 @@ BIOME_RULES: dict[TerrainClass, list[BiomeRule]] = {
             lambda h, t, hum, g: t >= 800,
         ),
         BiomeRule(
+            BiomeID.BASALT,
+            lambda h, t, hum, g: h >= bd.H_HIGHLANDS,
+        ),
+        BiomeRule(
             BiomeID.MAGMA,
             bd.all_remaining
         )

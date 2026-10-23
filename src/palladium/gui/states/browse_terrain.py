@@ -179,14 +179,25 @@ class BrowseTerrainState(State):
                         padding=UI_MARGIN_S,
                     ),
                     Spacer(min_w=UI_MARGIN_S),
-                    hide_terrain_button := CircleButton(
+                    hide_gui_button := CircleButton(
                         r=ICON_SIZE // 2,
                         font=self.fonts.text,
                         **DEFAULT_ATTRS_DARK_BG,
                         img_path=self.images.eye_crossed_out,
                     ),
                 ),
-                Spacer(),
+                HBox(
+                    Spacer(),
+                    VBox(
+                        view_modes_button := CircleButton(
+                            r=ICON_SIZE // 2,
+                            font=self.fonts.ui,
+                            **DEFAULT_ATTRS_DARK_BG,
+                            img_path=self.images.view_modes,
+                        ),
+                    ),
+                    flex=1.0,
+                ),
                 HBox(
                     HBox(
                         info_button := CircleButton(
@@ -204,7 +215,8 @@ class BrowseTerrainState(State):
                         gap=UI_MARGIN_S,
                     ),
                     Spacer(),
-                )
+                ),
+                gap=UI_MARGIN_S
             ),
             horiz_padding=UI_MARGIN_M,
             vert_padding=UI_MARGIN_M,
@@ -244,7 +256,7 @@ class BrowseTerrainState(State):
         )
 
         self.back_button = back_button
-        self.hide_terrain_button = hide_terrain_button
+        self.hide_gui_button = hide_gui_button
         self.seed_label = seed_label
         self.offset_label = offset_label
         self.seed_int_label = seed_int_label
@@ -257,6 +269,7 @@ class BrowseTerrainState(State):
         self.hover_biome = hover_biome
 
         self.info_button = info_button
+        self.view_modes_button = view_modes_button
         self.planet_name_label = planet_name_label
 
         self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
@@ -265,9 +278,9 @@ class BrowseTerrainState(State):
     def _toggle_gui_visibility(self) -> None:
         self.panel.visible = not self.panel.visible
         if self.panel.visible:
-            self.hide_terrain_button.img_path = self.images.eye_crossed_out
+            self.hide_gui_button.img_path = self.images.eye_crossed_out
         else:
-            self.hide_terrain_button.img_path = self.images.eye
+            self.hide_gui_button.img_path = self.images.eye
 
     def _refresh_planet_surface(self) -> None:
         t_i = time.time()  # DEBUG
@@ -414,7 +427,7 @@ class BrowseTerrainState(State):
                 if self.info_button.check_overlaps(event.pos):
                     self.game.enter_state(StateID.PLANET_INFO)
                     return
-                if self.hide_terrain_button.check_overlaps(event.pos):
+                if self.hide_gui_button.check_overlaps(event.pos):
                     self._toggle_gui_visibility()
 
             if event.type == pg.KEYDOWN and event.key == Controls.CHANGE_VIEW_MODE:
@@ -434,14 +447,14 @@ class BrowseTerrainState(State):
             screen.blit(self.work_surface)
         else:
             self.work_surface.fill(CLEAR)
-            draw_elem(self.work_surface, self.hide_terrain_button, self.game.current_theme())
+            draw_elem(self.work_surface, self.hide_gui_button, self.game.current_theme())
             screen.blit(self.work_surface)
 
         if (
             pg.mouse.get_pressed()[0]
             and not self.info_button.check_hovered()
             and not self.back_button.check_hovered()
-            and not self.hide_terrain_button.check_hovered()
+            and not self.hide_gui_button.check_hovered()
         ):
             self._refresh_hover_panel()
             self.work_surface.fill(CLEAR)

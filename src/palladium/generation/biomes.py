@@ -37,6 +37,7 @@ class BiomeID(IntEnum):
     # Very hot biomes
     PYRO = auto()
     LAVA = auto()
+    BASALT = auto()
     MAGMA = auto()
     SCORCHED_MOUNTAINS = auto()
     SCORCHED_SLOPES = auto()
@@ -130,6 +131,7 @@ BIOME_PROFILES: dict[BiomeID, BiomeProfile] = {
     BiomeID.PLASMA: BiomeProfile("Plasma", (255, 252, 199)),
     BiomeID.VAPOUR: BiomeProfile("Vapour", (255, 242, 175)),
     BiomeID.MOLTEN_PEAKS: BiomeProfile("Molten Peaks", (255, 234, 150)),
+    BiomeID.BASALT: BiomeProfile("Basalt", (78, 78, 64)),
     BiomeID.MOLTEN: BiomeProfile("Molten", (255, 226, 110)),
 
     # Very hot biomes
