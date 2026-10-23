@@ -72,7 +72,7 @@ def stats_to_biome_array(fields: dict[FieldType, np.ndarray])  -> np.ndarray:
     """Accepts input `np.ndarray`s and returns an `np.ndarray` of `BiomeID`s."""
 
     fields = fields.copy()
-    fields[FieldType.TEMP] -= 273.15
+    fields[FieldType.TEMP] = fields[FieldType.TEMP] - 273.15
 
     classes = _classify_terrain(fields)
     biomes = _classify_biomes(classes, fields)
