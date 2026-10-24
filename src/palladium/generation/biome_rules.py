@@ -84,6 +84,14 @@ CLASS_RULES: list[ClassRule] = [
         lambda fields: fields[FieldType.TEMP] >= bd.T_SCORCHING
     ),
     ClassRule(
+        TerrainClass.CRYOGENIC,
+        lambda fields: fields[FieldType.TEMP] < bd.T_CRYO
+    ),
+    ClassRule(
+        TerrainClass.VERY_COLD,
+        lambda fields: fields[FieldType.TEMP] < bd.T_POLAR
+    ),
+    ClassRule(
         TerrainClass.ARID,
         lambda fields: fields[FieldType.HUMIDITY] < bd.HUM_VERY_DRY
     ),
@@ -97,16 +105,8 @@ CLASS_RULES: list[ClassRule] = [
     ),
     ClassRule(
         TerrainClass.COLD,
-        lambda fields: fields[FieldType.TEMP] >= bd.T_POLAR
-    ),
-    ClassRule(
-        TerrainClass.VERY_COLD,
-        lambda fields: fields[FieldType.TEMP] >= bd.T_CRYO
-    ),
-    ClassRule(
-        TerrainClass.CRYOGENIC,
         bd.all_remaining
-    )
+    ),
 ]
 
 # For each `TerrainClass`, what are the
@@ -148,7 +148,7 @@ BIOME_RULES: dict[TerrainClass, list[BiomeRule]] = {
         ),
         BiomeRule(
             BiomeID.BASALT,
-            lambda fields: fields[FieldType.HEIGHT] >= bd.H_HIGHLANDS,
+            lambda fields: fields[FieldType.HEIGHT] >= bd.H_ELEVATED,
         ),
         BiomeRule(
             BiomeID.MAGMA,
@@ -362,7 +362,7 @@ BIOME_RULES: dict[TerrainClass, list[BiomeRule]] = {
     TerrainClass.ARID: [
         BiomeRule(
             BiomeID.WASTELAND,
-            lambda fields: (fields[FieldType.HUMIDITY] < bd.HUM_VERY_DRY) & bd.alternate(fields[FieldType.SPECIAL_0])
+            lambda fields: (fields[FieldType.HUMIDITY] < bd.HUM_VERY_DRY) & bd.rare(fields[FieldType.SPECIAL_0])
         ),
         BiomeRule(
             BiomeID.SALT_FLATS,
@@ -375,6 +375,10 @@ BIOME_RULES: dict[TerrainClass, list[BiomeRule]] = {
         BiomeRule(
             BiomeID.BADLANDS,
             lambda fields: (fields[FieldType.TEMP] > bd.T_VERY_WARM) & bd.alternate(fields[FieldType.SPECIAL_1])
+        ),
+        BiomeRule(
+            BiomeID.OASIS,
+            lambda fields: (fields[FieldType.TEMP] > bd.T_COOL) & bd.rare(fields[FieldType.SPECIAL_2])
         ),
         BiomeRule(
             BiomeID.HOT_DESERT,

@@ -17,27 +17,20 @@
 
 
 import time
+import random
 from enum import Enum, auto
 from functools import lru_cache
 
 import numpy as np
-from noise import snoise2
+from noise import snoise3
 
 from palladium.generation.field_types import FieldType
 from palladium.generation.terrain_surface import TerrainSurface, MAP_WIDTH, MAP_HEIGHT
-from palladium.generation.noise_field import NoiseField, prepare_axes
+from palladium.generation.noise_field import prepare_axes, seeded_bicubic_snoise3_array
 
 
-_TERRAIN_SCALE_COEFF = 2.5
+_TERRAIN_SCALE_COEFF = 0.75
 _NUM_OCTAVES = 4
-
-
-class NoiseLayers(Enum):
-    BASE = auto()
-    MOUNTAINS = auto()
-    DETAIL = auto()
-    HUMIDITY = auto()
-    DRYNESS = auto()
 
 
 def _signed_pow4_array(x: np.ndarray) -> np.ndarray:
@@ -52,72 +45,73 @@ def _sigmoid_array(value: np.ndarray, strength: float) -> np.ndarray:
 
 _FIDELITY_LOW = 40
 _FIDELITY_HIGH = 160
-_NOISE_SEED_MODULUS = 32_768
 
 
 @lru_cache(maxsize=16)
 def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     """Expects base_temp in °K"""
 
-    t_i = time.time()  # DEBUG
-
     # Arrays of x and y where x, y in [0..1]
     xs = np.arange(MAP_WIDTH, dtype=np.float32) / MAP_WIDTH
     ys = np.arange(MAP_HEIGHT, dtype=np.float32) / MAP_HEIGHT
-    x_grid, y_grid = np.meshgrid(xs, ys)  # TODO: eliminate x_grid
 
-    t_grid = time.time()
-    print(f"Time for calculating grid: {1000 * (t_grid - t_i):.4f} ms")  # DEBUG
+    y_grid = np.broadcast_to(
+        ys[:, None],
+        (MAP_HEIGHT, MAP_WIDTH),
+    )
 
     axes_f_low = prepare_axes(fidelity=_FIDELITY_LOW, xs=xs, ys=ys)
     axes_f_high = prepare_axes(fidelity=_FIDELITY_HIGH, xs=xs, ys=ys)
 
-    # Noise fields
-    fields = {
-        NoiseLayers.BASE: NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int) % _NOISE_SEED_MODULUS
-            ),
-        ),
-        NoiseLayers.MOUNTAINS: NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * 0.5 * _TERRAIN_SCALE_COEFF, y * 0.5 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 1) % _NOISE_SEED_MODULUS
-            ),
-        ),
-        NoiseLayers.DETAIL: NoiseField(
-            fidelity=_FIDELITY_HIGH, axes=axes_f_high,
-            generator=lambda x, y: snoise2(
-                x * 4 * _TERRAIN_SCALE_COEFF, y * 4 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 2) % _NOISE_SEED_MODULUS
-            ),
-        ),
-        NoiseLayers.HUMIDITY: NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * 3 * _TERRAIN_SCALE_COEFF, y * 3 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 3) % _NOISE_SEED_MODULUS
-            ),
-        ),
-        NoiseLayers.DRYNESS: NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * 3 * _TERRAIN_SCALE_COEFF, y * 3 * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 4) % _NOISE_SEED_MODULUS
-            ),
-        ),
-    }
-
-    t_noise = time.time()
-    print(f"Time for calculating noise fields: {1000 * (t_noise - t_grid):.4f} ms")  # DEBUG
-
     # Get noise fields - fidelity of axes must match fidelity of fields
-    base_noise = fields[NoiseLayers.BASE].sample_array()
-    mount_noise = fields[NoiseLayers.MOUNTAINS].sample_array()
-    detail_noise = fields[NoiseLayers.DETAIL].sample_array()
-    humidity_noise = fields[NoiseLayers.HUMIDITY].sample_array()
-    dryness_noise = fields[NoiseLayers.DRYNESS].sample_array()
+    base_noise = seeded_bicubic_snoise3_array(
+        fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int,
+        generator=lambda x, y, z: snoise3(
+            x * _TERRAIN_SCALE_COEFF,
+            y * _TERRAIN_SCALE_COEFF,
+            z * _TERRAIN_SCALE_COEFF,
+            octaves=_NUM_OCTAVES,
+        )
+    )
 
-    t_sample = time.time()
-    print(f"Time for sampling noise fields: {1000 * (t_sample - t_noise):.4f} ms")  # DEBUG
+    mount_noise = seeded_bicubic_snoise3_array(
+        fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 1,
+        generator=lambda x, y, z: snoise3(
+            x * 0.5 * _TERRAIN_SCALE_COEFF,
+            y * 0.5 * _TERRAIN_SCALE_COEFF,
+            z * 0.5 * _TERRAIN_SCALE_COEFF,
+            octaves=_NUM_OCTAVES,
+        )
+    )
+    detail_noise = seeded_bicubic_snoise3_array(
+        fidelity=_FIDELITY_HIGH, axes=axes_f_high, seed_int=seed_int + 2,
+        generator=lambda x, y, z: snoise3(
+            x * 4 * _TERRAIN_SCALE_COEFF,
+            y * 4 * _TERRAIN_SCALE_COEFF,
+            z * 4 * _TERRAIN_SCALE_COEFF,
+            octaves=_NUM_OCTAVES,
+        )
+    )
+
+    humidity_noise = seeded_bicubic_snoise3_array(
+        fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 3,
+        generator=lambda x, y, z: snoise3(
+            x * 3 * _TERRAIN_SCALE_COEFF,
+            y * 3 * _TERRAIN_SCALE_COEFF,
+            z * 3 * _TERRAIN_SCALE_COEFF,
+            octaves=_NUM_OCTAVES,
+        )
+    )
+
+    dryness_noise = seeded_bicubic_snoise3_array(
+        fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 4,
+        generator=lambda x, y, z: snoise3(
+            x * 3 * _TERRAIN_SCALE_COEFF,
+            y * 3 * _TERRAIN_SCALE_COEFF,
+            z * 3 * _TERRAIN_SCALE_COEFF,
+            octaves=_NUM_OCTAVES,
+        )
+    )
 
     # Height layer
     base = _sigmoid_array(base_noise, 35) - 0.8
@@ -153,43 +147,65 @@ def generate_terrain_surface(seed_int: int, base_temp: float) -> TerrainSurface:
     coast_bonus = np.clip(0.025 - 0.00025 * heights, 0, 0.05)
 
     # Dry band humidity penalty
+    DRY_BAND_CENTRE = 0.225
+    DRY_BAND_HALF_W = 0.16
+    DRY_BAND_STRENGTH_COEFF = 0.6
+
     strength = np.zeros_like(latitude_abs)
     dry_band = (
-        (latitude_abs >= 0.1)
-        & (latitude_abs <= 0.35)
+        (latitude_abs >= (DRY_BAND_CENTRE - DRY_BAND_HALF_W))
+        & (latitude_abs <= (DRY_BAND_CENTRE + DRY_BAND_HALF_W))
     )
-    strength[dry_band] = 1 - np.abs(latitude_abs[dry_band] - 0.225) / 0.125
+    strength[dry_band] = 1 - np.abs(latitude_abs[dry_band] - DRY_BAND_CENTRE) / DRY_BAND_HALF_W
 
     dry_band_factor = np.ones_like(latitude_abs)
-    dry_band_factor[dry_band] = 1 - (dryness_noise[dry_band] + 1) * strength[dry_band] * 0.55
+    dry_band_factor[dry_band] = 1 - (dryness_noise[dry_band] + 1) * strength[dry_band] * DRY_BAND_STRENGTH_COEFF
 
     # Humidity
     humidities = np.clip((base_humidity + coast_bonus) * humidity_latitude_multiplier * dry_band_factor, 0, 1)
 
-    t_f = time.time()
-    print(f"Time for terrain sampling + generation: {1000 * (t_f - t_noise):.4f} ms")  # DEBUG
-    print(f"Generated terrain surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
-
     # Special fields
-    specials: list[np.ndarray] = []
-
-    for _ in range(2):
-        field = NoiseField(
-            fidelity=_FIDELITY_LOW, axes=axes_f_low,
-            generator=lambda x, y: snoise2(
-                x * _TERRAIN_SCALE_COEFF, y * _TERRAIN_SCALE_COEFF, octaves=_NUM_OCTAVES, base=(seed_int + 5) % 32_768
+    special_fields: list[np.ndarray] = [
+        seeded_bicubic_snoise3_array(
+            fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 5,
+            generator=lambda x, y, z: snoise3(
+                x * _TERRAIN_SCALE_COEFF,
+                y * _TERRAIN_SCALE_COEFF,
+                z * _TERRAIN_SCALE_COEFF,
+                octaves=_NUM_OCTAVES,
             ),
-        )
+        ),
+        seeded_bicubic_snoise3_array(
+            fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 6,
+            generator=lambda x, y, z: snoise3(
+                x * _TERRAIN_SCALE_COEFF,
+                y * _TERRAIN_SCALE_COEFF,
+                z * _TERRAIN_SCALE_COEFF,
+                octaves=_NUM_OCTAVES,
+            ),
+        ),
+        seeded_bicubic_snoise3_array(
+            fidelity=_FIDELITY_LOW, axes=axes_f_low, seed_int=seed_int + 7,
+            generator=lambda x, y, z: snoise3(
+                x * 6 * _TERRAIN_SCALE_COEFF,
+                y * 6 * _TERRAIN_SCALE_COEFF,
+                z * 6 * _TERRAIN_SCALE_COEFF,
+                octaves=_NUM_OCTAVES,
+            ),
+        ),
+    ]
 
-        noise = field.sample_array()
-        noise_norm = (noise + 1) * 0.5  # map [-1..1] to [0..1]
-        specials.append(noise_norm)
+    for noise in special_fields:
+        # map [-1..1] to [0..1]
+        noise += 1
+        noise /= 2
 
     # Grid
     return TerrainSurface({
         FieldType.HEIGHT: heights,
         FieldType.TEMP: temps,
         FieldType.HUMIDITY: humidities,
-        FieldType.SPECIAL_0: specials[0],
-        FieldType.SPECIAL_1: specials[1],
+        FieldType.SPECIAL_0: special_fields[0],
+        FieldType.SPECIAL_1: special_fields[1],
+        FieldType.SPECIAL_2: special_fields[2],
     })

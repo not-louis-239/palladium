@@ -17,6 +17,8 @@
 
 
 import time
+import math
+import random
 import numpy as np
 from dataclasses import dataclass
 
@@ -76,42 +78,66 @@ def prepare_axes(fidelity: int, xs: np.ndarray, ys: np.ndarray) -> SampleAxes:
      return SampleAxes(x_axis, y_axis)
 
 
-class NoiseField:
-    def __init__(
-        self,
-        fidelity: int,
-        axes: SampleAxes,
-        generator: Callable[[float, float], float],
-    ):
-        self.fidelity = fidelity
-        self.axes = axes
+def _noise_offset(seed_int: int) -> tuple[float, float, float]:
+    rng = random.Random(seed_int)
+
+    return (
+        rng.uniform(-10_000, 10_000),
+        rng.uniform(-10_000, 10_000),
+        rng.uniform(-10_000, 10_000),
+    )
 
 
-        self.values = np.array([[
-            generator(x / fidelity, y / fidelity)
-            for x in range(fidelity + 1)
-        ] for y in range(fidelity + 1)], dtype=np.float32)
+_TWO_TIMES_PI = 2 * math.pi
 
-    def sample_array(self) -> np.ndarray:
-        t_i = time.time()  # DEBUG
 
-        x_axis, y_axis = self.axes.x_axis, self.axes.y_axis
+def seeded_bicubic_snoise3_array(
+        fidelity: int, axes: SampleAxes, seed_int: int,
+        generator: Callable[[float, float, float], float],
+    ) -> np.ndarray:
 
-        horizontal = (
-            self.values[:, x_axis.i0] * x_axis.w0
-            + self.values[:, x_axis.i1] * x_axis.w1
-            + self.values[:, x_axis.i2] * x_axis.w2
-            + self.values[:, x_axis.i3] * x_axis.w3
-        )
+    # Generate offset from seed
+    ox, oy, oz = _noise_offset(seed_int)
 
-        result = (
-            horizontal[y_axis.i0, :] * y_axis.w0[:, None]
-            + horizontal[y_axis.i1, :] * y_axis.w1[:, None]
-            + horizontal[y_axis.i2, :] * y_axis.w2[:, None]
-            + horizontal[y_axis.i3, :] * y_axis.w3[:, None]
-        )
+    # Get values first
+    values: list[list[float]] = []
+    for cell_y in range(fidelity + 1):
+        row: list[float] = []
+        for cell_x in range(fidelity + 1):
+            # 0..1
+            frac_x = cell_x / fidelity
+            frac_y = cell_y / fidelity
 
-        t_f = time.time()
-        print(f"Interpolation completed in {1000 * (t_f - t_i)} ms")  # DEBUG
+            # Latitude and longitude in radians
+            longitude = frac_x * _TWO_TIMES_PI
+            latitude = math.pi * (0.5 - frac_y)
 
-        return result
+            # Convert to Cartesian coordinates -> unit sphere with range -1..1
+            x = math.cos(latitude) * math.cos(longitude)
+            z = math.cos(latitude) * math.sin(longitude)
+            y = math.sin(latitude)
+
+            row.append(generator(x + ox, y + oy, z + oz))
+        values.append(row)
+
+    # Convert to NumPy array
+    values_arr = np.array(values, dtype=np.float32)
+
+    # Sample using bicubic interpolation
+    x_axis, y_axis = axes.x_axis, axes.y_axis
+
+    horizontal = (
+        values_arr[:, x_axis.i0] * x_axis.w0
+        + values_arr[:, x_axis.i1] * x_axis.w1
+        + values_arr[:, x_axis.i2] * x_axis.w2
+        + values_arr[:, x_axis.i3] * x_axis.w3
+    )
+
+    result = (
+        horizontal[y_axis.i0, :] * y_axis.w0[:, None]
+        + horizontal[y_axis.i1, :] * y_axis.w1[:, None]
+        + horizontal[y_axis.i2, :] * y_axis.w2[:, None]
+        + horizontal[y_axis.i3, :] * y_axis.w3[:, None]
+    )
+
+    return result
