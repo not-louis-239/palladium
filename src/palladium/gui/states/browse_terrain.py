@@ -29,10 +29,11 @@ from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 from palladium.core.constants import Controls
 from palladium.core.custom_types import Colour
 from palladium.core.utils import lerp_gradient_array, map_range
-from palladium.generation.field_types import FieldType
 from palladium.generation.biomes import BIOME_COLOURS, BIOME_PROFILES
+from palladium.generation.field_types import FieldType
 from palladium.generation.terrain_surface import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
+    DEFAULT_ATTRS_DARK_BG,
     ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
@@ -44,7 +45,6 @@ from palladium.gui.constants import (
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
-from palladium.gui.constants import DEFAULT_ATTRS_DARK_BG
 from palladium.gui.utils import (
     get_seed_messages,
 )

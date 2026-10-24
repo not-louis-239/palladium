@@ -16,12 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 
 from palladium.generation.field_types import FieldType
-
 
 type BiomeCondition = Callable[
     # input: input fields, e.g. height, temp, etc.

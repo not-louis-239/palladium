@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from enum import IntEnum, auto
 from dataclasses import dataclass
+from enum import IntEnum, auto
 
+import palladium.generation.biome_descriptors as bd
 from palladium.generation.biomes import BiomeID
 from palladium.generation.field_types import FieldType
-import palladium.generation.biome_descriptors as bd
 
 
 class TerrainClass(IntEnum):

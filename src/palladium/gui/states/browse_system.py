@@ -25,12 +25,12 @@ import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox
 
 from palladium.core.constants import (
+    SECONDS_PER_YEAR,
     SOLAR_RADIUS_IN_AU,
     SOLAR_RADIUS_IN_KM,
     WN_H,
     WN_W,
     ZOOM_RATE,
-    SECONDS_PER_YEAR,
     Controls,
 )
 from palladium.core.utils import clamp
@@ -40,7 +40,6 @@ from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
     DEFAULT_ATTRS_DARK_BG,
-    ICON_SIZE,
     ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,

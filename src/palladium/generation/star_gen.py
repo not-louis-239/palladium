@@ -19,9 +19,9 @@
 import random
 from enum import StrEnum
 
+from palladium.core.utils import lerp_gradient
 from palladium.generation.name_gen import generate_star_name
 from palladium.gui.constants import KELVIN_COLOURS
-from palladium.core.utils import lerp_gradient
 
 SUN_TEMP = 5778.0  # °K
 

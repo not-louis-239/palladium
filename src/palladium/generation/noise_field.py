@@ -16,13 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
 import math
 import random
-import numpy as np
+from collections.abc import Callable
 from dataclasses import dataclass
 
-from typing import Callable
+import numpy as np
 
 
 @dataclass

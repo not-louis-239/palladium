@@ -19,10 +19,10 @@
 import math
 import random
 
-from palladium.core.constants import SOLAR_RADIUS_IN_AU, SECONDS_PER_YEAR
-from palladium.generation.terrain_surface import TerrainSurface
+from palladium.core.constants import SECONDS_PER_YEAR, SOLAR_RADIUS_IN_AU
 from palladium.generation.star_gen import StarProfile
 from palladium.generation.terrain_gen import generate_terrain_surface
+from palladium.generation.terrain_surface import TerrainSurface
 
 _ESTIMATED_SURFACE_TEMP_RATIO = 1.0316
 KG_PER_M3_TO_MSUN_PER_RSUN3 = 0.0016928997

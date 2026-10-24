@@ -16,18 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
-import random
-from enum import Enum, auto
 from functools import lru_cache
 
 import numpy as np
 from noise import snoise3
 
 from palladium.generation.field_types import FieldType
-from palladium.generation.terrain_surface import TerrainSurface, MAP_WIDTH, MAP_HEIGHT
 from palladium.generation.noise_field import prepare_axes, seeded_bicubic_snoise3_array
-
+from palladium.generation.terrain_surface import MAP_HEIGHT, MAP_WIDTH, TerrainSurface
 
 _TERRAIN_SCALE_COEFF = 0.75
 _NUM_OCTAVES = 4

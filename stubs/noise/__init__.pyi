@@ -10,7 +10,6 @@ def snoise2(
         base: int | None = None,
     ) -> float:
     """Return a float from -1 to 1 using 2D Simplex Noise."""
-    ...
 
 def snoise3(
         x: float,
@@ -26,4 +25,3 @@ def snoise3(
         base: int | None = None,
     ) -> float:
     """Return a float from -1 to 1 using 3D Simplex Noise."""
-    ...

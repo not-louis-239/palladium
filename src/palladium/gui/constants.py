@@ -24,7 +24,6 @@ from palladium.core.constants import WN_H, WN_W
 from palladium.core.custom_types import Colour
 from palladium.gui.themes import ThemeKey
 
-
 BORDER_W = 2
 
 UI_MARGIN_XS = 7

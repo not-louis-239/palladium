@@ -17,9 +17,10 @@
 
 
 import numpy as np
+
+from palladium.generation.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
 from palladium.generation.biomes import BiomeID
 from palladium.generation.field_types import FieldType
-from palladium.generation.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
 
 
 def _classify_terrain(fields: dict[FieldType, np.ndarray]) -> np.ndarray:

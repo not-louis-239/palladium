@@ -17,9 +17,9 @@
 
 
 import hashlib
-from itertools import pairwise
 import random
 from collections.abc import Callable
+from itertools import pairwise
 from types import ModuleType
 from typing import Any
 

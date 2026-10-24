@@ -21,16 +21,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
+from james import CircleButton, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox
 from pygame import Event, Surface
 from pygame.key import ScancodeWrapper
 
-from james import Panel, ScrollableDisplay, CircleButton, Spacer, VBox, HBox, Label
-
-from palladium.gui.states.base import State, StateID
-from palladium.gui.themes import ThemeKey, CLEAR
-from palladium.gui.utils import get_seed_messages
+from palladium.gui.constants import (
+    DEFAULT_ATTRS_DARK_BG,
+    ICON_SIZE,
+    SCREEN_RECT,
+    UI_MARGIN_M,
+    UI_MARGIN_S,
+)
 from palladium.gui.renderer import draw_elem
-from palladium.gui.constants import SCREEN_RECT, UI_MARGIN_M, UI_MARGIN_S, ICON_SIZE, DEFAULT_ATTRS_DARK_BG
+from palladium.gui.states.base import State, StateID
+from palladium.gui.themes import CLEAR, ThemeKey
+from palladium.gui.utils import get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -111,9 +116,8 @@ class PlanetInfoState(State):
         self.overlay_panel.layout(SCREEN_RECT)
 
     def on_entered(self) -> None:
-        planet = self.game.current_planet()
-
         # TODO: refresh planet information
+        # planet = self.game.current_planet()
 
         # Update labels
         self._update_labels()

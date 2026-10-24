@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 
-from palladium.generation.biome_classifier import stats_to_biome_array
-from palladium.generation.field_types import FieldType
-from palladium.generation.biomes import BiomeID
-from palladium.gui.constants import LIGHT_NORMAL
-
 import numpy as np
 
+from palladium.generation.biome_classifier import stats_to_biome_array
+from palladium.generation.biomes import BiomeID
+from palladium.generation.field_types import FieldType
+from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
 MAP_HEIGHT = 720
