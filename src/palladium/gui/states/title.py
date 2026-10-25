@@ -22,7 +22,7 @@ import random
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import Label, Panel, RectButton, SBox, Spacer, VBox
+from james import Label, Panel, RectButton, SBox, Spacer, VBox, GUI
 
 from palladium.core.constants import WN_H, WN_W
 from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M
@@ -65,7 +65,6 @@ class TitleState(State):
             pg.draw.circle(self.star_overlay_surface, (255, 255, 255, 255), star, 2)
 
         self.panel = Panel(
-            vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
             child=VBox(
                 Spacer(flex=0.5),
@@ -92,17 +91,20 @@ class TitleState(State):
         self.begin_button = begin_button
 
         self.panel.layout(SCREEN_RECT)
+        self.gui = GUI(self.panel, renderer=draw_elem)
 
     def on_entered(self) -> None:
         pass
 
     def update(self, dt_s: float) -> None:
-        pass
+        self.gui.update(dt_s)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                if self.begin_button.check_overlaps(event.pos):
+                if elem is self.begin_button:
                     self.game.enter_state(StateID.ENTER_SEED)
 
     def draw(self, screen: pg.Surface) -> None:

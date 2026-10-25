@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox
+from james import CircleButton, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox, GUI
 from pygame import Event, Surface
 from pygame.key import ScancodeWrapper
 
@@ -51,15 +51,14 @@ class PlanetInfoState(State):
 
     def _setup_ui(self) -> None:
         self.info_panel = Panel(
-            child=ScrollableDisplay(
+            ScrollableDisplay(
                 child=VBox()
             ),
-            vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M
         )
 
         self.overlay_panel = Panel(
-            child=VBox(
+            VBox(
                 HBox(
                     back_button := CircleButton(
                         r=ICON_SIZE // 2,
@@ -68,35 +67,38 @@ class PlanetInfoState(State):
                         **DEFAULT_ATTRS_DARK_BG,
                     ),
                     Spacer(flex=0, min_w=UI_MARGIN_S),
-                    seed_hbox := HBox(
-                        seed_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT,
-                            shrink=1.0,
+                    Panel(
+                        seed_hbox := HBox(
+                            seed_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT,
+                                shrink=1.0,
+                            ),
+                            offset_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT2,
+                            ),
+                            seed_int_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL,
+                            ),
                         ),
-                        offset_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT2,
-                        ),
-                        seed_int_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_SENTINEL,
-                        ),
-                        padding=UI_MARGIN_S,
-                        k_bg_colour=ThemeKey.BG_DARK,
+                        horiz_padding=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK,
                     ),
                     Spacer(),
                 ),
                 Spacer(),
             ),
-            vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M
         )
 
         self.overlay_panel.layout(SCREEN_RECT)
+
+        self.gui = GUI(self.overlay_panel, renderer=draw_elem)
 
         self.seed_hbox = seed_hbox
         self.back_button = back_button
@@ -123,12 +125,14 @@ class PlanetInfoState(State):
         self._update_labels()
 
     def update(self, dt_s: float) -> None:
-        pass
+        self.gui.update(dt_s)
 
     def take_input(self, keys: ScancodeWrapper, events: list[Event], dt_s: float) -> None:
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                if self.back_button.check_overlaps(event.pos):
+                if elem is self.back_button:
                     self.game.enter_state(StateID.BROWSE_TERRAIN)
 
     def draw(self, screen: Surface) -> None:

@@ -37,15 +37,15 @@ class ThemeKey(StrEnum):
 
     BG_DARK = "BG_DARK"
     BG_DARK_HOVERED = "BG_DARK_HOVERED"
-    BG_DARK_ACTIVE = "BG_DARK_ACTIVE"
+    BG_DARK_PRESSED = "BG_DARK_PRESSED"
 
     FG_ELEMS = "FG"
     FG_HOVERED = "FG_HOVERED"
-    FG_ACTIVE = "FG_ACTIVE"
+    FG_PRESSED = "FG_PRESSED"
 
     FG_INPUT_TEXT = "FG_INPUT_TEXT"
     FG_INPUT_TEXT_HOVERED = "FG_INPUT_TEXT_HOVERED"
-    FG_INPUT_TEXT_ACTIVE = "FG_INPUT_TEXT_ACTIVE"
+    FG_INPUT_TEXT_PRESSED = "FG_INPUT_TEXT_PRESSED"
 
     FG_ACCENT = "FG_ACCENT"
     FG_ACCENT2 = "FG_ACCENT2"
@@ -53,11 +53,11 @@ class ThemeKey(StrEnum):
 
     FG_ERROR = "FG_ERROR"
     FG_ERROR_HOVERED = "FG_ERROR_HOVERED"
-    FG_ERROR_ACTIVE = "FG_ERROR_ACTIVE"
+    FG_ERROR_PRESSED = "FG_ERROR_PRESSED"
 
     BORDER = "BORDER"
     BORDER_HOVERED = "BORDER_HOVERED"
-    BORDER_ACTIVE = "BORDER_ACTIVE"
+    BORDER_PRESSED = "BORDER_PRESSED"
 
     CURSOR = "CURSOR"
     FG_SELECTION = "FG_SELECTION"
@@ -87,15 +87,15 @@ THEMES = [
 
         ThemeKey.BG_DARK: TRANSLUCENT_BLACK,
         ThemeKey.BG_DARK_HOVERED: (30, 30, 38, 170),
-        ThemeKey.BG_DARK_ACTIVE: (45, 45, 58, 170),
+        ThemeKey.BG_DARK_PRESSED: (45, 45, 58, 170),
 
         ThemeKey.FG_ELEMS: (210, 210, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),
-        ThemeKey.FG_ACTIVE: (255, 255, 255),
+        ThemeKey.FG_PRESSED: (255, 255, 255),
 
         ThemeKey.FG_INPUT_TEXT: (247, 220, 178),
         ThemeKey.FG_INPUT_TEXT_HOVERED: (255, 233, 199),
-        ThemeKey.FG_INPUT_TEXT_ACTIVE: (255, 245, 227),
+        ThemeKey.FG_INPUT_TEXT_PRESSED: (255, 245, 227),
 
         ThemeKey.FG_ACCENT: (90, 255, 255),
         ThemeKey.FG_ACCENT2: (230, 90, 255),
@@ -103,11 +103,11 @@ THEMES = [
 
         ThemeKey.FG_ERROR: (255, 0, 76),
         ThemeKey.FG_ERROR_HOVERED: (255, 20, 90),
-        ThemeKey.FG_ERROR_ACTIVE: (255, 38, 117),
+        ThemeKey.FG_ERROR_PRESSED: (255, 38, 117),
 
         ThemeKey.BORDER: (170, 170, 220),
         ThemeKey.BORDER_HOVERED: (205, 205, 240),
-        ThemeKey.BORDER_ACTIVE: (240, 240, 255),
+        ThemeKey.BORDER_PRESSED: (240, 240, 255),
 
         ThemeKey.CURSOR: (255, 255, 255),
         ThemeKey.FG_SELECTION: (75, 126, 166),

@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox
+from james import CircleButton, HBox, Label, Panel, Spacer, VBox, GUI
 
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
@@ -76,13 +76,13 @@ def _format_qty(v: float) -> str:
 def _disable(button: CircleButton):
     button.k_fg_colour = ThemeKey.FG_SENTINEL
     button.k_fg_hovered = ThemeKey.FG_SENTINEL
-    button.k_fg_active = ThemeKey.FG_SENTINEL
+    button.k_fg_pressed = ThemeKey.FG_SENTINEL
     button.disabled = True
 
 def _enable(button: CircleButton):
     button.k_fg_colour = ThemeKey.FG_ELEMS
     button.k_fg_hovered = ThemeKey.FG_HOVERED
-    button.k_fg_active = ThemeKey.FG_ACTIVE
+    button.k_fg_pressed = ThemeKey.FG_PRESSED
     button.disabled = False
 
 
@@ -97,7 +97,7 @@ class BrowseStarState(State):
 
     def _setup_ui(self) -> None:
         self.overlay_panel = Panel(
-            child=HBox(
+            HBox(
                 VBox(
                     HBox(
                         HBox(
@@ -108,26 +108,28 @@ class BrowseStarState(State):
                                 **DEFAULT_ATTRS_DARK_BG,
                             ),
                             Spacer(min_w=UI_MARGIN_S),
-                            HBox(
-                                seed_label := Label(
-                                    text="",
-                                    font=self.fonts.text,
-                                    k_fg=ThemeKey.FG_ACCENT,
-                                    shrink=1.0,
+                            Panel(
+                                HBox(
+                                    seed_label := Label(
+                                        text="",
+                                        font=self.fonts.text,
+                                        k_fg=ThemeKey.FG_ACCENT,
+                                        shrink=1.0,
+                                    ),
+                                    offset_label := Label(
+                                        text="",
+                                        font=self.fonts.text,
+                                        k_fg=ThemeKey.FG_ACCENT2,
+                                    ),
+                                    seed_int_label := Label(
+                                        text="",
+                                        font=self.fonts.text,
+                                        k_fg=ThemeKey.FG_SENTINEL,
+                                    ),
                                 ),
-                                offset_label := Label(
-                                    text="",
-                                    font=self.fonts.text,
-                                    k_fg=ThemeKey.FG_ACCENT2,
-                                ),
-                                seed_int_label := Label(
-                                    text="",
-                                    font=self.fonts.text,
-                                    k_fg=ThemeKey.FG_SENTINEL,
-                                ),
-                                k_bg_colour=ThemeKey.BG_DARK,
-                                padding=UI_MARGIN_S
-                            ),
+                                horiz_padding=UI_MARGIN_S,
+                                k_bg=ThemeKey.BG_DARK,
+                            )
                         ),
                         Spacer(),
                     ),
@@ -166,78 +168,84 @@ class BrowseStarState(State):
                 ),
                 Spacer(min_w=UI_MARGIN_S),
                 VBox(
-                    info_vbox := VBox(
-                        Label(
-                            text="surface temperature:",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS
-                        ),
-                        HBox(
-                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                            temp_label := Label(
-                                text="",
+                    Panel(
+                        info_vbox := VBox(
+                            Label(
+                                text="surface temperature:",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT
+                                k_fg=ThemeKey.FG_ELEMS
+                            ),
+                            HBox(
+                                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                                temp_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT
+                                ),
+                            ),
+                            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                            Label(
+                                text="radius:",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ELEMS
+                            ),
+                            HBox(
+                                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                                radius_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT
+                                ),
+                            ),
+                            HBox(
+                                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                                radius_km_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_SENTINEL
+                                ),
+                            ),
+                            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                            Label(
+                                text="mass:",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ELEMS
+                            ),
+                            HBox(
+                                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                                mass_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT
+                                ),
+                            ),
+                            Spacer(flex=0.0, min_h=UI_MARGIN_S),
+                            Label(
+                                text="luminosity:",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ELEMS
+                            ),
+                            HBox(
+                                Spacer(flex=0.0, min_w=UI_MARGIN_M),
+                                luminosity_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT
+                                ),
                             ),
                         ),
-                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
-                        Label(
-                            text="radius:",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS
-                        ),
-                        HBox(
-                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                            radius_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT
-                            ),
-                        ),
-                        HBox(
-                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                            radius_km_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_SENTINEL
-                            ),
-                        ),
-                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
-                        Label(
-                            text="mass:",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS
-                        ),
-                        HBox(
-                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                            mass_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT
-                            ),
-                        ),
-                        Spacer(flex=0.0, min_h=UI_MARGIN_S),
-                        Label(
-                            text="luminosity:",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS
-                        ),
-                        HBox(
-                            Spacer(flex=0.0, min_w=UI_MARGIN_M),
-                            luminosity_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT
-                            ),
-                        ),
-                        padding=UI_MARGIN_S,
-                        k_bg_colour=ThemeKey.BG_DARK
+                        horiz_padding=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK,
                     ),
                     Spacer(),
                 ),
             ),
-            vert_padding=UI_MARGIN_M,
             horiz_padding=UI_MARGIN_M,
+        )
+
+        self.gui = GUI(
+            self.overlay_panel,
+            renderer=draw_elem
         )
 
         self.scale_bar = scale_bar
@@ -311,18 +319,21 @@ class BrowseStarState(State):
         self._refresh_labels()
 
     def update(self, dt_s: float) -> None:
-        pass
+        self.gui.update(dt_s)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                if self.back_button.check_overlaps(event.pos):
+                if elem is self.back_button:
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
 
-        if self.zoom_in_button.check_held():
-            self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
-        if self.zoom_out_button.check_held():
-            self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
+        if pg.mouse.get_pressed()[0]:
+            if elem is self.zoom_in_button:
+                self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
+            elif elem is self.zoom_out_button:
+                self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
 
         # Grey out zoom buttons when zoom is at max or min
         if self.zoom_level >= OUTER_ZOOM_LIMIT:

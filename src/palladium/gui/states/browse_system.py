@@ -22,7 +22,7 @@ import math
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox
+from james import CircleButton, HBox, Label, Panel, Spacer, VBox, GUI, Group
 
 from palladium.core.constants import (
     SECONDS_PER_YEAR,
@@ -149,7 +149,7 @@ class BrowseSystemState(State):
         )
 
         self.overlay_panel = Panel(
-            child=VBox(
+            VBox(
                 HBox(
                     back_button := CircleButton(
                         **DEFAULT_ATTRS_DARK_BG,
@@ -158,31 +158,33 @@ class BrowseSystemState(State):
                         font=self.fonts.ui
                     ),
                     Spacer(),
-                    HBox(
-                        Label(
-                            text="star system ",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS
+                    Panel(
+                        HBox(
+                            Label(
+                                text="star system ",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ELEMS
+                            ),
+                            seed_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT,
+                                shrink=1.0,
+                            ),
+                            offset_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT2
+                            ),
+                            seed_int_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL
+                            ),
                         ),
-                        seed_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT,
-                            shrink=1.0,
+                        k_bg=ThemeKey.BG_DARK,
+                        horiz_padding=UI_MARGIN_S,
                         ),
-                        offset_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT2
-                        ),
-                        seed_int_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_SENTINEL
-                        ),
-                        k_bg_colour=ThemeKey.BG_DARK,
-                        padding=UI_MARGIN_S,
-                    ),
                     Spacer(),
                 ),
                 Spacer(),
@@ -223,17 +225,19 @@ class BrowseSystemState(State):
                     Spacer(),
                 ),
                 HBox(
-                    HBox(
-                        speed_text_label := Label(
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ELEMS,
+                    Panel(
+                        HBox(
+                            speed_text_label := Label(
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ELEMS,
+                            ),
+                            speed_mult_label := Label(
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL,
+                            ),
                         ),
-                        speed_mult_label := Label(
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_SENTINEL,
-                        ),
-                        k_bg_colour=ThemeKey.BG_DARK,
-                        padding=UI_MARGIN_S,
+                        horiz_padding=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK,
                     ),
                     Spacer(),
                 ),
@@ -262,8 +266,7 @@ class BrowseSystemState(State):
                 gap=UI_MARGIN_S,
             ),
             horiz_padding=UI_MARGIN_M,
-            vert_padding=UI_MARGIN_M,
-        )
+            )
 
         # Bind UI components from the main panel to `self`
         self.back_button = back_button
@@ -281,11 +284,19 @@ class BrowseSystemState(State):
         self.seed_int_label = seed_int_label
 
         # planet buttons
-        self.planet_buttons: list[CircleButton] = []
+        self.planet_buttons: Group = Group()
+        self.planet_buttons.layout(SCREEN_RECT)
+
+        self.gui = GUI(
+            self.overlay_panel,
+            self.star_button,
+            self.planet_buttons,
+            renderer=draw_elem
+        )
 
         # Star/planet hover boxes
         self.hover_box = Panel(
-            child=VBox(
+            VBox(
                 hover_name := Label(
                     font=self.fonts.ui,
                     k_fg=ThemeKey.FG_ELEMS
@@ -304,7 +315,6 @@ class BrowseSystemState(State):
                 ),
             ),
             horiz_padding=UI_MARGIN_S,
-            vert_padding=UI_MARGIN_S
         )
 
         self.hover_name = hover_name
@@ -399,9 +409,9 @@ class BrowseSystemState(State):
         self.offset_label.set_text(offset_text)
 
         # Refresh planet stats
-        self.planet_buttons.clear()
+        self.planet_buttons.clear_children()
         for i in range(len(self.game.star_system.planets)):
-            self.planet_buttons.append(CircleButton(
+            self.planet_buttons.add_child(CircleButton(
                 r=0, font=self.fonts.text, **DEFAULT_ATTRS,
             ))
 
@@ -409,9 +419,6 @@ class BrowseSystemState(State):
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
-
-        # DEBUG
-        print(self.seed_label.rect)
 
     def _refresh_with_seed_offset(self, offset: int) -> None:
         assert self.game.star_system is not None
@@ -438,6 +445,7 @@ class BrowseSystemState(State):
             r = int(r + UI_MARGIN_S)
 
             button = self.planet_buttons[i]
+            assert isinstance(button, CircleButton)
             button.r = r
             button.layout(pg.Rect(x - r, y - r, 2 * r, 2 * r))
 
@@ -480,6 +488,7 @@ class BrowseSystemState(State):
     def update(self, dt_s: float) -> None:
         assert self.game.star_system is not None
 
+        self.gui.update(dt_s)
         self.scroll_disp += self.scroll_vel * dt_s
         self.scroll_vel *= (1 - SCROLL_FRICTION) ** dt_s
         self._refresh_body_buttons()
@@ -499,20 +508,22 @@ class BrowseSystemState(State):
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         assert self.game.star_system is not None
 
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                if self.back_button.check_overlaps(event.pos):
+                if elem is self.back_button:
                     self.game.enter_state(StateID.ENTER_SEED)
                     return
-                if self.star_button.check_overlaps(event.pos):
+                if elem is self.star_button:
                     self.game.enter_state(StateID.BROWSE_STAR)
                     return
                 for i, button in enumerate(self.planet_buttons):
-                    if button.check_overlaps(event.pos):
+                    if elem is button:
                         self.game.planet_idx = i
                         self.game.enter_state(StateID.BROWSE_TERRAIN)
                         return
-                if self.recentre_button.check_overlaps(event.pos):
+                if elem is self.recentre_button:
                     self.scroll_disp.update(0, 0)
 
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
@@ -532,14 +543,15 @@ class BrowseSystemState(State):
                 self.scroll_vel.x += event.x * SCROLL_SENSITIVITY * self.zoom_level
                 self.scroll_vel.y -= event.y * SCROLL_SENSITIVITY * self.zoom_level
 
-        if self.zoom_in_button.check_held():
-            self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
-        if self.zoom_out_button.check_held():
-            self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
-        if self.fast_button.check_held():
-            self._adjust_speed(self.run_speed * SPEED_ADJUST_RATE ** dt_s)
-        if self.slow_button.check_held():
-            self._adjust_speed(self.run_speed / SPEED_ADJUST_RATE ** dt_s)
+        if pg.mouse.get_pressed()[0]:
+            if elem is self.zoom_in_button:
+                self._adjust_zoom(self.zoom_level / ZOOM_RATE ** dt_s)
+            if elem is self.zoom_out_button:
+                self._adjust_zoom(self.zoom_level * ZOOM_RATE ** dt_s)
+            if elem is self.fast_button:
+                self._adjust_speed(self.run_speed * SPEED_ADJUST_RATE ** dt_s)
+            if elem is self.slow_button:
+                self._adjust_speed(self.run_speed / SPEED_ADJUST_RATE ** dt_s)
 
         for button, value, bound in (
             (self.zoom_out_button, self.zoom_level, OUTER_ZOOM_LIMIT),
@@ -552,11 +564,11 @@ class BrowseSystemState(State):
             if button.disabled:
                 button.k_fg_colour = ThemeKey.FG_SENTINEL
                 button.k_fg_hovered = ThemeKey.FG_SENTINEL
-                button.k_fg_active = ThemeKey.FG_SENTINEL
+                button.k_fg_pressed = ThemeKey.FG_SENTINEL
             else:
                 button.k_fg_colour = ThemeKey.FG_ELEMS
                 button.k_fg_hovered = ThemeKey.FG_HOVERED
-                button.k_fg_active = ThemeKey.FG_ACTIVE
+                button.k_fg_pressed = ThemeKey.FG_PRESSED
 
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
@@ -626,8 +638,10 @@ class BrowseSystemState(State):
         draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
         screen.blit(self.work_surface)
 
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
         # Draw hover boxes over planets or stars
-        if self.star_button.check_hovered():
+        if elem is self.star_button:
             self._refresh_hover_labels(
                 name=self.game.star_system.star.name,
                 temp=self.game.star_system.star.temp,
@@ -636,7 +650,7 @@ class BrowseSystemState(State):
             draw_elem(screen, self.hover_box, self.game.current_theme())
         else:
             for planet, button in zip(self.game.star_system.planets, self.planet_buttons):
-                if button.check_hovered():
+                if elem is button:
                     self._refresh_hover_labels(
                         name=planet.name,
                         temp=planet.displayed_surface_temp,

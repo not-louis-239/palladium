@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox
+from james import CircleButton, HBox, Label, Panel, Spacer, VBox, Collapsible, ScrollableDisplay, GUI
 
 from palladium.core.constants import Controls
 from palladium.core.custom_types import Colour
@@ -150,7 +150,7 @@ class BrowseTerrainState(State):
 
     def _setup_ui(self) -> None:
         self.panel = Panel(
-            child=VBox(
+            VBox(
                 HBox(
                     back_button := CircleButton(
                         r=ICON_SIZE // 2,
@@ -159,25 +159,27 @@ class BrowseTerrainState(State):
                         **DEFAULT_ATTRS_DARK_BG,
                     ),
                     Spacer(flex=0.0, min_w=UI_MARGIN_S),
-                    HBox(
-                        seed_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT,
-                            shrink=1.0,
+                    Panel(
+                        HBox(
+                            seed_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT,
+                                shrink=1.0,
+                            ),
+                            offset_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_ACCENT2,
+                            ),
+                            seed_int_label := Label(
+                                text="",
+                                font=self.fonts.text,
+                                k_fg=ThemeKey.FG_SENTINEL,
+                            ),
                         ),
-                        offset_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_ACCENT2,
-                        ),
-                        seed_int_label := Label(
-                            text="",
-                            font=self.fonts.text,
-                            k_fg=ThemeKey.FG_SENTINEL,
-                        ),
-                        k_bg_colour=ThemeKey.BG_DARK,
-                        padding=UI_MARGIN_S,
+                        horiz_padding=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK,
                     ),
                     Spacer(min_w=UI_MARGIN_S),
                     hide_gui_button := CircleButton(
@@ -186,15 +188,63 @@ class BrowseTerrainState(State):
                         **DEFAULT_ATTRS_DARK_BG,
                         img_path=self.images.eye_crossed_out,
                     ),
+                    # allow that Label to shrink inside the HBox,
+                    # but don't allow this HBox itself to shrink
+                    shrink=0.0,
                 ),
                 HBox(
                     Spacer(),
                     VBox(
-                        view_modes_button := CircleButton(
-                            r=ICON_SIZE // 2,
-                            font=self.fonts.ui,
-                            **DEFAULT_ATTRS_DARK_BG,
-                            img_path=self.images.view_modes,
+                        view_mode_collapsible := Collapsible(
+                            trigger=(view_modes_button := CircleButton(
+                                r=ICON_SIZE // 2,
+                                font=self.fonts.ui,
+                                **DEFAULT_ATTRS_DARK_BG,
+                                img_path=self.images.view_modes,
+                            )),
+                            content=(view_modes_scrollable := ScrollableDisplay(
+                                child=(view_modes_vbox := VBox(
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.trees,
+                                    ),
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.sun,
+                                    ),
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.height,
+                                    ),
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.flame,
+                                    ),
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.water,
+                                    ),
+                                    CircleButton(
+                                        r=ICON_SIZE // 2,
+                                        font=self.fonts.ui,
+                                        **DEFAULT_ATTRS_DARK_BG,
+                                        img_path=self.images.shading,
+                                   ),
+                                   gap=UI_MARGIN_S,
+                                )),
+                            )),
+                            gap=UI_MARGIN_S,
+                            shrink=1.0,
                         ),
                     ),
                     flex=1.0,
@@ -220,7 +270,7 @@ class BrowseTerrainState(State):
                 gap=UI_MARGIN_S
             ),
             horiz_padding=UI_MARGIN_M,
-            vert_padding=UI_MARGIN_M,
+            interactive=False
         )
 
         self.hover_panel = Panel(
@@ -252,8 +302,14 @@ class BrowseTerrainState(State):
                     hover_biome := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 )
             ),
-            vert_padding=UI_MARGIN_S,
             horiz_padding=UI_MARGIN_S,
+            interactive=False,
+        )
+
+        self.gui = GUI(
+            self.panel,
+            self.hover_panel,
+            renderer=draw_elem
         )
 
         self.back_button = back_button
@@ -271,6 +327,9 @@ class BrowseTerrainState(State):
 
         self.info_button = info_button
         self.view_modes_button = view_modes_button
+        self.view_mode_collapsible = view_mode_collapsible
+        self.view_modes_scrollable = view_modes_scrollable
+        self.view_modes_vbox = view_modes_vbox
         self.planet_name_label = planet_name_label
 
         self.scaled_planet_surface = pg.Surface((WN_W, WN_H))
@@ -284,8 +343,6 @@ class BrowseTerrainState(State):
             self.hide_gui_button.img_path = self.images.eye
 
     def _refresh_planet_surface(self) -> None:
-        t_i = time.time()  # DEBUG
-
         planet = self.game.current_planet()
         assert planet.surface is not None
         assert self.game.star_system is not None
@@ -343,9 +400,6 @@ class BrowseTerrainState(State):
             surface,
             (WN_W, WN_H),
         )
-
-        t_f = time.time()
-        print(f"Refreshed planet surface in {1000 * (t_f - t_i):.4f} ms")  # DEBUG
 
     def _refresh_for_new_planet(self) -> None:
         assert self.game.star_system is not None
@@ -417,23 +471,43 @@ class BrowseTerrainState(State):
         self._refresh_for_new_planet()
 
     def update(self, dt_s: float) -> None:
-        pass
+        self.gui.update(dt_s)
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
+        elem = self.gui.hit_test(pg.mouse.get_pos())
+
+        if pg.mouse.get_pressed()[0] and elem is None:
+            self._refresh_hover_panel()
+            self.hover_panel.visible = True
+        else:
+            self.hover_panel.visible = False
+
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
-                if self.back_button.check_overlaps(event.pos):
+                if elem is self.back_button:
                     self.game.enter_state(StateID.BROWSE_SYSTEM)
-                    return
-                if self.info_button.check_overlaps(event.pos):
+                elif elem is self.info_button:
                     self.game.enter_state(StateID.PLANET_INFO)
-                    return
-                if self.hide_gui_button.check_overlaps(event.pos):
+                elif elem is self.hide_gui_button:
                     self._toggle_gui_visibility()
+                elif elem is self.view_modes_button:
+                    self.view_mode_collapsible.toggle()
 
-            if event.type == pg.KEYDOWN and event.key == Controls.CHANGE_VIEW_MODE:
-                self.view_mode = (self.view_mode + 1) % _NUM_VIEW_MODES
-                self._refresh_planet_surface()
+                for i, button in enumerate(self.view_modes_vbox.children):
+                    if elem is button:
+                        self.view_mode = i
+                        self._refresh_planet_surface()
+
+            if event.type == pg.MOUSEWHEEL:
+                if elem is self.view_modes_scrollable:
+                    self.view_modes_scrollable.handle_scroll(event)
+
+            if event.type == pg.MOUSEWHEEL:
+                if elem is not None and self.view_modes_scrollable in elem.parents:
+                    self.view_modes_scrollable.handle_scroll(event)
+
+        if self.panel.layout_dirty:
+            self.panel.layout(SCREEN_RECT)
 
     def draw(self, screen: pg.Surface) -> None:
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
@@ -451,13 +525,6 @@ class BrowseTerrainState(State):
             draw_elem(self.work_surface, self.hide_gui_button, self.game.current_theme())
             screen.blit(self.work_surface)
 
-        if (
-            pg.mouse.get_pressed()[0]
-            and not self.info_button.check_hovered()
-            and not self.back_button.check_hovered()
-            and not self.hide_gui_button.check_hovered()
-        ):
-            self._refresh_hover_panel()
-            self.work_surface.fill(CLEAR)
-            draw_elem(self.work_surface, self.hover_panel, self.game.current_theme())
-            screen.blit(self.work_surface)
+        self.work_surface.fill(CLEAR)
+        draw_elem(self.work_surface, self.hover_panel, self.game.current_theme())
+        screen.blit(self.work_surface)

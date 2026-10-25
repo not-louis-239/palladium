@@ -86,7 +86,7 @@ class Profiler:
         self.snapshots = self.snapshots[-MAX_HISTORY_LEN:]
 
     def fps(self) -> float:
-        if len(self.snapshots) == 0:
+        if not self.snapshots:
             return 0.0
         t_current = time.time()
         t_first = self.snapshots[0].t_i
