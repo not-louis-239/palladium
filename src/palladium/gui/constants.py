@@ -104,6 +104,20 @@ DEFAULT_INPUT_BOX_ATTRS: InputBoxKwargs = {
 }
 
 
+class HoverLabelKwargs(TypedDict):
+    k_bg: ThemeKey
+    k_fg: ThemeKey
+    k_border: ThemeKey
+    inset: int
+
+HOVER_LABEL_ATTRS: HoverLabelKwargs = {
+    "k_bg": ThemeKey.BG_DARK,
+    "k_fg": ThemeKey.FG_ELEMS,
+    "k_border": ThemeKey.BORDER,
+    "inset": UI_MARGIN_S
+}
+
+
 # blackbody colours in terms of {°K: tuple[int, int, int]}
 KELVIN_COLOURS: dict[float, Colour] = {
     400.0: (0, 0, 0),

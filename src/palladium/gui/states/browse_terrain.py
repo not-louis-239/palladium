@@ -26,7 +26,6 @@ import numpy as np
 import pygame as pg
 from james import CircleButton, HBox, Label, Panel, Spacer, VBox, Collapsible, ScrollableDisplay, GUI
 
-from palladium.core.constants import Controls
 from palladium.core.custom_types import Colour
 from palladium.core.utils import lerp_gradient_array, map_range
 from palladium.generation.biomes import BIOME_COLOURS, BIOME_PROFILES
@@ -34,6 +33,7 @@ from palladium.generation.field_types import FieldType
 from palladium.generation.terrain_surface import MAP_HEIGHT, MAP_WIDTH
 from palladium.gui.constants import (
     DEFAULT_ATTRS_DARK_BG,
+    HOVER_LABEL_ATTRS,
     ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
@@ -150,124 +150,155 @@ class BrowseTerrainState(State):
 
     def _setup_ui(self) -> None:
         self.panel = Panel(
-            VBox(
-                HBox(
-                    back_button := CircleButton(
-                        r=ICON_SIZE // 2,
-                        font=self.fonts.text,
-                        img_path=self.images.back,
-                        **DEFAULT_ATTRS_DARK_BG,
-                    ),
-                    Spacer(flex=0.0, min_w=UI_MARGIN_S),
-                    Panel(
-                        HBox(
-                            seed_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT,
-                                shrink=1.0,
-                            ),
-                            offset_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ACCENT2,
-                            ),
-                            seed_int_label := Label(
-                                text="",
-                                font=self.fonts.text,
-                                k_fg=ThemeKey.FG_SENTINEL,
-                            ),
+            HBox(
+                content_vbox := VBox(
+                    HBox(
+                        back_button := CircleButton(
+                            r=ICON_SIZE // 2,
+                            font=self.fonts.text,
+                            img_path=self.images.back,
+                            **DEFAULT_ATTRS_DARK_BG,
                         ),
-                        horiz_padding=UI_MARGIN_S,
-                        k_bg=ThemeKey.BG_DARK,
+                        Spacer(flex=0.0, min_w=UI_MARGIN_S),
+                        Panel(
+                            HBox(
+                                seed_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT,
+                                    shrink=1.0,
+                                ),
+                                offset_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_ACCENT2,
+                                ),
+                                seed_int_label := Label(
+                                    text="",
+                                    font=self.fonts.text,
+                                    k_fg=ThemeKey.FG_SENTINEL,
+                                ),
+                            ),
+                            horiz_padding=UI_MARGIN_S,
+                            k_bg=ThemeKey.BG_DARK,
+                        ),
+                        # allow that Label to shrink inside the HBox,
+                        # but don't allow this HBox itself to shrink
+                        shrink=0.0,
                     ),
-                    Spacer(min_w=UI_MARGIN_S),
+                    Spacer(),
+                    HBox(
+                        HBox(
+                            info_button := CircleButton(
+                                r=ICON_SIZE // 2,
+                                font=self.fonts.ui,
+                                **DEFAULT_ATTRS_DARK_BG,
+                                img_path=self.images.info
+                            ),
+                            planet_name_label := Label(
+                                k_bg=ThemeKey.BG_DARK,
+                                k_fg=ThemeKey.FG_ELEMS,
+                                font=self.fonts.text,
+                                inset=UI_MARGIN_S
+                            ),
+                            gap=UI_MARGIN_S,
+                        ),
+                        Spacer(),
+                    ),
+                    gap=UI_MARGIN_S
+                ),
+                Spacer(),
+                VBox(
                     hide_gui_button := CircleButton(
                         r=ICON_SIZE // 2,
                         font=self.fonts.text,
                         **DEFAULT_ATTRS_DARK_BG,
                         img_path=self.images.eye_crossed_out,
                     ),
-                    # allow that Label to shrink inside the HBox,
-                    # but don't allow this HBox itself to shrink
-                    shrink=0.0,
-                ),
-                HBox(
-                    Spacer(),
-                    VBox(
-                        view_mode_collapsible := Collapsible(
-                            trigger=(view_modes_button := CircleButton(
-                                r=ICON_SIZE // 2,
-                                font=self.fonts.ui,
-                                **DEFAULT_ATTRS_DARK_BG,
-                                img_path=self.images.view_modes,
-                            )),
-                            content=(view_modes_scrollable := ScrollableDisplay(
-                                child=(view_modes_vbox := VBox(
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.trees,
-                                    ),
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.sun,
-                                    ),
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.height,
-                                    ),
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.flame,
-                                    ),
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.water,
-                                    ),
-                                    CircleButton(
-                                        r=ICON_SIZE // 2,
-                                        font=self.fonts.ui,
-                                        **DEFAULT_ATTRS_DARK_BG,
-                                        img_path=self.images.shading,
-                                   ),
-                                   gap=UI_MARGIN_S,
-                                )),
-                            )),
-                            gap=UI_MARGIN_S,
-                            shrink=1.0,
-                        ),
-                    ),
-                    flex=1.0,
-                ),
-                HBox(
-                    HBox(
-                        info_button := CircleButton(
+                    view_mode_collapsible := Collapsible(
+                        trigger=(view_modes_button := CircleButton(
                             r=ICON_SIZE // 2,
                             font=self.fonts.ui,
                             **DEFAULT_ATTRS_DARK_BG,
-                            img_path=self.images.info
-                        ),
-                        planet_name_label := Label(
-                            k_bg=ThemeKey.BG_DARK,
-                            k_fg=ThemeKey.FG_ELEMS,
-                            font=self.fonts.text,
-                            inset=UI_MARGIN_S
-                        ),
+                            img_path=self.images.view_modes,
+                        )),
+                        content=(view_modes_scrollable := ScrollableDisplay(
+                            child=(view_modes_vbox := VBox(
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.trees,
+                                    hover_tooltip=Label(
+                                        text="Natural Light",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.sun,
+                                    hover_tooltip=Label(
+                                        text="White Light",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.height,
+                                    hover_tooltip=Label(
+                                        text="Altitude",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.flame,
+                                    hover_tooltip=Label(
+                                        text="Temperature",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.water,
+                                    hover_tooltip=Label(
+                                        text="Humidity",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                CircleButton(
+                                    r=ICON_SIZE // 2,
+                                    font=self.fonts.ui,
+                                    **DEFAULT_ATTRS_DARK_BG,
+                                    img_path=self.images.shading,
+                                    hover_tooltip=Label(
+                                        text="Shading",
+                                        font=self.fonts.text,
+                                        **HOVER_LABEL_ATTRS
+                                    )
+                                ),
+                                gap=UI_MARGIN_S,
+                            )),
+                        )),
                         gap=UI_MARGIN_S,
+                        shrink=1.0,
                     ),
                     Spacer(),
+                    gap=UI_MARGIN_S
                 ),
-                gap=UI_MARGIN_S
             ),
             horiz_padding=UI_MARGIN_M,
             interactive=False
@@ -326,6 +357,7 @@ class BrowseTerrainState(State):
         self.hover_biome = hover_biome
 
         self.info_button = info_button
+        self.content_vbox = content_vbox
         self.view_modes_button = view_modes_button
         self.view_mode_collapsible = view_mode_collapsible
         self.view_modes_scrollable = view_modes_scrollable
@@ -336,11 +368,14 @@ class BrowseTerrainState(State):
         self.panel.layout(SCREEN_RECT)
 
     def _toggle_gui_visibility(self) -> None:
-        self.panel.visible = not self.panel.visible
-        if self.panel.visible:
-            self.hide_gui_button.img_path = self.images.eye_crossed_out
-        else:
+        currently_visible = self.content_vbox.visible
+        self.content_vbox.toggle_visibility()
+        self.view_mode_collapsible.toggle_visibility()
+
+        if currently_visible:
             self.hide_gui_button.img_path = self.images.eye
+        else:
+            self.hide_gui_button.img_path = self.images.eye_crossed_out
 
     def _refresh_planet_surface(self) -> None:
         planet = self.game.current_planet()
@@ -516,15 +551,4 @@ class BrowseTerrainState(State):
         screen.blit(self.scaled_planet_surface)
 
         # Draw overlay panel
-        if self.panel.visible:
-            self.work_surface.fill(CLEAR)
-            draw_elem(self.work_surface, self.panel, self.game.current_theme())
-            screen.blit(self.work_surface)
-        else:
-            self.work_surface.fill(CLEAR)
-            draw_elem(self.work_surface, self.hide_gui_button, self.game.current_theme())
-            screen.blit(self.work_surface)
-
-        self.work_surface.fill(CLEAR)
-        draw_elem(self.work_surface, self.hover_panel, self.game.current_theme())
-        screen.blit(self.work_surface)
+        self.gui.draw(screen, self.game.current_theme())

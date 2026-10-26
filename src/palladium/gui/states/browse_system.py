@@ -261,8 +261,6 @@ class BrowseSystemState(State):
                     ),
                 ),
 
-                # TODO: add buttons: re-centre, 'click and drag' instruction
-
                 gap=UI_MARGIN_S,
             ),
             horiz_padding=UI_MARGIN_M,

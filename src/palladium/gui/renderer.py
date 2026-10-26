@@ -18,6 +18,9 @@ from james import Element, InputBox, RectButton, SupportsGetItemColour
 
 
 def draw_elem(surface: pg.Surface, elem: Element, theme: SupportsGetItemColour) -> None:
+    if not elem.visible:
+        return
+
     # Custom overrides in the renderer to add specialised behaviour to specific element types
     if isinstance(elem, RectButton):
         elem.draw_primitive(surface, theme)
