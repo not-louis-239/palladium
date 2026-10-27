@@ -21,8 +21,8 @@ import pygame as pg
 from palladium.core.asset_manager import Assets
 from palladium.core.constants import Controls
 from palladium.core.profiler import Profiler
-from palladium.generation.planet import Planet
-from palladium.generation.star_system import StarSystem
+from palladium.generation.objects.planet import Planet
+from palladium.generation.objects.star_system import StarSystem
 from palladium.gui.states import (
     BrowseStarState,
     BrowseSystemState,

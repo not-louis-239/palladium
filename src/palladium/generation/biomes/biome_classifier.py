@@ -18,9 +18,9 @@
 
 import numpy as np
 
-from palladium.generation.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
-from palladium.generation.biomes import BiomeID
-from palladium.generation.field_types import FieldType
+from palladium.generation.biomes.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
+from palladium.generation.biomes.biomes import BiomeID
+from palladium.generation.objects.field_types import FieldType
 
 
 def _classify_terrain(fields: dict[FieldType, np.ndarray]) -> np.ndarray:
@@ -69,7 +69,7 @@ def _classify_biomes(terrain_classes: np.ndarray, fields: dict[FieldType, np.nda
     assert not np.any(biomes == BiomeID.INVALID), "Invalid biome detected due to failure to classify all biomes"
     return biomes
 
-def stats_to_biome_array(fields: dict[FieldType, np.ndarray])  -> np.ndarray:
+def fields_to_biome_array(fields: dict[FieldType, np.ndarray])  -> np.ndarray:
     """Accepts input `np.ndarray`s and returns an `np.ndarray` of `BiomeID`s."""
 
     fields = fields.copy()

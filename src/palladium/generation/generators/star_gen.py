@@ -19,11 +19,8 @@
 import random
 from enum import StrEnum
 
-from palladium.core.utils import lerp_gradient
-from palladium.generation.name_gen import generate_star_name
-from palladium.gui.constants import KELVIN_COLOURS
-
-SUN_TEMP = 5778.0  # °K
+from palladium.generation.generators.name_gen import generate_star_name
+from palladium.generation.objects.star_profile import StarProfile, SUN_TEMP
 
 
 class StarType(StrEnum):
@@ -44,29 +41,6 @@ STAR_WEIGHTS: dict[StarType, float] = {
     StarType.BROWN_DWARF: 0.06,
     StarType.WHITE_DWARF: 0.01,
 }
-
-
-class StarProfile:
-    def __init__(self, name: str, mass: float, radius: float, temp: float):
-        """
-        Expects:
-            name: str
-            mass: float (solar masses)
-            radius: float (solar radii)
-            temp: float (°K)
-        """
-
-        self.name = name
-        self.mass = mass
-        self.radius = radius
-        self.temp = temp
-
-        # Calculate light colour.
-        self.light_colour = lerp_gradient(self.temp, KELVIN_COLOURS)
-
-        # Crude approximation using Stefan-Boltzmann law.
-        # Luminosity is expressed in terms of the Sun.
-        self.luminosity = (self.radius ** 2) * ((self.temp / SUN_TEMP) ** 4)
 
 
 def generate_star_profile(seed_int: int) -> StarProfile:

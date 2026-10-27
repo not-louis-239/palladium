@@ -16,31 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#import numpy as np
-import random
-from dataclasses import dataclass
-
 from palladium.core.utils import random_seed, str_to_seed
-from palladium.generation.planet import Planet, generate_planet
-from palladium.generation.star_gen import StarProfile, generate_star_profile
-
-PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
-PLANET_SUFFIXES: str = "bcdefghijklmnopqrstuvwxyz"
-
-
-@dataclass(frozen=True, kw_only=True)
-class SeedMetadata:
-    display_str: str
-    offset: int  # offset from the seed of `display_str`
-    is_string: bool  # True if the `display_str` is not a pure integer
-    integer_value: int  # internal integer value of the seed, including `offset`
+from palladium.generation.generators.star_gen import generate_star_profile
+from palladium.generation.objects.generate_planet import generate_planet
+from palladium.generation.objects.planet import Planet
+from palladium.generation.objects.star_profile import StarProfile
+from palladium.generation.objects.star_system import PLANET_COUNT_WEIGHTS, PLANET_SUFFIXES, SeedMetadata, StarSystem
 
 
-class StarSystem:
-    def __init__(self, star: StarProfile, planets: list[Planet], seed_metadata: SeedMetadata) -> None:
-        self.star = star
-        self.planets = planets
-        self.seed_metadata = seed_metadata
+import random
 
 
 def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:
@@ -69,6 +53,7 @@ def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:
         #print(f"{mean_temp / planet.base_temp} mean temp : temp ratio for planet '{planet.name}'")
 
     return planets
+
 
 def generate_star_system(seed: int | str, offset: int = 0) -> StarSystem:
     # Handling seed conversion and display

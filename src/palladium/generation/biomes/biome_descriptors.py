@@ -20,7 +20,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from palladium.generation.field_types import FieldType
+from palladium.generation.objects.field_types import FieldType
 
 type BiomeCondition = Callable[
     # input: input fields, e.g. height, temp, etc.

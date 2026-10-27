@@ -37,7 +37,7 @@ from james import (
 
 from palladium.core.constants import WN_H, WN_W
 from palladium.core.utils import random_seed, safe_convert
-from palladium.generation.star_system import generate_star_system
+from palladium.generation.generators.star_system_gen import generate_star_system
 from palladium.gui.constants import (
     BORDER_W,
     DEFAULT_ATTRS,

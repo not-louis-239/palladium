@@ -34,8 +34,8 @@ from palladium.core.constants import (
     Controls,
 )
 from palladium.core.utils import clamp
-from palladium.generation.planet import calculate_habitable_zone
-from palladium.generation.star_system import generate_star_system
+from palladium.generation.objects.generate_planet import calculate_habitable_zone
+from palladium.generation.generators.star_system_gen import generate_star_system
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,

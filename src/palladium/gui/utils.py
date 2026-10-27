@@ -17,7 +17,7 @@
 import pygame as pg
 
 from palladium.core.custom_types import AColour
-from palladium.generation.star_system import SeedMetadata
+from palladium.generation.objects.star_system import SeedMetadata
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:

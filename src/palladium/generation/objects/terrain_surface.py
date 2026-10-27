@@ -1,11 +1,29 @@
+# repo at: https://github.com/not-louis-239/palladium
+# Palladium - Pygame terrain and star system generator
+# Copyright (C) 2026 Louis Masarei-Boulton <243234869+not-louis-239@users.noreply.github.com>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from dataclasses import dataclass
 
 import numpy as np
 
-from palladium.generation.biome_classifier import stats_to_biome_array
-from palladium.generation.biomes import BiomeID
+from palladium.generation.biomes.biome_classifier import fields_to_biome_array
+from palladium.generation.biomes.biomes import BiomeID
 from palladium.core.utils import clamp
-from palladium.generation.field_types import FieldType
+from palladium.generation.objects.field_types import FieldType
 from palladium.gui.constants import LIGHT_NORMAL
 
 MAP_WIDTH = 1280
@@ -28,9 +46,14 @@ class TerrainSurface:
 
         self.fields = fields
 
+        # Calculate terrain normals
         self.normals = self._calculate_normals()
+
+        # Calculate dot products between terrain normals and light direction
         self.dot_products = self.normals @ np.asarray(LIGHT_NORMAL, dtype=np.float32)
-        self.biomes = stats_to_biome_array(fields=fields)
+
+        # Classify the terrain surface into biomes
+        self.biomes = fields_to_biome_array(fields=fields)
 
     def info_at(self, x: int, y: int) -> CellWrapper:
         """Returns a CellWrapper containing the properties of the cell at (x, y)."""
