@@ -38,7 +38,7 @@ class ScaleBar(james.Element):
             inset: int = 0, gap: int = 0,
             bar_height: int = 4
         ) -> None:
-        super().__init__(flex=flex, draw_attrs=draw_attrs, colours=colours)
+        super().__init__(flex=flex)
         self.k_bg = k_bg
         self.k_fg = k_fg
         self.bar_width = bar_width

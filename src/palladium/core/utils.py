@@ -67,6 +67,7 @@ def safe_convert[T](val: Any, typ: Callable[[Any], T]) -> T | None:
 
 
 def map_range(val: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    """Linearly maps a value from one range to another."""
     if in_max == in_min:
         return out_min
     return out_min + (out_max - out_min) * (val - in_min) / (in_max - in_min)
