@@ -21,7 +21,7 @@ import random
 from collections.abc import Callable
 from itertools import pairwise
 from types import ModuleType
-from typing import Any
+from typing import Any, overload
 
 import numpy as np
 
@@ -51,6 +51,10 @@ def str_to_seed(s: str) -> tuple[int, bool]:
         return _str_to_terrain_seed(s), True
 
 
+@overload
+def clamp(val: int, lower: int, upper: int) -> int: ...
+@overload
+def clamp(val: float, lower: float, upper: float) -> float: ...
 def clamp(val: float, lower: float, upper: float) -> float:
     return max(min(val, upper), lower)
 

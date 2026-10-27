@@ -463,7 +463,8 @@ class BrowseTerrainState(State):
 
         # Get the cell
         mx, my = pg.mouse.get_pos()
-        cell_x, cell_y = int(MAP_WIDTH * (mx / WN_W)), int(MAP_HEIGHT * (my / WN_H))
+        cell_x = int(map_range(mx, 0, WN_W, 0, MAP_WIDTH - 1))
+        cell_y = int(map_range(my, 0, WN_H, 0, MAP_HEIGHT - 1))
         cell = planet.surface.info_at(cell_x, cell_y)
 
         # Refresh panel information

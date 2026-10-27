@@ -4,6 +4,7 @@ import numpy as np
 
 from palladium.generation.biome_classifier import stats_to_biome_array
 from palladium.generation.biomes import BiomeID
+from palladium.core.utils import clamp
 from palladium.generation.field_types import FieldType
 from palladium.gui.constants import LIGHT_NORMAL
 
@@ -32,11 +33,18 @@ class TerrainSurface:
         self.biomes = stats_to_biome_array(fields=fields)
 
     def info_at(self, x: int, y: int) -> CellWrapper:
+        """Returns a CellWrapper containing the properties of the cell at (x, y)."""
+
+        # Clamp to avoid IndexError from attempting to grab a cell that doesn't exist
+        # or weird bugs caused by implicit wrapping from x<0 or y<0.
+        clamped_x = clamp(x, 0, MAP_WIDTH - 1)
+        clamped_y = clamp(y, 0, MAP_HEIGHT - 1)
+
         return CellWrapper(
-            height=float(self.fields[FieldType.HEIGHT][y, x]),
-            temp=float(self.fields[FieldType.TEMP][y, x]),
-            humidity=float(self.fields[FieldType.HUMIDITY][y, x]),
-            biome_id=BiomeID(self.biomes[y, x]),
+            height=float(self.fields[FieldType.HEIGHT][clamped_y, clamped_x]),
+            temp=float(self.fields[FieldType.TEMP][clamped_y, clamped_x]),
+            humidity=float(self.fields[FieldType.HUMIDITY][clamped_y, clamped_x]),
+            biome_id=BiomeID(self.biomes[clamped_y, clamped_x]),
         )
 
     def _calculate_normals(self) -> np.ndarray:
