@@ -22,7 +22,7 @@ import random
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import Label, Panel, RectButton, SBox, Spacer, VBox, GUI
+from james import GUI, Label, Panel, RectButton, SBox, Spacer, VBox
 
 from palladium.core.constants import WN_H, WN_W
 from palladium.gui.constants import BORDER_W, DEFAULT_ATTRS, SCREEN_RECT, UI_MARGIN_M

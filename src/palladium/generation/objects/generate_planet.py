@@ -16,13 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from palladium.core.constants import SECONDS_PER_YEAR, SOLAR_RADIUS_IN_AU
-from palladium.generation.objects.planet import _ESTIMATED_SURFACE_TEMP_RATIO, KG_PER_M3_TO_MSUN_PER_RSUN3, Planet, calculate_stellar_flux
-from palladium.generation.objects.star_profile import StarProfile
-
 import math
 import random
 
+from palladium.core.constants import SECONDS_PER_YEAR, SOLAR_RADIUS_IN_AU
+from palladium.generation.objects.planet import (
+    _ESTIMATED_SURFACE_TEMP_RATIO,
+    KG_PER_M3_TO_MSUN_PER_RSUN3,
+    Planet,
+    calculate_stellar_flux,
+)
+from palladium.generation.objects.star_profile import StarProfile
 
 HABITABLE_INNER_FLUX_LIMIT = 1.10  # solar flux
 HABITABLE_OUTER_FLUX_LIMIT = 0.35  # solar flux

@@ -18,16 +18,25 @@
 
 from __future__ import annotations
 
-import math
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox, GUI, Collapsible, ScrollableDisplay
+from james import (
+    GUI,
+    CircleButton,
+    Collapsible,
+    HBox,
+    Label,
+    Panel,
+    ScrollableDisplay,
+    Spacer,
+    VBox,
+)
 
 from palladium.core.custom_types import Colour
-from palladium.core.utils import lerp_gradient_array, map_range, clamp
+from palladium.core.utils import clamp, lerp_gradient_array, map_range
 from palladium.generation.biomes.biomes import BIOME_COLOURS, BIOME_PROFILES
 from palladium.generation.objects.field_types import FieldType
 from palladium.generation.objects.terrain_surface import MAP_HEIGHT, MAP_WIDTH
@@ -42,9 +51,9 @@ from palladium.gui.constants import (
     WN_H,
     WN_W,
 )
+from palladium.gui.elements.gradient_scale import GradientScale
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
-from palladium.gui.elements.gradient_scale import GradientScale
 from palladium.gui.themes import ThemeKey
 from palladium.gui.utils import (
     get_seed_messages,

@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox, GUI
+from james import GUI, CircleButton, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox
 from pygame import Event, Surface
 from pygame.key import ScancodeWrapper
 

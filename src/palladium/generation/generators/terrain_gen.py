@@ -21,9 +21,16 @@ from functools import lru_cache
 import numpy as np
 from noise import snoise3
 
+from palladium.generation.helpers.noise_field import (
+    prepare_axes,
+    seeded_bicubic_snoise3_array,
+)
 from palladium.generation.objects.field_types import FieldType
-from palladium.generation.helpers.noise_field import prepare_axes, seeded_bicubic_snoise3_array
-from palladium.generation.objects.terrain_surface import MAP_HEIGHT, MAP_WIDTH, TerrainSurface
+from palladium.generation.objects.terrain_surface import (
+    MAP_HEIGHT,
+    MAP_WIDTH,
+    TerrainSurface,
+)
 
 _TERRAIN_SCALE_COEFF = 0.75
 _NUM_OCTAVES = 4

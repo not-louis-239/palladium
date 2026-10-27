@@ -22,7 +22,7 @@ import math
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox, GUI, Group
+from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox
 
 from palladium.core.constants import (
     SECONDS_PER_YEAR,
@@ -34,8 +34,8 @@ from palladium.core.constants import (
     Controls,
 )
 from palladium.core.utils import clamp
-from palladium.generation.objects.generate_planet import calculate_habitable_zone
 from palladium.generation.generators.star_system_gen import generate_star_system
+from palladium.generation.objects.generate_planet import calculate_habitable_zone
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,

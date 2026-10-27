@@ -16,16 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Callable, Literal
+from collections.abc import Callable
+from typing import Literal
 
-import pygame as pg
 import numpy as np
-
+import pygame as pg
 from james import Element
 from james.elements.static_leaves.label import Label
-
 from james.helpers.custom_types import SupportsGetItemColour
 from james.helpers.utils import get_text_surf
+
 from palladium.core.custom_types import Colour
 from palladium.core.utils import map_range
 

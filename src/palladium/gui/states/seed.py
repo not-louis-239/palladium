@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 from james import (
+    GUI,
     CircleButton,
     HBox,
     InputBox,
@@ -32,7 +33,6 @@ from james import (
     Spacer,
     Table,
     VBox,
-    GUI,
 )
 
 from palladium.core.constants import WN_H, WN_W

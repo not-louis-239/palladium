@@ -18,7 +18,11 @@
 
 import numpy as np
 
-from palladium.generation.biomes.biome_rules import BIOME_RULES, CLASS_RULES, TerrainClass
+from palladium.generation.biomes.biome_rules import (
+    BIOME_RULES,
+    CLASS_RULES,
+    TerrainClass,
+)
 from palladium.generation.biomes.biomes import BiomeID
 from palladium.generation.objects.field_types import FieldType
 

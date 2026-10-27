@@ -19,7 +19,6 @@
 from palladium.core.utils import lerp_gradient
 from palladium.gui.constants import KELVIN_COLOURS
 
-
 SUN_TEMP = 5778.0  # °K
 
 class StarProfile:

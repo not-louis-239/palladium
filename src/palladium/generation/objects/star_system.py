@@ -19,8 +19,8 @@
 #import numpy as np
 from dataclasses import dataclass
 
-from palladium.generation.objects.star_profile import StarProfile
 from palladium.generation.objects.planet import Planet
+from palladium.generation.objects.star_profile import StarProfile
 
 PLANET_COUNT_WEIGHTS: list[int] = [1, 5, 10, 25, 30, 20, 10, 3, 1, 1]
 PLANET_SUFFIXES: str = "bcdefghijklmnopqrstuvwxyz"

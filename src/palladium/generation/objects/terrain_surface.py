@@ -20,9 +20,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from palladium.core.utils import clamp
 from palladium.generation.biomes.biome_classifier import fields_to_biome_array
 from palladium.generation.biomes.biomes import BiomeID
-from palladium.core.utils import clamp
 from palladium.generation.objects.field_types import FieldType
 from palladium.gui.constants import LIGHT_NORMAL
 

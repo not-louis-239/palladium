@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame as pg
-from james import CircleButton, HBox, Label, Panel, Spacer, VBox, GUI
+from james import GUI, CircleButton, HBox, Label, Panel, Spacer, VBox
 
 from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp

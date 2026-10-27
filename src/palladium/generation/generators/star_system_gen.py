@@ -16,15 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import random
+
 from palladium.core.utils import random_seed, str_to_seed
 from palladium.generation.generators.star_gen import generate_star_profile
 from palladium.generation.objects.generate_planet import generate_planet
 from palladium.generation.objects.planet import Planet
 from palladium.generation.objects.star_profile import StarProfile
-from palladium.generation.objects.star_system import PLANET_COUNT_WEIGHTS, PLANET_SUFFIXES, SeedMetadata, StarSystem
-
-
-import random
+from palladium.generation.objects.star_system import (
+    PLANET_COUNT_WEIGHTS,
+    PLANET_SUFFIXES,
+    SeedMetadata,
+    StarSystem,
+)
 
 
 def _generate_planets(seed_int: int, star: StarProfile) -> list[Planet]:

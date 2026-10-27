@@ -20,7 +20,7 @@ import random
 from enum import StrEnum
 
 from palladium.generation.generators.name_gen import generate_star_name
-from palladium.generation.objects.star_profile import StarProfile, SUN_TEMP
+from palladium.generation.objects.star_profile import SUN_TEMP, StarProfile
 
 
 class StarType(StrEnum):
