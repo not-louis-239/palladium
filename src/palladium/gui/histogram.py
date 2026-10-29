@@ -19,7 +19,7 @@
 import numpy as np
 
 
-def generate_bins(data: list[float], num_bins: int) -> dict[float, int]:
+def generate_bins(data: np.ndarray, num_bins: int) -> dict[tuple[float, float], int]:
     """
     Generate histogram bins from a list of data.
 
@@ -28,7 +28,14 @@ def generate_bins(data: list[float], num_bins: int) -> dict[float, int]:
         num_bins (int): The number of bins to create.
 
     Returns:
-        dict[float, int]: A dictionary where keys are bin minimums and values are counts.
+        dict[tuple[float, float], int]: A dictionary where keys are bin edges and values are counts.
     """
+
+    # `hist` is the number of values in each bin,
+    # while `bin_edges` contains the boundaries for each bin
+    # Hence, `len(bin_edges) == len(hist) + 1`.
+    # Each bin N contains values where bin_edges[N] <= x < bin_edges[N + 1],
+    # except the final bin, where bin_edges[-2] <= x <= bin_edges[-1].
+
     hist, bin_edges = np.histogram(data, bins=num_bins)
-    return {bin_edges[i]: hist[i] for i in range(len(hist))}
+    return {(bin_edges[i], bin_edges[i + 1]): hist[i] for i in range(len(hist))}

@@ -198,14 +198,22 @@ class SeedState(State):
         elem = self.gui.hit_test(pg.mouse.get_pos())
 
         for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                for input_box in (self.seed_input_box, self.offset_input_box):
+                    input_box.on_mouse_down(event=event)
+
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if elem is self.back_button:
                     self.game.enter_state(StateID.TITLE)
                 if elem is self.proceed_button and self.is_valid:
                     self._proceed()
 
-        self.seed_input_box.handle_input(keys, events, dt_s)
-        if self.offset_input_box.handle_input(keys, events, dt_s):
+                for input_box in (self.seed_input_box, self.offset_input_box):
+                    if elem is input_box:
+                        input_box.on_mouse_up()
+
+        self.seed_input_box.handle_input(events, dt_s)
+        if self.offset_input_box.handle_input(events, dt_s):
             self._validate()
 
     def draw(self, screen: pg.Surface) -> None:

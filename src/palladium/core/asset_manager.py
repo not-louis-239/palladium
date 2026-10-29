@@ -57,6 +57,7 @@ class Fonts:
         self.ui = pg.font.Font(self._font_path, 45)
         self.text = pg.font.Font(self._font_path, 28)
         self.tips = pg.font.Font(self._font_path, 20)
+        self.tiny = pg.font.Font(self._font_path, 12)
 
 
 class Assets:

@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -35,7 +34,6 @@ from james import (
     VBox,
 )
 
-from palladium.core.custom_types import Colour
 from palladium.core.utils import clamp, lerp_gradient_array, map_range
 from palladium.generation.biomes.biomes import BIOME_COLOURS, BIOME_PROFILES
 from palladium.generation.objects.field_types import FieldType
@@ -53,6 +51,7 @@ from palladium.gui.constants import (
 )
 from palladium.gui.elements.gradient_scale import GradientScale
 from palladium.gui.renderer import draw_elem
+from palladium.gui.view_colour_schemes import COLOUR_SCHEMES, ViewMode
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
 from palladium.gui.utils import (
@@ -63,106 +62,13 @@ if TYPE_CHECKING:
     from palladium.game.game import Game
 
 
-class _ViewMode(IntEnum):
-    FANCY = 0
-    WHITE = 1
-    ALTITUDE = 2
-    TEMPERATURE = 3
-    HUMIDITY = 4
-    SHADING = 5
-
-
-def _prepare_gradient(gradient: dict[float, Colour]) -> tuple[np.ndarray, np.ndarray]:
-    """Compile a gradient of `float`s and `Colour`s into two `np.ndarray`s,
-    one for the stops and one for the colours. """
-
-    sorted_stops = sorted(gradient)
-
-    stops = np.array(
-        sorted_stops,
-        dtype=np.float32,
-    )
-
-    colours = np.array(
-        [gradient[stop] for stop in sorted_stops],
-        dtype=np.float32,
-    )
-
-    return stops, colours
-
-
 _WHITE_LIGHT = (30, 30, 30)
 _STARLIGHT_STRENGTH_COEFF = 50
-
-_COLOUR_SCHEMES: dict[_ViewMode, tuple[dict[float, Colour], tuple[np.ndarray, np.ndarray]]] = {
-    _ViewMode.ALTITUDE: (
-        d := {  # m -> colour
-            -20_000: (0, 0, 0),        # abyssal black
-            -10_000: (5, 10, 45),      # very dark blue
-            -5_000:  (10, 35, 120),    # deep blue
-            -1_000:  (40, 150, 210),   # medium azure
-            -1:      (170, 225, 235),  # pale cyan coast
-            0:       (225, 195, 125),  # beach sand
-            500:     (125, 180, 90),   # light green
-            1_000:   (35, 105, 45),    # dark green
-            2_000:   (75, 55, 35),     # dark brown
-            4_000:   (165, 120, 75),   # light brown
-            5_000:   (70, 80, 85),     # dark slate gray
-            7_000:   (145, 155, 160),  # light slate gray
-            10_000:  (205, 220, 220),  # pale cyan-grey snow
-            20_000:  (255, 255, 255),  # white
-        },
-        _prepare_gradient(d)
-    ),
-    _ViewMode.HUMIDITY: (
-        d := {  # % -> colour
-            0.0:  (150, 150, 145),  # salt flat grey
-            0.15: (215, 195, 145),  # desert beige
-            0.3:  (225, 220, 145),  # pale prairie yellow
-            0.5:  (100, 190, 90),   # spring green
-            0.8:  (135, 215, 225),  # light cyan-blue
-            1.0:  (20, 75, 190),    # deep ocean blue
-        },
-        _prepare_gradient(d)
-    ),
-    _ViewMode.TEMPERATURE: (
-        d := {  # °C -> colour
-            -273.15: (255, 255, 255),  # absolute zero, white
-            -250:    (253, 145, 255),  # pale magenta-pink
-            -210:    (150, 39, 219),  # pale purple
-            -150:     (49, 30, 105),    # dark purple
-            -90:     (34, 73, 189),    # dark blue
-            -20:     (145, 205, 240),  # pale blue
-            0:       (220, 250, 250),  # pale cyan-white
-            10:      (100, 210, 175),  # green-cyan
-            20:      (100, 210, 80),   # spring green
-            30:      (245, 225, 45),   # yellow
-            40:      (245, 125, 30),   # orange
-            50:      (245, 25, 30),    # bright red
-            100:     (145, 10, 20),    # deep scarlet
-            500:     (232, 46, 46),  # bright scarlet
-            2_000:   (255, 151, 107),  # very pale red-orange
-            10_000:  (255, 240, 235),  # very slightly red off-white
-        },
-        _prepare_gradient(d)
-    ),
-    _ViewMode.SHADING: (
-        d := {  # dot_product(light, normal) -> colour
-            -1.0: (10, 15, 55),      # midnight blue
-            -0.5: (65, 25, 90),      # dark purple
-            0.0: (165, 75, 125),    # muted magenta
-            0.5: (219, 157, 112),    # orange
-            1.0: (255, 240, 165),   # pale sunlight yellow
-        },
-        _prepare_gradient(d)
-    )
-}
-
 
 class BrowseTerrainState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
-        self.view_mode = _ViewMode.FANCY
+        self.view_mode = ViewMode.FANCY
         self.work_surface = pg.Surface(SCREEN_RECT.size, pg.SRCALPHA)
 
         self._setup_ui()
@@ -393,9 +299,9 @@ class BrowseTerrainState(State):
 
     def _setup_gradients(self) -> None:
         self.gradient_elems = {
-            _ViewMode.FANCY: None,
-            _ViewMode.WHITE: None,
-            _ViewMode.ALTITUDE: GradientScale(
+            ViewMode.FANCY: None,
+            ViewMode.WHITE: None,
+            ViewMode.ALTITUDE: GradientScale(
                 inset=UI_MARGIN_S,
                 gradient_w=UI_MARGIN_S,
                 gap=UI_MARGIN_XS,
@@ -411,12 +317,12 @@ class BrowseTerrainState(State):
                 label_font=self.fonts.tips,
                 title_font=self.fonts.text,
                 title_text="altitude (m)",
-                gradient_anchors=_COLOUR_SCHEMES[_ViewMode.ALTITUDE][0],
+                gradient_anchors=COLOUR_SCHEMES[ViewMode.ALTITUDE][0],
                 k_bg=ThemeKey.BG_DARK,
                 k_fg=ThemeKey.FG_ELEMS,
                 value_transform="equidistant"
             ),
-            _ViewMode.TEMPERATURE: GradientScale(
+            ViewMode.TEMPERATURE: GradientScale(
                 inset=UI_MARGIN_S,
                 gradient_w=UI_MARGIN_S,
                 gap=UI_MARGIN_XS,
@@ -429,12 +335,12 @@ class BrowseTerrainState(State):
                 label_font=self.fonts.tips,
                 title_font=self.fonts.text,
                 title_text="temperature (°C)",
-                gradient_anchors=_COLOUR_SCHEMES[_ViewMode.TEMPERATURE][0],
+                gradient_anchors=COLOUR_SCHEMES[ViewMode.TEMPERATURE][0],
                 k_bg=ThemeKey.BG_DARK,
                 k_fg=ThemeKey.FG_ELEMS,
                 value_transform="equidistant",
             ),
-            _ViewMode.HUMIDITY: GradientScale(
+            ViewMode.HUMIDITY: GradientScale(
                 inset=UI_MARGIN_S,
                 gradient_w=UI_MARGIN_S,
                 gap=UI_MARGIN_XS,
@@ -447,11 +353,11 @@ class BrowseTerrainState(State):
                 label_font=self.fonts.tips,
                 title_font=self.fonts.text,
                 title_text="humidity (%)",
-                gradient_anchors=_COLOUR_SCHEMES[_ViewMode.HUMIDITY][0],
+                gradient_anchors=COLOUR_SCHEMES[ViewMode.HUMIDITY][0],
                 k_bg=ThemeKey.BG_DARK,
                 k_fg=ThemeKey.FG_ELEMS,
             ),
-            _ViewMode.SHADING: GradientScale(
+            ViewMode.SHADING: GradientScale(
                 inset=UI_MARGIN_S,
                 gradient_w=UI_MARGIN_S,
                 gap=UI_MARGIN_XS,
@@ -467,7 +373,7 @@ class BrowseTerrainState(State):
                 label_font=self.fonts.tips,
                 title_font=self.fonts.text,
                 title_text="lighting",
-                gradient_anchors=_COLOUR_SCHEMES[_ViewMode.SHADING][0],
+                gradient_anchors=COLOUR_SCHEMES[ViewMode.SHADING][0],
                 k_bg=ThemeKey.BG_DARK,
                 k_fg=ThemeKey.FG_ELEMS,
             ),
@@ -490,7 +396,7 @@ class BrowseTerrainState(State):
 
         terrain = planet.surface
 
-        if self.view_mode == _ViewMode.FANCY:
+        if self.view_mode == ViewMode.FANCY:
             r, g, b = self.game.star_system.star.light_colour
             light_colour = np.array((r, g, b), dtype=np.float32,)
             length = np.linalg.norm(light_colour)
@@ -502,34 +408,34 @@ class BrowseTerrainState(State):
             pixels = (biome_colours + brightness * light_colour)
             pixels = np.clip(pixels, 0, 255).astype(np.uint8)
 
-        elif self.view_mode == _ViewMode.WHITE:
+        elif self.view_mode == ViewMode.WHITE:
             biome_colours = BIOME_COLOURS[terrain.biomes]
             brightness = terrain.dot_products[..., np.newaxis]
             pixels = (biome_colours + brightness * _WHITE_LIGHT)
             pixels = np.clip(pixels, 0, 255).astype(np.uint8)
 
-        elif self.view_mode == _ViewMode.ALTITUDE:
+        elif self.view_mode == ViewMode.ALTITUDE:
             pixels = lerp_gradient_array(
                 terrain.fields[FieldType.HEIGHT],
-                _COLOUR_SCHEMES[_ViewMode.ALTITUDE][1],
+                COLOUR_SCHEMES[ViewMode.ALTITUDE][1],
             )
 
-        elif self.view_mode == _ViewMode.TEMPERATURE:
+        elif self.view_mode == ViewMode.TEMPERATURE:
             pixels = lerp_gradient_array(
                 terrain.fields[FieldType.TEMP] - 273.15,
-                _COLOUR_SCHEMES[_ViewMode.TEMPERATURE][1],
+                COLOUR_SCHEMES[ViewMode.TEMPERATURE][1],
             )
 
-        elif self.view_mode == _ViewMode.HUMIDITY:
+        elif self.view_mode == ViewMode.HUMIDITY:
             pixels = lerp_gradient_array(
                 terrain.fields[FieldType.HUMIDITY],
-                _COLOUR_SCHEMES[_ViewMode.HUMIDITY][1],
+                COLOUR_SCHEMES[ViewMode.HUMIDITY][1],
             )
 
-        elif self.view_mode == _ViewMode.SHADING:
+        elif self.view_mode == ViewMode.SHADING:
             pixels = lerp_gradient_array(
                 terrain.dot_products,
-                _COLOUR_SCHEMES[_ViewMode.SHADING][1],
+                COLOUR_SCHEMES[ViewMode.SHADING][1],
             )
 
         else:
@@ -650,11 +556,10 @@ class BrowseTerrainState(State):
                             self._refresh_planet_surface()
 
             if event.type == pg.MOUSEWHEEL:
-                if elem is self.view_modes_scrollable:
-                    self.view_modes_scrollable.handle_scroll(event)
-
-            if event.type == pg.MOUSEWHEEL:
-                if elem is not None and self.view_modes_scrollable in elem.parents:
+                if elem is not None and (
+                    self.view_modes_scrollable in elem.parents
+                    or elem is self.view_modes_scrollable
+                ):
                     self.view_modes_scrollable.handle_scroll(event)
 
         if self.panel.layout_dirty:
