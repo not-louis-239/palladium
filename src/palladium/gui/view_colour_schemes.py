@@ -18,9 +18,9 @@
 
 from enum import IntEnum
 
-from palladium.core.custom_types import Colour
-
 import numpy as np
+
+from palladium.core.custom_types import Colour
 
 
 class ViewMode(IntEnum):

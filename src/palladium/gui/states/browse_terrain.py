@@ -51,12 +51,12 @@ from palladium.gui.constants import (
 )
 from palladium.gui.elements.gradient_scale import GradientScale
 from palladium.gui.renderer import draw_elem
-from palladium.gui.view_colour_schemes import COLOUR_SCHEMES, ViewMode
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import ThemeKey
 from palladium.gui.utils import (
     get_seed_messages,
 )
+from palladium.gui.view_colour_schemes import COLOUR_SCHEMES, ViewMode
 
 if TYPE_CHECKING:
     from palladium.game.game import Game

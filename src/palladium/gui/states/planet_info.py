@@ -20,13 +20,23 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pygame as pg
-from james import GUI, CircleButton, Divider, HBox, Label, Panel, ScrollableDisplay, Spacer, VBox
+from james import (
+    GUI,
+    CircleButton,
+    Divider,
+    HBox,
+    Label,
+    Panel,
+    ScrollableDisplay,
+    Spacer,
+    VBox,
+)
 from pygame import Event, Surface
 from pygame.key import ScancodeWrapper
 
 from palladium.core.constants import WN_W
+from palladium.generation.objects.field_types import FieldType
 from palladium.gui.constants import (
     DEFAULT_ATTRS_DARK_BG,
     ICON_SIZE,
@@ -35,14 +45,13 @@ from palladium.gui.constants import (
     UI_MARGIN_M,
     UI_MARGIN_S,
 )
-from palladium.generation.objects.field_types import FieldType
-from palladium.gui.renderer import draw_elem
 from palladium.gui.elements.histogram import HorizontalHistogram
+from palladium.gui.histogram import generate_bins
+from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
 from palladium.gui.utils import get_seed_messages
-from palladium.gui.histogram import generate_bins
-from palladium.gui.view_colour_schemes import ViewMode, COLOUR_SCHEMES
+from palladium.gui.view_colour_schemes import COLOUR_SCHEMES, ViewMode
 
 if TYPE_CHECKING:
     from palladium.game.game import Game

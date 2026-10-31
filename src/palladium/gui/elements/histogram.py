@@ -16,20 +16,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Callable
+from collections.abc import Callable
 
 import pygame as pg
-
 from james import Element
-from james.helpers.utils import get_text_surf
 from james.elements.static_leaves.label import Label
 from james.helpers.custom_types import SupportsGetItemColour
+from james.helpers.utils import get_text_surf
 
 from palladium.core.custom_types import Colour
-from palladium.core.utils import lerp_gradient
-from palladium.gui.constants import BORDER_W, UI_MARGIN_XS, UI_MARGIN_S
+from palladium.core.utils import lerp_gradient, map_range
+from palladium.gui.constants import BORDER_W, UI_MARGIN_S, UI_MARGIN_XS
 from palladium.gui.themes import CLEAR
-from palladium.core.utils import map_range
 
 
 class HorizontalHistogram(Element):
