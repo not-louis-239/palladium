@@ -77,7 +77,7 @@ SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
 
 # astronomical units per pixel
 INNER_ZOOM_LIMIT = 0.00002
-OUTER_ZOOM_LIMIT = 100
+OUTER_ZOOM_LIMIT = 50
 
 CENTRE_POS = (WN_W // 2, WN_H // 2)
 
@@ -103,8 +103,19 @@ INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this t
 
 
 STAR_BG_WRAP_BOUNDS_AU = np.array([20_000, 20_000], dtype=np.float32)
-PARALLAX_FACTOR = 0.1  # how much the BG moves as a ratio to how much the FG moves
-STAR_DENSITY = 0.0001  # per au^2
+STAR_DENSITY = 0.0001  # per au^2 per layer
+
+PARALLAX_FACTORS = (
+    0.02,
+    0.05,
+    0.10,
+    0.18,
+)
+
+STAR_SURFACES = [
+    pg.transform.smoothscale_by(star_surface, x / max(PARALLAX_FACTORS))
+    for x in PARALLAX_FACTORS
+]
 
 
 def _format_zoom_value(val: float) -> str:
@@ -339,11 +350,20 @@ class BrowseSystemState(State):
             return
 
         star_seed = self.game.star_system.seed_metadata.integer_value
-        star_positions = generate_bg_star_positions(
-            seed=star_seed % 2**63,
-            wrap_bounds=(int(STAR_BG_WRAP_BOUNDS_AU[0]), int(STAR_BG_WRAP_BOUNDS_AU[1])),
-            star_density_per_pix2=STAR_DENSITY
-        )
+
+        # (positions, parallax_value)
+        star_positions = [
+            (
+                generate_bg_star_positions(
+                    seed=(star_seed + i) % 2**63,
+                    wrap_bounds=(int(STAR_BG_WRAP_BOUNDS_AU[0]), int(STAR_BG_WRAP_BOUNDS_AU[1])),
+                    star_density_per_pix2=STAR_DENSITY
+                ),
+                parallax,
+                STAR_SURFACES[i]
+            )
+            for i, parallax in enumerate(PARALLAX_FACTORS)
+        ]
 
         self.star_positions = star_positions
 
@@ -502,6 +522,94 @@ class BrowseSystemState(State):
 
         self.hover_box.layout(pg.Rect(left, top, hover_w, hover_h))
 
+    def _draw_stars(self, screen: pg.Surface, layer: tuple[np.ndarray, float, pg.Surface]) -> None:
+        # layer is: positions, parallax, star surface
+
+        # Density factor needs to be quadratic as zooming out by a factor of N
+        # shows N^2 more stars, so this compensates.
+        density_factor = 1 / self.zoom_level_au_per_pixel ** 2
+        density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
+
+        bg_scroll_offset = self.scroll_disp * layer[1]
+        positions = layer[0] - (np.asarray(bg_scroll_offset) % STAR_BG_WRAP_BOUNDS_AU)
+
+        # Convert to screen space
+        screen_positions = positions / self.zoom_level_au_per_pixel
+
+        # Compensate for the width of the star surface
+        screen_positions -= star_surface.get_width() / 2
+        # Make sure that the positions converge at the centre
+        screen_positions += np.array([WN_W / 2, WN_H / 2], dtype=np.float32)
+
+        # Size of one world-space tile in pixels
+        tile_size_au = np.asarray(
+            STAR_BG_WRAP_BOUNDS_AU,
+            dtype=np.float32,
+        )
+        tile_size_pix = (
+            tile_size_au / self.zoom_level_au_per_pixel
+        )
+
+        # Scroll offset in tiles
+        scroll_offset_tiles_x = math.floor(bg_scroll_offset.x / tile_size_au[0])
+        scroll_offset_tiles_y = math.floor(bg_scroll_offset.y / tile_size_au[1])
+
+        # Bounds checks
+        min_bound = -star_surface.get_width()
+        max_bound_x = WN_W
+        max_bound_y = WN_H
+
+        # Number of tiles needed in each direction.
+        tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
+        tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
+        num_positions = len(screen_positions)
+        star_indices = np.arange(num_positions, dtype=np.uint32)
+
+        for dx in range(-tiles_x, tiles_x + 1):
+            tile_x = dx + scroll_offset_tiles_x
+            tile_x_hash = np.uint32(tile_x % 2**32)
+
+            offset_x = dx * tile_size_pix[0]
+
+            for dy in range(-tiles_y, tiles_y + 1):
+                offset_y = dy * tile_size_pix[1]
+
+                # Find stars that could possibly be visible.
+                candidate = (
+                    (screen_positions[:, 0] >= min_bound - offset_x)
+                    & (screen_positions[:, 0] <= max_bound_x - offset_x)
+                    & (screen_positions[:, 1] >= min_bound - offset_y)
+                    & (screen_positions[:, 1] <= max_bound_y - offset_y)
+                )
+
+                candidate_indices = np.flatnonzero(candidate)
+
+                if density_factor < 1.0:
+                    tile_y = dy + scroll_offset_tiles_y
+                    tile_y_hash = np.uint32(tile_y % 2**32)
+
+                    values = (
+                        star_indices[candidate_indices]
+                        + tile_x_hash * np.uint32(73856093)
+                        + tile_y_hash * np.uint32(19349663)
+                    )
+
+                    values ^= values >> np.uint32(13)
+                    values *= np.uint32(1274126177)
+                    values ^= values >> np.uint32(16)
+
+                    keep = values < density_threshold
+                    candidate_indices = candidate_indices[keep]
+
+                tile_blits = screen_positions[candidate_indices].copy()
+                tile_blits[:, 0] += offset_x
+                tile_blits[:, 1] += offset_y
+
+                screen.fblits([
+                    (layer[2], b)
+                    for b in tile_blits
+                ])
+
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
         self._refresh_ui_for_new_system()
@@ -599,92 +707,8 @@ class BrowseSystemState(State):
 
         # Draw the stars
         if self.star_positions is not None:
-            # Density factor needs to be quadratic as zooming out by a factor of N
-            # shows N^2 more stars, so this compensates.
-            density_factor = 1 / self.zoom_level_au_per_pixel ** 2
-            density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
-
-            positions = self.star_positions - (np.asarray(self.scroll_disp) % STAR_BG_WRAP_BOUNDS_AU)
-
-            # Convert to screen space
-            screen_positions = positions / self.zoom_level_au_per_pixel
-
-            # Compensate for the width of the star surface
-            screen_positions -= star_surface.get_width() / 2
-            # Make sure that the positions converge at the centre
-            screen_positions += np.array([WN_W / 2, WN_H / 2], dtype=np.float32)
-
-            # Size of one world-space tile in pixels
-            tile_size_au = np.asarray(
-                STAR_BG_WRAP_BOUNDS_AU,
-                dtype=np.float32,
-            )
-            tile_size_pix = (
-                tile_size_au / self.zoom_level_au_per_pixel
-            )
-
-            # Scroll offset in tiles
-            scroll_offset_tiles_x = math.floor(self.scroll_disp.x / tile_size_au[0])
-            scroll_offset_tiles_y = math.floor(self.scroll_disp.y / tile_size_au[1])
-
-            # Bounds checks
-            min_bound = -star_surface.get_width()
-            max_bound_x = WN_W
-            max_bound_y = WN_H
-
-            # Number of tiles needed in each direction.
-            tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
-            tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
-            num_positions = len(screen_positions)
-            star_indices = np.arange(num_positions, dtype=np.uint32)
-
-            for dx in range(-tiles_x, tiles_x + 1):
-                tile_x = dx + scroll_offset_tiles_x
-                tile_x_hash = np.uint32(tile_x % 2**32)
-
-                offset_x = dx * tile_size_pix[0]
-
-                for dy in range(-tiles_y, tiles_y + 1):
-                    offset_y = dy * tile_size_pix[1]
-
-                    # Find stars that could possibly be visible.
-                    candidate = (
-                        (screen_positions[:, 0] >= min_bound - offset_x)
-                        & (screen_positions[:, 0] <= max_bound_x - offset_x)
-                        & (screen_positions[:, 1] >= min_bound - offset_y)
-                        & (screen_positions[:, 1] <= max_bound_y - offset_y)
-                    )
-
-                    candidate_indices = np.flatnonzero(candidate)
-
-                    if density_factor < 1.0:
-                        tile_x = dx + scroll_offset_tiles_x
-                        tile_y = dy + scroll_offset_tiles_y
-
-                        tile_x_hash = np.uint32(tile_x % 2**32)
-                        tile_y_hash = np.uint32(tile_y % 2**32)
-
-                        values = (
-                            star_indices[candidate_indices]
-                            + tile_x_hash * np.uint32(73856093)
-                            + tile_y_hash * np.uint32(19349663)
-                        )
-
-                        values ^= values >> np.uint32(13)
-                        values *= np.uint32(1274126177)
-                        values ^= values >> np.uint32(16)
-
-                        keep = values < density_threshold
-                        candidate_indices = candidate_indices[keep]
-
-                    tile_blits = screen_positions[candidate_indices].copy()
-                    tile_blits[:, 0] += offset_x
-                    tile_blits[:, 1] += offset_y
-
-                    screen.fblits([
-                        (star_surface, b)
-                        for b in tile_blits
-                    ])
+            for layer in self.star_positions:
+                self._draw_stars(screen, layer)
 
         # Draw the habitable zone
         centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level_au_per_pixel
