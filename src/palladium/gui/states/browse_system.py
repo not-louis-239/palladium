@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import math
-import random
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -602,6 +602,7 @@ class BrowseSystemState(State):
             # Density factor needs to be quadratic as zooming out by a factor of N
             # shows N^2 more stars, so this compensates.
             density_factor = 1 / self.zoom_level_au_per_pixel ** 2
+            density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
 
             positions = self.star_positions - (np.asarray(self.scroll_disp) % STAR_BG_WRAP_BOUNDS_AU)
 
@@ -626,54 +627,60 @@ class BrowseSystemState(State):
             scroll_offset_tiles_x = math.floor(self.scroll_disp.x / tile_size_au[0])
             scroll_offset_tiles_y = math.floor(self.scroll_disp.y / tile_size_au[1])
 
+            # Bounds checks
+            min_bound = -star_surface.get_width()
+            max_bound_x = WN_W
+            max_bound_y = WN_H
+
             # Number of tiles needed in each direction.
             tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
             tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
             num_positions = len(screen_positions)
+            star_indices = np.arange(num_positions, dtype=np.uint32)
 
             for dx in range(-tiles_x, tiles_x + 1):
+                tile_x = dx + scroll_offset_tiles_x
+                tile_x_hash = np.uint32(tile_x % 2**32)
+
+                offset_x = dx * tile_size_pix[0]
+
                 for dy in range(-tiles_y, tiles_y + 1):
-                    tile_offset = np.array(
-                        [
-                            dx * tile_size_pix[0],
-                            dy * tile_size_pix[1],
-                        ],
-                        dtype=np.float32,
+                    offset_y = dy * tile_size_pix[1]
+
+                    # Find stars that could possibly be visible.
+                    candidate = (
+                        (screen_positions[:, 0] >= min_bound - offset_x)
+                        & (screen_positions[:, 0] <= max_bound_x - offset_x)
+                        & (screen_positions[:, 1] >= min_bound - offset_y)
+                        & (screen_positions[:, 1] <= max_bound_y - offset_y)
                     )
 
-                    # Make up a tile seed
+                    candidate_indices = np.flatnonzero(candidate)
 
-                    # Sample stars based on tile seed
-                    # to avoid repeating patterns
-                    num_to_render = min(num_positions, int(len(screen_positions) * density_factor))
+                    if density_factor < 1.0:
+                        tile_x = dx + scroll_offset_tiles_x
+                        tile_y = dy + scroll_offset_tiles_y
 
-                    tile_seed = (dx + scroll_offset_tiles_x) * 73856093 ^ (dy + scroll_offset_tiles_y) * 19349663
-                    rng = np.random.default_rng(tile_seed % 2 ** 63)
+                        tile_x_hash = np.uint32(tile_x % 2**32)
+                        tile_y_hash = np.uint32(tile_y % 2**32)
 
-                    priorities = rng.random(num_positions)
+                        values = (
+                            star_indices[candidate_indices]
+                            + tile_x_hash * np.uint32(73856093)
+                            + tile_y_hash * np.uint32(19349663)
+                        )
 
-                    visible_by_density = priorities < density_factor
+                        values ^= values >> np.uint32(13)
+                        values *= np.uint32(1274126177)
+                        values ^= values >> np.uint32(16)
 
-                    blit_coords = screen_positions[visible_by_density]
+                        keep = values < density_threshold
+                        candidate_indices = candidate_indices[keep]
 
-                    # Compensating for tile offset
-                    tile_blits = blit_coords + tile_offset
+                    tile_blits = screen_positions[candidate_indices].copy()
+                    tile_blits[:, 0] += offset_x
+                    tile_blits[:, 1] += offset_y
 
-                    # Bounds check
-                    min_bound = -star_surface.get_width()
-                    max_bound_x = WN_W
-                    max_bound_y = WN_H
-
-                    visible = (
-                        (tile_blits[:, 0] >= min_bound)
-                        & (tile_blits[:, 0] <= max_bound_x)
-                        & (tile_blits[:, 1] >= min_bound)
-                        & (tile_blits[:, 1] <= max_bound_y)
-                    )
-
-                    tile_blits = tile_blits[visible]
-
-                    # Blit the stars
                     screen.fblits([
                         (star_surface, b)
                         for b in tile_blits
