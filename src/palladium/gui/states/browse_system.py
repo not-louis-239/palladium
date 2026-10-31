@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import math
+import random
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -101,7 +102,7 @@ DISTANCE_RINGS: list[float] = [0.001, 0.01, 0.1, 1, 10, 100, 1_000, 10_000]   # 
 INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this to avoid overcrowding
 
 
-STAR_BG_WRAP_BOUNDS_AU = np.array([10_000, 10_000], dtype=np.float32)
+STAR_BG_WRAP_BOUNDS_AU = np.array([20_000, 20_000], dtype=np.float32)
 PARALLAX_FACTOR = 0.1  # how much the BG moves as a ratio to how much the FG moves
 STAR_DENSITY = 0.0001  # per au^2
 
@@ -621,9 +622,14 @@ class BrowseSystemState(State):
                 tile_size_au / self.zoom_level_au_per_pixel
             )
 
+            # Scroll offset in tiles
+            scroll_offset_tiles_x = math.floor(self.scroll_disp.x / tile_size_au[0])
+            scroll_offset_tiles_y = math.floor(self.scroll_disp.y / tile_size_au[1])
+
             # Number of tiles needed in each direction.
             tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
             tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
+            num_positions = len(screen_positions)
 
             for dx in range(-tiles_x, tiles_x + 1):
                 for dy in range(-tiles_y, tiles_y + 1):
@@ -635,8 +641,20 @@ class BrowseSystemState(State):
                         dtype=np.float32,
                     )
 
-                    num_to_render = int(len(screen_positions) * density_factor)
-                    blit_coords = screen_positions[:num_to_render]
+                    # Make up a tile seed
+
+                    # Sample stars based on tile seed
+                    # to avoid repeating patterns
+                    num_to_render = min(num_positions, int(len(screen_positions) * density_factor))
+
+                    tile_seed = (dx + scroll_offset_tiles_x) * 73856093 ^ (dy + scroll_offset_tiles_y) * 19349663
+                    rng = np.random.default_rng(tile_seed % 2 ** 63)
+
+                    priorities = rng.random(num_positions)
+
+                    visible_by_density = priorities < density_factor
+
+                    blit_coords = screen_positions[visible_by_density]
 
                     # Compensating for tile offset
                     tile_blits = blit_coords + tile_offset
