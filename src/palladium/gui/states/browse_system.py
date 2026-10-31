@@ -30,6 +30,8 @@ from palladium.core.constants import (
     SECONDS_PER_YEAR,
     SOLAR_RADIUS_IN_AU,
     SOLAR_RADIUS_IN_KM,
+    SPEED_OF_LIGHT_AU_PER_S,
+    AU_IN_METRES,
     WN_H,
     WN_W,
     ZOOM_RATE,
@@ -49,6 +51,7 @@ from palladium.gui.constants import (
     UI_MARGIN_XS,
 )
 from palladium.gui.elements.scale_bar import ScaleBar
+from palladium.gui.elements.direction_icon import DirectionIcon
 from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
@@ -117,6 +120,8 @@ STAR_SURFACES = [
     for x in PARALLAX_FACTORS
 ]
 
+EPS = 1e-6
+
 
 def _format_zoom_value(val: float) -> str:
     return f"{round(val):,.0f}" if val > 1 else str(val)
@@ -144,15 +149,19 @@ def _format_speed_value(val: float) -> str:
     return f"{val:.2f}"
 
 
+def _get_bearing_degrees(v: pg.Vector2) -> float:
+    """Assuming a bearing of 000°T = upwards."""
+    return math.degrees(math.atan2(v.y, v.x))
+
+
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
         self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
-        # astronomical units
-        self.scroll_disp: pg.Vector2 = pg.Vector2(0, 0)
-        self.scroll_vel: pg.Vector2 = pg.Vector2(0, 0)
+        self.scroll_disp: pg.Vector2 = pg.Vector2(0, 0)  # astronomical units
+        self.scroll_vel: pg.Vector2 = pg.Vector2(0, 0)  # astronomical units per second
 
         self.zoom_level_au_per_pixel = 0.01  # astronomical units per pixel
         self.run_speed = 86_400  # multiplier
@@ -204,6 +213,28 @@ class BrowseSystemState(State):
                     Spacer(),
                 ),
                 Spacer(),
+                HBox(
+                    coords_label := Label(
+                        font=self.fonts.text,
+                        k_fg=ThemeKey.FG_ELEMS,
+                        inset=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK
+                    ),
+                    Spacer(flex=0, min_w=UI_MARGIN_S),
+                    scroll_hbox := Panel(
+                        HBox(
+                            scroll_direction_icon := DirectionIcon(
+                                k_fg=ThemeKey.FG_ACCENT
+                            ),
+                            scroll_speed_label := Label(
+                                k_fg=ThemeKey.FG_ACCENT,
+                                font=self.fonts.text,
+                                inset=UI_MARGIN_S
+                            )
+                        ),
+                        k_bg=ThemeKey.BG_DARK
+                    )
+                ),
                 HBox(
                     buttons_hbox := HBox(
                         zoom_in_button := CircleButton(
@@ -286,16 +317,25 @@ class BrowseSystemState(State):
         self.back_button = back_button
         self.scale_bar = scale_bar
         self.buttons_hbox = buttons_hbox
+
         self.zoom_in_button = zoom_in_button
         self.zoom_out_button = zoom_out_button
         self.slow_button = slow_button
         self.fast_button = fast_button
         self.recentre_button = recentre_button
+
         self.speed_text_label = speed_text_label
         self.speed_mult_label = speed_mult_label
+
         self.seed_label = seed_label
         self.offset_label = offset_label
         self.seed_int_label = seed_int_label
+
+        self.coords_label = coords_label
+
+        self.scroll_subpanel = scroll_hbox
+        self.scroll_direction_icon = scroll_direction_icon
+        self.scroll_speed_label = scroll_speed_label
 
         # planet buttons
         self.planet_buttons: Group = Group()
@@ -341,7 +381,35 @@ class BrowseSystemState(State):
         # refresh labels
         self._adjust_zoom(self.zoom_level_au_per_pixel)
         self._adjust_speed(self.run_speed)
+        self._update_scroll_subpanel()
 
+
+    def _update_scroll_subpanel(self) -> None:
+        if self.scroll_vel.length() < EPS:
+            self.scroll_subpanel.hide()
+            return
+
+        speed_au_per_s = self.scroll_vel.length() / self.run_speed
+
+        if speed_au_per_s > SPEED_OF_LIGHT_AU_PER_S * 0.01:
+            # Show readout in multiples of the speed of light.
+            speed_c = speed_au_per_s / SPEED_OF_LIGHT_AU_PER_S
+            text = f"{_format_speed_value(speed_c)} c"
+        else:
+            # Show readout in metres per second
+            speed_m_per_s = speed_au_per_s * AU_IN_METRES
+            if speed_m_per_s > 1_000.0:
+                text = f"{speed_m_per_s / 1_000.0:,.2f} km/s"
+            else:
+                text = f"{speed_m_per_s:,.2f} m/s"
+
+        self.scroll_subpanel.show()
+        self.scroll_speed_label.set_text(text)
+
+        # Quantise to int to avoid generating a ton of images for super similar angles.
+        # This is also why the internal cache inside the module containing
+        # `DirectionIcon` does not accept `float`s for rotation.
+        self.scroll_direction_icon.set_bearing(int(_get_bearing_degrees(self.scroll_vel)) + 90)
 
     def _refresh_star_positions(self) -> None:
         if self.game.star_system is None:
@@ -366,7 +434,6 @@ class BrowseSystemState(State):
         ]
 
         self.star_positions = star_positions
-
 
     def _scaled_body_pos(self, orbit_angle_rads: float, orbit_radius: float, body_radius: float):
         """
@@ -437,7 +504,7 @@ class BrowseSystemState(State):
 
         self.overlay_panel.layout(SCREEN_RECT)
 
-    def _refresh_ui_for_new_system(self) -> None:
+    def _refresh_for_new_system(self) -> None:
         """Refresh UI when regenerating star system or scrolling through offsets"""
 
         assert self.game.star_system is not None
@@ -461,6 +528,10 @@ class BrowseSystemState(State):
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
 
+        # Cancel scroll displacement and velocity
+        self.scroll_disp.update(0, 0)
+        self.scroll_vel.update(0, 0)
+
     def _refresh_with_seed_offset(self, offset: int) -> None:
         assert self.game.star_system is not None
 
@@ -472,7 +543,7 @@ class BrowseSystemState(State):
             star_system = generate_star_system(int(seed_string) + offset, 0)
         self.game.star_system = star_system
 
-        self._refresh_ui_for_new_system()
+        self._refresh_for_new_system()
 
     def _refresh_body_buttons(self) -> None:
         assert self.game.star_system is not None
@@ -612,14 +683,25 @@ class BrowseSystemState(State):
 
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
-        self._refresh_ui_for_new_system()
+        self._refresh_for_new_system()
 
     def update(self, dt_s: float) -> None:
         assert self.game.star_system is not None
 
+        # Flip the y-coordinate in the display so that +y = upwards.
+        self.coords_label.set_text(f"({self.scroll_disp.x:,.3f} au, {-self.scroll_disp.y:,.3f} au)")
+        self._update_scroll_subpanel()
+
+        if self.overlay_panel.layout_dirty:
+            self.overlay_panel.layout(SCREEN_RECT)
+
         self.gui.update(dt_s)
         self.scroll_disp += self.scroll_vel * dt_s
         self.scroll_vel *= (1 - SCROLL_FRICTION) ** dt_s
+
+        if self.scroll_vel.length() < EPS:
+            self.scroll_vel.update(0, 0)
+
         self._refresh_body_buttons()
 
         if self.paused:
