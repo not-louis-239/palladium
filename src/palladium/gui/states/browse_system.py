@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 from typing import TYPE_CHECKING
 
@@ -26,7 +27,7 @@ import numpy as np
 import pygame as pg
 from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.units import SPEED_OF_LIGHT, SECOND, YEAR, R_SUN, KM, AU, METRE, convert_units
+from palladium.core.units import SPEED_OF_LIGHT, SECOND, YEAR, R_SUN, KM, AU, METRE, LIGHT_YEAR, convert_units
 from palladium.core.constants import (
     WN_H,
     WN_W,
@@ -52,6 +53,7 @@ from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
 from palladium.gui.utils import star_surface, generate_bg_star_positions, get_seed_messages
+from palladium.debug.timer import log_segment
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -103,6 +105,12 @@ INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this t
 
 STAR_BG_WRAP_BOUNDS_AU = np.array([20_000, 20_000], dtype=np.float32)
 STAR_DENSITY = 0.0001  # per au^2 per layer
+STAR_BG_WRAP_BOUNDS_AU_ARR = np.asarray(
+    STAR_BG_WRAP_BOUNDS_AU,
+    dtype=np.float32,
+)
+
+HALF_WN_SIZE_ARR = np.array([WN_W / 2, WN_H / 2], dtype=np.float32)
 
 PARALLAX_FACTORS = (
     0.02,
@@ -150,6 +158,13 @@ def _get_bearing_degrees(v: pg.Vector2) -> float:
     return math.degrees(math.atan2(v.y, v.x))
 
 
+@dataclass
+class _StarLayer:
+    positions: np.ndarray
+    parallax_value: float
+    star_img: pg.Surface
+
+
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
@@ -162,6 +177,7 @@ class BrowseSystemState(State):
         self.zoom_level_au_per_pixel = 0.01  # astronomical units per pixel
         self.run_speed = 86_400  # multiplier
         self.paused = False
+        self.light_lock = False  # limit speed to a maximum of 1.00c
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
@@ -210,11 +226,18 @@ class BrowseSystemState(State):
                 ),
                 Spacer(),
                 HBox(
-                    coords_label := Label(
-                        font=self.fonts.text,
-                        k_fg=ThemeKey.FG_ELEMS,
-                        inset=UI_MARGIN_S,
-                        k_bg=ThemeKey.BG_DARK
+                    light_lock_button := CircleButton(
+                        r=ICON_SIZE // 2,
+                        img_path=self.images.sun,
+                        font=self.fonts.heading,
+                        **DEFAULT_ATTRS_DARK_BG,
+                        hover_tooltip=Label(
+                            text=f"Limit scroll speed to the speed of light",
+                            k_bg=ThemeKey.BG_DARK,
+                            k_fg=ThemeKey.FG_ELEMS,
+                            inset=UI_MARGIN_S,
+                            font=self.fonts.text,
+                        )
                     ),
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     scroll_hbox := Panel(
@@ -229,7 +252,15 @@ class BrowseSystemState(State):
                             )
                         ),
                         k_bg=ThemeKey.BG_DARK
-                    )
+                    ),
+                ),
+                HBox(
+                    coords_label := Label(
+                        font=self.fonts.text,
+                        k_fg=ThemeKey.FG_ELEMS,
+                        inset=UI_MARGIN_S,
+                        k_bg=ThemeKey.BG_DARK
+                    ),
                 ),
                 HBox(
                     buttons_hbox := HBox(
@@ -332,6 +363,7 @@ class BrowseSystemState(State):
         self.scroll_subpanel = scroll_hbox
         self.scroll_direction_icon = scroll_direction_icon
         self.scroll_speed_label = scroll_speed_label
+        self.light_lock_button = light_lock_button
 
         # planet buttons
         self.planet_buttons: Group = Group()
@@ -378,7 +410,17 @@ class BrowseSystemState(State):
         self._adjust_zoom(self.zoom_level_au_per_pixel)
         self._adjust_speed(self.run_speed)
         self._update_scroll_subpanel()
+        self._update_light_lock_button_appearance()
 
+    def _update_light_lock_button_appearance(self) -> None:
+        if self.light_lock:
+            self.light_lock_button.k_fg_colour = ThemeKey.FG_ACCENT
+            self.light_lock_button.k_fg_hovered = ThemeKey.FG_ACCENT_HOVERED
+            self.light_lock_button.k_fg_pressed = ThemeKey.FG_ACCENT_PRESSED
+        else:
+            self.light_lock_button.k_fg_colour = ThemeKey.FG_SENTINEL
+            self.light_lock_button.k_fg_hovered = ThemeKey.FG_SENTINEL_HOVERED
+            self.light_lock_button.k_fg_pressed = ThemeKey.FG_SENTINEL_PRESSED
 
     def _update_scroll_subpanel(self) -> None:
         if self.scroll_vel.length() < EPS:
@@ -417,7 +459,7 @@ class BrowseSystemState(State):
 
         # (positions, parallax_value)
         star_positions = [
-            (
+            _StarLayer(
                 generate_bg_star_positions(
                     seed=(star_seed + i) % 2**63,
                     wrap_bounds=(int(STAR_BG_WRAP_BOUNDS_AU[0]), int(STAR_BG_WRAP_BOUNDS_AU[1])),
@@ -589,16 +631,17 @@ class BrowseSystemState(State):
 
         self.hover_box.layout(pg.Rect(left, top, hover_w, hover_h))
 
-    def _draw_stars(self, screen: pg.Surface, layer: tuple[np.ndarray, float, pg.Surface]) -> None:
-        # layer is: positions, parallax, star surface
-
+    def _draw_stars(self, screen: pg.Surface, layer: _StarLayer) -> None:
         # Density factor needs to be quadratic as zooming out by a factor of N
         # shows N^2 more stars, so this compensates.
+
+        log_segment()
+
         density_factor = 1 / self.zoom_level_au_per_pixel ** 2
         density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
 
-        bg_scroll_offset = self.scroll_disp * layer[1]
-        positions = layer[0] - (np.asarray(bg_scroll_offset) % STAR_BG_WRAP_BOUNDS_AU)
+        bg_scroll_offset = self.scroll_disp * layer.parallax_value
+        positions = layer.positions - (np.asarray(bg_scroll_offset) % STAR_BG_WRAP_BOUNDS_AU)
 
         # Convert to screen space
         screen_positions = positions / self.zoom_level_au_per_pixel
@@ -606,20 +649,14 @@ class BrowseSystemState(State):
         # Compensate for the width of the star surface
         screen_positions -= star_surface.get_width() / 2
         # Make sure that the positions converge at the centre
-        screen_positions += np.array([WN_W / 2, WN_H / 2], dtype=np.float32)
+        screen_positions += HALF_WN_SIZE_ARR
 
         # Size of one world-space tile in pixels
-        tile_size_au = np.asarray(
-            STAR_BG_WRAP_BOUNDS_AU,
-            dtype=np.float32,
-        )
-        tile_size_pix = (
-            tile_size_au / self.zoom_level_au_per_pixel
-        )
+        tile_size_pix = (STAR_BG_WRAP_BOUNDS_AU_ARR / self.zoom_level_au_per_pixel)
 
         # Scroll offset in tiles
-        scroll_offset_tiles_x = math.floor(bg_scroll_offset.x / tile_size_au[0])
-        scroll_offset_tiles_y = math.floor(bg_scroll_offset.y / tile_size_au[1])
+        scroll_offset_tiles_x = math.floor(bg_scroll_offset.x / STAR_BG_WRAP_BOUNDS_AU_ARR[0])
+        scroll_offset_tiles_y = math.floor(bg_scroll_offset.y / STAR_BG_WRAP_BOUNDS_AU_ARR[1])
 
         # Bounds checks
         min_bound = -star_surface.get_width()
@@ -629,8 +666,10 @@ class BrowseSystemState(State):
         # Number of tiles needed in each direction.
         tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
         tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
+
         num_positions = len(screen_positions)
         star_indices = np.arange(num_positions, dtype=np.uint32)
+        log_segment("pre-loop")
 
         for dx in range(-tiles_x, tiles_x + 1):
             tile_x = dx + scroll_offset_tiles_x
@@ -638,19 +677,28 @@ class BrowseSystemState(State):
 
             offset_x = dx * tile_size_pix[0]
 
+            x_positions = screen_positions[:, 0] + offset_x
+
+            x_candidate = (
+                (x_positions >= min_bound)
+                & (x_positions <= max_bound_x)
+            )
+
             for dy in range(-tiles_y, tiles_y + 1):
+                log_segment("beginning inner loop")
                 offset_y = dy * tile_size_pix[1]
 
-                # Find stars that could possibly be visible.
-                candidate = (
-                    (screen_positions[:, 0] >= min_bound - offset_x)
-                    & (screen_positions[:, 0] <= max_bound_x - offset_x)
-                    & (screen_positions[:, 1] >= min_bound - offset_y)
-                    & (screen_positions[:, 1] <= max_bound_y - offset_y)
+                x_indices = np.flatnonzero(x_candidate)
+
+                y_positions = screen_positions[x_indices, 1] + offset_y
+
+                y_candidate = (
+                    (y_positions >= min_bound)
+                    & (y_positions <= max_bound_y)
                 )
 
-                candidate_indices = np.flatnonzero(candidate)
-
+                candidate_indices = x_indices[y_candidate]
+                log_segment("candidate filtering")
                 if density_factor < 1.0:
                     tile_y = dy + scroll_offset_tiles_y
                     tile_y_hash = np.uint32(tile_y % 2**32)
@@ -668,14 +716,19 @@ class BrowseSystemState(State):
                     keep = values < density_threshold
                     candidate_indices = candidate_indices[keep]
 
+                log_segment("hashing")
                 tile_blits = screen_positions[candidate_indices].copy()
                 tile_blits[:, 0] += offset_x
                 tile_blits[:, 1] += offset_y
+                log_segment("accounting for offset")
 
                 screen.fblits([
-                    (layer[2], b)
+                    (layer.star_img, b)
                     for b in tile_blits
                 ])
+                log_segment("blitting")
+
+        log_segment("post-loop")
 
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
@@ -685,7 +738,19 @@ class BrowseSystemState(State):
         assert self.game.star_system is not None
 
         # Flip the y-coordinate in the display so that +y = upwards.
-        self.coords_label.set_text(f"({self.scroll_disp.x:,.3f} au, {-self.scroll_disp.y:,.3f} au)")
+        s_x, s_y = self.scroll_disp.x, -self.scroll_disp.y
+
+        if abs(s_x) > convert_units(LIGHT_YEAR, AU):
+            x_text = f"{s_x / convert_units(LIGHT_YEAR, AU):,.2f} ly"
+        else:
+            x_text = f"{s_x:,.2f} au"
+
+        if abs(s_y) > convert_units(LIGHT_YEAR, AU):
+            y_text = f"{s_y / convert_units(LIGHT_YEAR, AU):,.2f} ly"
+        else:
+            y_text = f"{s_y:,.2f} au"
+
+        self.coords_label.set_text(f"({x_text}, {y_text})")
         self._update_scroll_subpanel()
 
         if self.overlay_panel.layout_dirty:
@@ -697,6 +762,11 @@ class BrowseSystemState(State):
 
         if self.scroll_vel.length() < EPS:
             self.scroll_vel.update(0, 0)
+
+        if self.light_lock:
+            c_au = convert_units(SPEED_OF_LIGHT, AU / SECOND) * self.run_speed
+            if self.scroll_vel.length() > c_au:
+                self.scroll_vel = self.scroll_vel.clamp_magnitude(c_au)
 
         self._refresh_body_buttons()
 
@@ -725,14 +795,17 @@ class BrowseSystemState(State):
                 if elem is self.star_button:
                     self.game.enter_state(StateID.BROWSE_STAR)
                     return
+                if elem is self.recentre_button:
+                    self.scroll_disp.update(0, 0)
+                    self.scroll_vel.update(0, 0)
+                if elem is self.light_lock_button:
+                    self.light_lock = not self.light_lock
+                    self._update_light_lock_button_appearance()
                 for i, button in enumerate(self.planet_buttons):
                     if elem is button:
                         self.game.planet_idx = i
                         self.game.enter_state(StateID.BROWSE_TERRAIN)
                         return
-                if elem is self.recentre_button:
-                    self.scroll_disp.update(0, 0)
-                    self.scroll_vel.update(0, 0)
 
             if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
                 self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
@@ -750,6 +823,11 @@ class BrowseSystemState(State):
             if event.type == pg.MOUSEWHEEL:
                 self.scroll_vel.x += event.x * SCROLL_SENSITIVITY * self.zoom_level_au_per_pixel
                 self.scroll_vel.y -= event.y * SCROLL_SENSITIVITY * self.zoom_level_au_per_pixel
+
+                if self.light_lock:
+                    c_au = convert_units(SPEED_OF_LIGHT, AU / SECOND) * self.run_speed
+                    if self.scroll_vel.length() > c_au:
+                        self.scroll_vel = self.scroll_vel.clamp_magnitude(c_au)
 
         if pg.mouse.get_pressed()[0]:
             if elem is self.zoom_in_button:
@@ -846,8 +924,8 @@ class BrowseSystemState(State):
 
         # Draw UI
         self.work_surface.fill(CLEAR)
-        draw_elem(self.work_surface, self.overlay_panel, self.game.current_theme())
-        screen.blit(self.work_surface)
+        self.gui.draw(self.work_surface, self.game.current_theme())
+        screen.blit(self.work_surface, (0, 0))
 
         elem = self.gui.hit_test(pg.mouse.get_pos())
 
