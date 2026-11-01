@@ -19,7 +19,7 @@
 import math
 import random
 
-from palladium.core.constants import SECONDS_PER_YEAR, SOLAR_RADIUS_IN_AU
+from palladium.core.units import SECOND, YEAR, R_SUN, AU, convert_units
 from palladium.generation.objects.planet import (
     _ESTIMATED_SURFACE_TEMP_RATIO,
     KG_PER_M3_TO_MSUN_PER_RSUN3,
@@ -36,7 +36,7 @@ def generate_planet(seed_int: int, star: StarProfile) -> Planet:
     inst = random.Random(seed_int)
 
     orbit_radius = star.radius * 10 ** inst.uniform(1, 6)  # solar radii
-    orbit_au = orbit_radius * SOLAR_RADIUS_IN_AU
+    orbit_au = orbit_radius * convert_units(R_SUN, AU)
 
     base_temp = 287 * calculate_stellar_flux(star.luminosity, orbit_au) ** 0.25  # using Stefan-Boltzmann's Law
     day_length = 10 ** inst.uniform(3.255, 7.499)  # seconds, anywhere from ~30min to ~1yr
@@ -58,7 +58,7 @@ def generate_planet(seed_int: int, star: StarProfile) -> Planet:
     mass = 2_700 * KG_PER_M3_TO_MSUN_PER_RSUN3 * volume  # solar masses
 
     # Using Kepler's Law
-    orbit_duration = math.sqrt(orbit_au ** 3 / (star.mass + mass)) * SECONDS_PER_YEAR
+    orbit_duration = math.sqrt(orbit_au ** 3 / (star.mass + mass)) * convert_units(YEAR, SECOND)
 
     p = Planet(
         name="",  # assign names in generation

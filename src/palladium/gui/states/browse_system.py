@@ -26,12 +26,8 @@ import numpy as np
 import pygame as pg
 from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox
 
+from palladium.core.units import SPEED_OF_LIGHT, SECOND, YEAR, R_SUN, KM, AU, METRE, convert_units
 from palladium.core.constants import (
-    SECONDS_PER_YEAR,
-    SOLAR_RADIUS_IN_AU,
-    SOLAR_RADIUS_IN_KM,
-    SPEED_OF_LIGHT_AU_PER_S,
-    AU_IN_METRES,
     WN_H,
     WN_W,
     ZOOM_RATE,
@@ -85,11 +81,11 @@ OUTER_ZOOM_LIMIT = 50
 CENTRE_POS = (WN_W // 2, WN_H // 2)
 
 SPEED_ADJUST_RATE = 10  # factor per second
-MAX_SPEED = SECONDS_PER_YEAR * 1_000_000  # multiplier
+MAX_SPEED = convert_units(YEAR, SECOND) * 1_000_000  # multiplier
 MIN_SPEED = 1
 
 DURATION_UNITS = (
-    ("year", SECONDS_PER_YEAR),
+    ("year", convert_units(YEAR, SECOND)),
     ("week", 7 * 24 * 60 * 60),
     ("day", 24 * 60 * 60),
     ("hour", 60 * 60),
@@ -391,13 +387,13 @@ class BrowseSystemState(State):
 
         speed_au_per_s = self.scroll_vel.length() / self.run_speed
 
-        if speed_au_per_s > SPEED_OF_LIGHT_AU_PER_S * 0.01:
+        if speed_au_per_s > convert_units(SPEED_OF_LIGHT, AU / SECOND) * 0.01:
             # Show readout in multiples of the speed of light.
-            speed_c = speed_au_per_s / SPEED_OF_LIGHT_AU_PER_S
+            speed_c = speed_au_per_s / convert_units(SPEED_OF_LIGHT, AU / SECOND)
             text = f"{_format_speed_value(speed_c)} c"
         else:
             # Show readout in metres per second
-            speed_m_per_s = speed_au_per_s * AU_IN_METRES
+            speed_m_per_s = speed_au_per_s * convert_units(AU, METRE)
             if speed_m_per_s > 1_000.0:
                 text = f"{speed_m_per_s / 1_000.0:,.2f} km/s"
             else:
@@ -451,7 +447,7 @@ class BrowseSystemState(State):
 
         Accounts for logarithmic scaling of bodies
         """
-        orbit_radius_au = (orbit_radius * SOLAR_RADIUS_IN_AU)
+        orbit_radius_au = (orbit_radius * convert_units(R_SUN, AU))
         x = CENTRE_POS[0] + (-self.scroll_disp[0] - math.cos(orbit_angle_rads) * orbit_radius_au) / self.zoom_level_au_per_pixel
         y = CENTRE_POS[1] + (-self.scroll_disp[1] + math.sin(orbit_angle_rads) * orbit_radius_au) / self.zoom_level_au_per_pixel
         r = clamp(SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(body_radius), MIN_SIZE, MAX_SIZE)
@@ -572,7 +568,7 @@ class BrowseSystemState(State):
 
         self.hover_name.set_text(name)
         self.hover_label_temp.set_text(f"{temp - 273.15:,.2f}°C")
-        self.hover_label_radius.set_text(f"{radius * SOLAR_RADIUS_IN_KM:,.0f} km")
+        self.hover_label_radius.set_text(f"{radius * convert_units(R_SUN, KM):,.0f} km")
 
         hover_w, hover_h = self.hover_box.preferred_size()
 

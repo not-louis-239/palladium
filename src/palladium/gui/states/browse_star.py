@@ -23,7 +23,8 @@ from typing import TYPE_CHECKING
 import pygame as pg
 from james import GUI, CircleButton, HBox, Label, Panel, Spacer, VBox
 
-from palladium.core.constants import SOLAR_RADIUS_IN_KM, WN_H, WN_W, ZOOM_RATE
+from palladium.core.units import R_SUN, KM, convert_units
+from palladium.core.constants import WN_H, WN_W, ZOOM_RATE
 from palladium.core.utils import clamp
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
@@ -302,7 +303,7 @@ class BrowseStarState(State):
 
         # Radius
         self.radius_label.set_text(f"{_format_qty(self.game.star_system.star.radius)} × Sun")
-        self.radius_km_label.set_text(f" ({self.game.star_system.star.radius * SOLAR_RADIUS_IN_KM:,.0f} km)")
+        self.radius_km_label.set_text(f" ({self.game.star_system.star.radius * convert_units(R_SUN, KM):,.0f} km)")
 
         # Mass
         self.mass_label.set_text(f"{_format_qty(self.game.star_system.star.mass)} × Sun")
