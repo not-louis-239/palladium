@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import psutil
 import math
 import statistics
 import time
@@ -50,6 +51,21 @@ class Snapshot:
     t_update: float
     t_input: float
     t_draw: float
+
+
+def fetch_memory_usage() -> int:
+    """Fetches the current memory usage of the program in total bytes."""
+    process = psutil.Process()
+    return process.memory_info().rss
+
+
+def format_bytes(n: int) -> str:
+    for unit in ("B", "KiB", "MiB", "GiB"):
+        if n < 1024:
+            return f"{n:,.2f} {unit}"
+        n /= 1024  # type: ignore
+
+    return f"{n:.1f} TiB"
 
 
 class Profiler:
@@ -168,4 +184,12 @@ class Profiler:
         surface.blit(
             s := font.render(f"{self.fps():.2f} fps", True, self.game.current_theme()[ThemeKey.FG_ELEMS]),
             s.get_rect(bottom=bottom, left=UI_MARGIN_XS)
+        )
+
+        # Show memory usage
+        usage = fetch_memory_usage()
+        usage_formatted = format_bytes(usage)
+        surface.blit(
+            s := font.render(f"memory usage: {usage_formatted}", True, self.game.current_theme()[ThemeKey.FG_ELEMS]),
+            s.get_rect(topleft=(UI_MARGIN_S, UI_MARGIN_S))
         )
