@@ -54,7 +54,6 @@ from palladium.gui.renderer import draw_elem
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
 from palladium.gui.utils import star_surface, generate_bg_star_positions, get_seed_messages
-from palladium.debug.timer import log_segment
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -79,7 +78,7 @@ SCALE_BAR_LEVELS: list[float] = [  # astronomical units per `PER_PIXELS` pixels
 
 # astronomical units per pixel
 INNER_ZOOM_LIMIT = 0.00002
-OUTER_ZOOM_LIMIT = 80
+OUTER_ZOOM_LIMIT = 300
 
 CENTRE_POS = (WN_W // 2, WN_H // 2)
 
@@ -105,7 +104,8 @@ INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this t
 
 
 STAR_BG_WRAP_BOUNDS_AU = np.array([25_000, 25_000], dtype=np.float32)
-STAR_DENSITY = 0.00002  # per au^2 per layer
+STAR_DENSITY = 0.0000004  # per au^2 per layer
+STAR_DENSITY_FACTOR_MULT = 250
 STAR_BG_WRAP_BOUNDS_AU_ARR = np.asarray(
     STAR_BG_WRAP_BOUNDS_AU,
     dtype=np.float32,
@@ -688,71 +688,15 @@ class BrowseSystemState(State):
 
         self.hover_box.layout(pg.Rect(left, top, hover_w, hover_h))
 
-    def _calculate_tile_stars(
-            self,
-            layer: _StarLayer,
-            zoom: float,
-            tile_x: int,
-            tile_y: int,
-        ) -> np.ndarray:
-            """Return the indices of stars appearing in a world tile."""
-
-            tile_size = STAR_BG_WRAP_BOUNDS_AU_ARR
-
-            # World-space bounds of this tile.
-            min_x = tile_x * tile_size[0]
-            max_x = (tile_x + 1) * tile_size[0]
-
-            min_y = tile_y * tile_size[1]
-            max_y = (tile_y + 1) * tile_size[1]
-
-            positions = layer.positions
-
-            candidate = (
-                (positions[:, 0] >= min_x)
-                & (positions[:, 0] < max_x)
-                & (positions[:, 1] >= min_y)
-                & (positions[:, 1] < max_y)
-            )
-
-            candidate_indices = np.flatnonzero(candidate)
-
-            if not candidate_indices.size:
-                return candidate_indices
-
-            # Density culling.
-            density_factor = 1 / zoom**2
-
-            if density_factor < 1.0:
-                density_threshold = np.uint32(
-                    density_factor * (2**32 - 1)
-                )
-
-                values = (
-                    layer.indices[candidate_indices]
-                    + np.uint32(tile_x % 2**32) * np.uint32(73856093)
-                    + np.uint32(tile_y % 2**32) * np.uint32(19349663)
-                )
-
-                values ^= values >> np.uint32(13)
-                values *= np.uint32(1274126177)
-                values ^= values >> np.uint32(16)
-
-                candidate_indices = candidate_indices[
-                    values < density_threshold
-                ]
-
-            return candidate_indices
-
     def _draw_stars(self, screen: pg.Surface, layer: _StarLayer) -> None:
         # Density factor needs to be quadratic as zooming out by a factor of N
         # shows N^2 more stars, so this compensates.
 
-        log_segment()
-
         # Camera / density factor
+        # Density factor is >1 to intentionally increase the frequency of stars appearing
+        # Somehow it doesn't tank performance that much so it can compensate for reducing the star density
         zoom = self.zoom_level_au_per_pixel
-        density_factor = 1 / zoom ** 2
+        density_factor = STAR_DENSITY_FACTOR_MULT / zoom ** 2
         density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
         tiles_x, tiles_y = get_num_tiles(zoom_level=self.zoom_level_au_per_pixel)
         tile_size_pix = (STAR_BG_WRAP_BOUNDS_AU_ARR / self.zoom_level_au_per_pixel)  # size of 1 star tile in pixels
@@ -770,11 +714,7 @@ class BrowseSystemState(State):
 
         min_bound = -star_surface.get_width()
 
-        log_segment("pre-loop")
-
         for dx in range(-tiles_x, tiles_x + 1):
-            log_segment("calculating x values")
-
             # Calculate X-offsets and values
             offset_x = dx * tile_size_pix[0]
 
@@ -792,8 +732,6 @@ class BrowseSystemState(State):
             y = screen_positions[x_indices, 1]
 
             for dy in range(-tiles_y, tiles_y + 1):
-                log_segment("beginning inner loop")
-
                 # Calculate Y-offsets and values
                 offset_y = dy * tile_size_pix[1]
 
@@ -806,16 +744,12 @@ class BrowseSystemState(State):
                 if not candidate_indices.size:
                     continue
 
-                log_segment("candidate filtering")
-
                 # Pseudo-random hashing and density culling
                 if density_factor < 1.0:
                     tile_y = dy + scroll_offset_tiles_y
                     hashes = _get_star_hashes(layer, tile_x, tile_y)
                     keep = hashes[candidate_indices] < density_threshold
                     candidate_indices = candidate_indices[keep]
-
-                log_segment("hashing")
 
                 if not (tile_blits := screen_positions[candidate_indices]).size:
                     # No blits, so don't bother calculating offset.
@@ -825,7 +759,6 @@ class BrowseSystemState(State):
                 tile_blits = tile_blits.copy()
                 tile_blits[:, 0] += offset_x
                 tile_blits[:, 1] += offset_y
-                log_segment("accounting for offset")
 
                 print(f"Tile blits shape: {tile_blits.shape}")
                 print(f"Tile blits size: {tile_blits.size}")
@@ -837,9 +770,6 @@ class BrowseSystemState(State):
                     (layer.star_img, b)
                     for b in (tile_blits + HALF_WN_SIZE_ARR - star_surface.get_width() / 2)
                 ])
-
-                log_segment("blitting")
-
 
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
