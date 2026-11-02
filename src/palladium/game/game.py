@@ -21,6 +21,7 @@ import pygame as pg
 from palladium.core.asset_manager import Assets
 from palladium.core.constants import Controls
 from palladium.core.profiler import Profiler
+from palladium.core.data_manager import read_saved_seeds, write_saved_seeds
 from palladium.generation.objects.planet import Planet
 from palladium.generation.objects.star_system import StarSystem
 from palladium.gui.states import (
@@ -41,6 +42,7 @@ from palladium.gui.themes import THEMES, Theme
 class Game:
     def __init__(self):
         self.assets = Assets()
+        self.saved_seeds = read_saved_seeds()
 
         self.star_system: StarSystem | None = None
         self.planet_idx: int | None = None
@@ -59,6 +61,10 @@ class Game:
 
         self.theme_idx = 0
         self.profiler = Profiler(self)
+
+    def quit(self) -> None:
+        """Write data and cleanup."""
+        write_saved_seeds(self.saved_seeds)
 
     def current_theme(self) -> Theme:
         return THEMES[self.theme_idx]

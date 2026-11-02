@@ -94,11 +94,7 @@ class SeedState(State):
                         seed_input_box := InputBox(
                             flex=1.0,
                             font=self.fonts.text,
-                            k_bg_selection=ThemeKey.FG_SELECTION,
-                            k_sentinel=ThemeKey.FG_SENTINEL,
-                            border_w=BORDER_W,
                             sentinel_text="enter text or leave blank for random",
-                            k_cursor=ThemeKey.CURSOR,
                             **DEFAULT_INPUT_BOX_ATTRS,
                         ),
                     ),
@@ -114,12 +110,8 @@ class SeedState(State):
                         offset_input_box := InputBox(
                             flex=1.0,
                             font=self.fonts.text,
-                            k_bg_selection=ThemeKey.FG_SELECTION,
-                            k_sentinel=ThemeKey.FG_SENTINEL,
-                            border_w=BORDER_W,
                             sentinel_text="0",
                             tooltip_font=self.fonts.tips,
-                            k_cursor=ThemeKey.CURSOR,
                             k_tooltip=ThemeKey.FG_ERROR,
                             tooltip_inset=UI_MARGIN_XS,
                             **DEFAULT_INPUT_BOX_ATTRS,
@@ -209,8 +201,7 @@ class SeedState(State):
                     self._proceed()
 
                 for input_box in (self.seed_input_box, self.offset_input_box):
-                    if elem is input_box:
-                        input_box.on_mouse_up()
+                    input_box.on_mouse_up()
 
         self.seed_input_box.handle_input(events, dt_s)
         if self.offset_input_box.handle_input(events, dt_s):

@@ -19,14 +19,11 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from functools import lru_cache
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 import pygame as pg
-from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox
+from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox, InputBox, SBox, RectButton
 
 from palladium.core.units import SPEED_OF_LIGHT, SECOND, YEAR, R_SUN, KM, AU, METRE, LIGHT_YEAR, convert_units
 from palladium.core.constants import (
@@ -36,24 +33,29 @@ from palladium.core.constants import (
     Controls,
 )
 from palladium.core.utils import clamp
+from palladium.core.data_manager import SeedRecord
 from palladium.generation.generators.star_system_gen import generate_star_system
 from palladium.generation.objects.generate_planet import calculate_habitable_zone
+from palladium.gui.utils import Camera
 from palladium.gui.constants import (
     CIRCLE_RADIUS_DRAW_LIMIT,
     DEFAULT_ATTRS,
     DEFAULT_ATTRS_DARK_BG,
+    DEFAULT_INPUT_BOX_ATTRS,
     ICON_SIZE,
     SCREEN_RECT,
     UI_MARGIN_M,
     UI_MARGIN_S,
     UI_MARGIN_XS,
+    BORDER_W,
 )
 from palladium.gui.elements.scale_bar import ScaleBar
 from palladium.gui.elements.direction_icon import DirectionIcon
 from palladium.gui.renderer import draw_elem
+from palladium.gui.states.star_field import generate_star_field
 from palladium.gui.states.base import State, StateID
 from palladium.gui.themes import CLEAR, ThemeKey
-from palladium.gui.utils import star_surface, generate_bg_star_positions, get_seed_messages
+from palladium.gui.utils import get_seed_messages
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
@@ -95,37 +97,8 @@ DURATION_UNITS = (
     ("second", 1)
 )
 
-SCROLL_SENSITIVITY = 15
-SCROLL_SPEED = 800  # pix/s
-SCROLL_FRICTION = 0.9  # fraction of scroll velocity dissipated per second
-
 DISTANCE_RINGS: list[float] = [0.001, 0.01, 0.1, 1, 10, 100, 1_000, 10_000, 100_000]   # astronomical units
 INNER_RING_DRAW_LIMIT = 10  # only draw a ring if its radius is more than this to avoid overcrowding
-
-
-STAR_BG_WRAP_BOUNDS_AU = np.array([25_000, 25_000], dtype=np.float32)
-STAR_DENSITY = 0.0000004  # per au^2 per layer
-STAR_DENSITY_FACTOR_MULT = 250
-STAR_BG_WRAP_BOUNDS_AU_ARR = np.asarray(
-    STAR_BG_WRAP_BOUNDS_AU,
-    dtype=np.float32,
-)
-
-HALF_WN_SIZE_ARR = np.array([WN_W / 2, WN_H / 2], dtype=np.float32)
-
-PARALLAX_FACTORS = (
-    0.02,
-    0.05,
-    0.10,
-    0.18,
-)
-
-STAR_SURFACES = [
-    pg.transform.smoothscale_by(star_surface, x / max(PARALLAX_FACTORS))
-    for x in PARALLAX_FACTORS
-]
-
-EPS = 1e-6
 
 
 def _format_zoom_value(val: float) -> str:
@@ -159,94 +132,15 @@ def _get_bearing_degrees(v: pg.Vector2) -> float:
     return math.degrees(math.atan2(v.y, v.x))
 
 
-@lru_cache(maxsize=16)
-def _get_star_layers(seed: int) -> list[_StarLayer]:
-    """Returns a list of star layers, each containing a set of star positions and parallax values."""
-    star_positions = [
-        _StarLayer(
-            positions := generate_bg_star_positions(
-                seed=(seed + i) % 2**63,
-                wrap_bounds=(int(STAR_BG_WRAP_BOUNDS_AU[0]), int(STAR_BG_WRAP_BOUNDS_AU[1])),
-                star_density_per_pix2=STAR_DENSITY
-            ),
-            parallax,
-            STAR_SURFACES[i],
-            indices=np.arange(len(positions), dtype=np.uint32)
-        )
-        for i, parallax in enumerate(PARALLAX_FACTORS)
-    ]
-
-    return star_positions
-
-
-@lru_cache(maxsize=1024)
-def get_num_tiles(zoom_level: float) -> tuple[int, int]:
-    """Returns the tile sizes for a given zoom level."""
-    tile_size_pix = (STAR_BG_WRAP_BOUNDS_AU_ARR / zoom_level)
-    tiles_x = int(np.ceil(WN_W / tile_size_pix[0] / 2)) + 1
-    tiles_y = int(np.ceil(WN_H / tile_size_pix[1] / 2)) + 1
-    return tiles_x, tiles_y
-
-
-def _hash_stars(
-        layer: _StarLayer,
-        tile_x: int,
-        tile_y: int,
-    ) -> np.ndarray:
-    tile_x_hash = np.uint32(tile_x % 2**32)
-    tile_y_hash = np.uint32(tile_y % 2**32)
-
-    values = (
-        layer.indices
-        + tile_x_hash * np.uint32(73856093)
-        + tile_y_hash * np.uint32(19349663)
-    )
-
-    values ^= values >> np.uint32(13)
-    values *= np.uint32(1274126177)
-    values ^= values >> np.uint32(16)
-
-    return values
-
-
-def _get_star_hashes(
-    layer: _StarLayer,
-    tile_x: int,
-    tile_y: int,
-) -> np.ndarray:
-    key = (tile_x, tile_y)
-
-    if key not in layer.hash_cache:
-        layer.hash_cache[key] = _hash_stars(
-            layer,
-            tile_x,
-            tile_y,
-        )
-
-    return layer.hash_cache[key]
-
-
-@dataclass
-class _StarLayer:
-    positions: np.ndarray
-    parallax_value: float
-    star_img: pg.Surface
-    indices: np.ndarray
-    hash_cache: dict[tuple[int, int], np.ndarray] = field(default_factory=dict)  # {(tile_x, tile_y): star_hashes}
-    tile_cache: dict[tuple[int, int], np.ndarray] = field(default_factory=dict)  # {(tile_x, tile_y): star_positions}
-    cache_zoom: int | None = None
-
-
 class BrowseSystemState(State):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
 
         self.work_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
-        self.scroll_disp: pg.Vector2 = pg.Vector2(0, 0)  # astronomical units
-        self.scroll_vel: pg.Vector2 = pg.Vector2(0, 0)  # astronomical units per second
+        self.camera = Camera()
+        self.camera.zoom_au_per_pix = 0.01  # starting zoom
 
-        self.zoom_level_au_per_pixel = 0.01  # astronomical units per pixel
         self.run_speed = 86_400  # multiplier
         self.paused = False
         self.light_lock = False  # limit speed to a maximum of 1.00c
@@ -295,6 +189,12 @@ class BrowseSystemState(State):
                         horiz_padding=UI_MARGIN_S,
                         ),
                     Spacer(),
+                    bookmark_button := CircleButton(
+                        **DEFAULT_ATTRS_DARK_BG,
+                        r=ICON_SIZE // 2,
+                        img_path=self.images.bookmark_empty,
+                        font=self.fonts.ui
+                    ),
                 ),
                 Spacer(),
                 HBox(
@@ -391,7 +291,7 @@ class BrowseSystemState(State):
                     scale_bar := ScaleBar(
                         k_bg=ThemeKey.BG_DARK,
                         k_fg=ThemeKey.FG_ELEMS,
-                        bar_width=round(1 / self.zoom_level_au_per_pixel),
+                        bar_width=round(1 / self.camera.zoom_au_per_pix),
                         text="",
                         font=self.fonts.text,
                         inset=UI_MARGIN_S,
@@ -410,7 +310,55 @@ class BrowseSystemState(State):
                 gap=UI_MARGIN_S,
             ),
             horiz_padding=UI_MARGIN_M,
-            )
+            interactive=False
+        )
+
+        self.save_seed_dialog = HBox(
+            Spacer(),
+            VBox(
+                Spacer(),
+                Panel(
+                    VBox(
+                        SBox(
+                            Label(
+                                text="save seed",
+                                font=self.fonts.ui,
+                                k_fg=ThemeKey.FG_ELEMS,
+                            ),
+                        ),
+                        SBox(
+                            notes_input_box := InputBox(
+                                font=self.fonts.text,
+                                sentinel_text="add notes (optional)",
+                                **DEFAULT_INPUT_BOX_ATTRS,
+                            ),
+                            forced_width=WN_W - 4 * UI_MARGIN_M,
+                            strict=True
+                        ),
+                        HBox(
+                            Spacer(),
+                            save_seed_button := RectButton(
+                                text="save",
+                                font=self.fonts.ui,
+                                border_w=BORDER_W,
+                                **DEFAULT_ATTRS
+                            ),
+                            Spacer(),
+                        ),
+                        gap=UI_MARGIN_M
+                    ),
+                    horiz_padding=UI_MARGIN_M,
+                    vert_padding=UI_MARGIN_M,
+                    k_bg=ThemeKey.BG_DARK,
+                ),
+                Spacer()
+            ),
+            Spacer(),
+        )
+
+        self.save_seed_dialog.layout(SCREEN_RECT)
+
+        # TODO: add save seed button to trigger the "save seed" dialog to show up
 
         # Bind UI components from the main panel to `self`
         self.back_button = back_button
@@ -437,14 +385,19 @@ class BrowseSystemState(State):
         self.scroll_speed_label = scroll_speed_label
         self.light_lock_button = light_lock_button
 
+        self.notes_input_box = notes_input_box
+        self.save_seed_button = save_seed_button
+        self.bookmark_button = bookmark_button
+
         # planet buttons
         self.planet_buttons: Group = Group()
         self.planet_buttons.layout(SCREEN_RECT)
 
         self.gui = GUI(
-            self.overlay_panel,
-            self.star_button,
             self.planet_buttons,
+            self.star_button,
+            self.overlay_panel,
+            self.save_seed_dialog,
             renderer=draw_elem
         )
 
@@ -479,7 +432,7 @@ class BrowseSystemState(State):
         self.hz_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
 
         # refresh labels
-        self._adjust_zoom(self.zoom_level_au_per_pixel)
+        self._adjust_zoom(self.camera.zoom_au_per_pix)
         self._adjust_speed(self.run_speed)
         self._update_scroll_subpanel()
         self._update_light_lock_button_appearance()
@@ -495,11 +448,11 @@ class BrowseSystemState(State):
             self.light_lock_button.k_fg_pressed = ThemeKey.FG_SENTINEL_PRESSED
 
     def _update_scroll_subpanel(self) -> None:
-        if self.scroll_vel.length() < EPS:
+        if self.camera.vel.length() == 0:
             self.scroll_subpanel.hide()
             return
 
-        speed_au_per_s = self.scroll_vel.length() / self.run_speed
+        speed_au_per_s = self.camera.vel.length() / self.run_speed
 
         if speed_au_per_s > convert_units(SPEED_OF_LIGHT, AU / SECOND) * 0.01:
             # Show readout in multiples of the speed of light.
@@ -519,16 +472,16 @@ class BrowseSystemState(State):
         # Quantise to int to avoid generating a ton of images for super similar angles.
         # This is also why the internal cache inside the module containing
         # `DirectionIcon` does not accept `float`s for rotation.
-        self.scroll_direction_icon.set_bearing(int(_get_bearing_degrees(self.scroll_vel)) + 90)
+        self.scroll_direction_icon.set_bearing(int(_get_bearing_degrees(self.camera.vel)) + 90)
 
-    def _refresh_star_positions(self) -> None:
+    def _refresh_starfield(self) -> None:
         if self.game.star_system is None:
             # Just initialise some dummy values
-            self.star_positions = None
+            self.starfield = None
             return
 
         star_seed = self.game.star_system.seed_metadata.integer_value
-        self.star_positions = _get_star_layers(star_seed)
+        self.starfield = generate_star_field(star_seed)
 
     def _scaled_body_pos(self, orbit_angle_rads: float, orbit_radius: float, body_radius: float):
         """
@@ -547,8 +500,8 @@ class BrowseSystemState(State):
         Accounts for logarithmic scaling of bodies
         """
         orbit_radius_au = (orbit_radius * convert_units(R_SUN, AU))
-        x = CENTRE_POS[0] + (-self.scroll_disp[0] - math.cos(orbit_angle_rads) * orbit_radius_au) / self.zoom_level_au_per_pixel
-        y = CENTRE_POS[1] + (-self.scroll_disp[1] + math.sin(orbit_angle_rads) * orbit_radius_au) / self.zoom_level_au_per_pixel
+        x = CENTRE_POS[0] + (-self.camera.pos[0] - math.cos(orbit_angle_rads) * orbit_radius_au) / self.camera.zoom_au_per_pix
+        y = CENTRE_POS[1] + (-self.camera.pos[1] + math.sin(orbit_angle_rads) * orbit_radius_au) / self.camera.zoom_au_per_pix
         r = clamp(SOLAR_RADIUS_PIXELS * MAGNITUDE_PIXEL_DIFF ** math.log10(body_radius), MIN_SIZE, MAX_SIZE)
 
         return (x, y, r)
@@ -558,16 +511,16 @@ class BrowseSystemState(State):
 
         # Clamp and set zoom
         new_zoom = clamp(new_zoom, INNER_ZOOM_LIMIT, OUTER_ZOOM_LIMIT)
-        self.zoom_level_au_per_pixel = new_zoom
+        self.camera.zoom_au_per_pix = new_zoom
 
         # Set the scale bar to an appropriate level
         scale = SCALE_BAR_LEVELS[0]  # number of astronomical units represented by the scale bar
         for candidate_scale in SCALE_BAR_LEVELS:
-            if candidate_scale / self.zoom_level_au_per_pixel > PER_PIXELS:
+            if candidate_scale / self.camera.zoom_au_per_pix > PER_PIXELS:
                 scale = candidate_scale
                 break
 
-        bar_w = scale / self.zoom_level_au_per_pixel
+        bar_w = scale / self.camera.zoom_au_per_pix
         bar_zoom_str = _format_zoom_value(scale)
         self.scale_bar.text = f"{bar_zoom_str} astronomical unit{'' if scale == 1 else 's'}"
         self.scale_bar.bar_width = int(bar_w)
@@ -618,14 +571,16 @@ class BrowseSystemState(State):
             ))
 
         self._refresh_body_buttons()
-        self._refresh_star_positions()
+        self._refresh_starfield()
 
         # Refresh overlay panel layout
         self.overlay_panel.layout(SCREEN_RECT)
 
         # Cancel scroll displacement and velocity
-        self.scroll_disp.update(0, 0)
-        self.scroll_vel.update(0, 0)
+        self.camera.reset()
+
+        # Refresh bookmark label
+        # TODO: this
 
     def _refresh_with_seed_offset(self, offset: int) -> None:
         assert self.game.star_system is not None
@@ -688,98 +643,16 @@ class BrowseSystemState(State):
 
         self.hover_box.layout(pg.Rect(left, top, hover_w, hover_h))
 
-    def _draw_stars(self, screen: pg.Surface, layer: _StarLayer) -> None:
-        # Density factor needs to be quadratic as zooming out by a factor of N
-        # shows N^2 more stars, so this compensates.
-
-        # Camera / density factor
-        # Density factor is >1 to intentionally increase the frequency of stars appearing
-        # Somehow it doesn't tank performance that much so it can compensate for reducing the star density
-        zoom = self.zoom_level_au_per_pixel
-        density_factor = STAR_DENSITY_FACTOR_MULT / zoom ** 2
-        density_threshold = np.uint32(min(1, density_factor) * (2**32 - 1))
-        tiles_x, tiles_y = get_num_tiles(zoom_level=self.zoom_level_au_per_pixel)
-        tile_size_pix = (STAR_BG_WRAP_BOUNDS_AU_ARR / self.zoom_level_au_per_pixel)  # size of 1 star tile in pixels
-
-        # Scroll offset in tiles
-        bg_scroll_offset = self.scroll_disp * layer.parallax_value
-        scroll_offset_tiles_x: int = math.floor(bg_scroll_offset.x / STAR_BG_WRAP_BOUNDS_AU_ARR[0])
-        scroll_offset_tiles_y: int = math.floor(bg_scroll_offset.y / STAR_BG_WRAP_BOUNDS_AU_ARR[1])
-
-        # Positioning - convert to screen space while we're at it
-        screen_positions = (
-            (layer.positions - (np.asarray(bg_scroll_offset) % STAR_BG_WRAP_BOUNDS_AU))
-            / self.zoom_level_au_per_pixel
-        )
-
-        min_bound = -star_surface.get_width()
-
-        for dx in range(-tiles_x, tiles_x + 1):
-            # Calculate X-offsets and values
-            offset_x = dx * tile_size_pix[0]
-
-            x_positions = screen_positions[:, 0] + offset_x
-            x_candidate = (
-                (x_positions >= min_bound - HALF_WN_SIZE_ARR[0])
-                & (x_positions <= WN_W - HALF_WN_SIZE_ARR[0])
-            )
-
-            if not x_candidate.size:
-                continue
-
-            tile_x = dx + scroll_offset_tiles_x
-            x_indices = np.flatnonzero(x_candidate)
-            y = screen_positions[x_indices, 1]
-
-            for dy in range(-tiles_y, tiles_y + 1):
-                # Calculate Y-offsets and values
-                offset_y = dy * tile_size_pix[1]
-
-                # Cull by screen bounds
-                candidate_indices = x_indices[
-                    (y >= min_bound - offset_y - HALF_WN_SIZE_ARR[1])
-                    & (y <= WN_H - offset_y - HALF_WN_SIZE_ARR[1])
-                ]
-
-                if not candidate_indices.size:
-                    continue
-
-                # Pseudo-random hashing and density culling
-                if density_factor < 1.0:
-                    tile_y = dy + scroll_offset_tiles_y
-                    hashes = _get_star_hashes(layer, tile_x, tile_y)
-                    keep = hashes[candidate_indices] < density_threshold
-                    candidate_indices = candidate_indices[keep]
-
-                if not (tile_blits := screen_positions[candidate_indices]).size:
-                    # No blits, so don't bother calculating offset.
-                    continue
-
-                # Account for tile offset
-                tile_blits = tile_blits.copy()
-                tile_blits[:, 0] += offset_x
-                tile_blits[:, 1] += offset_y
-
-                print(f"Tile blits shape: {tile_blits.shape}")
-                print(f"Tile blits size: {tile_blits.size}")
-
-                # Blit the star images
-                # Compensate for the width of the star surface
-                # and make sure that the positions converge at the centre
-                screen.fblits([
-                    (layer.star_img, b)
-                    for b in (tile_blits + HALF_WN_SIZE_ARR - star_surface.get_width() / 2)
-                ])
-
     def on_entered(self) -> None:
         # shouldn't be None if entered properly
         self._refresh_for_new_system()
+        self.save_seed_dialog.hide()
 
     def update(self, dt_s: float) -> None:
         assert self.game.star_system is not None
 
         # Flip the y-coordinate in the display so that +y = upwards.
-        s_x, s_y = self.scroll_disp.x, -self.scroll_disp.y
+        s_x, s_y = self.camera.pos.x, -self.camera.pos.y
 
         if abs(s_x) > convert_units(LIGHT_YEAR, AU):
             x_text = f"{s_x / convert_units(LIGHT_YEAR, AU):,.2f} ly"
@@ -798,16 +671,12 @@ class BrowseSystemState(State):
             self.overlay_panel.layout(SCREEN_RECT)
 
         self.gui.update(dt_s)
-        self.scroll_disp += self.scroll_vel * dt_s
-        self.scroll_vel *= (1 - SCROLL_FRICTION) ** dt_s
-
-        if self.scroll_vel.length() < EPS:
-            self.scroll_vel.update(0, 0)
+        self.camera.update(dt_s)
 
         if self.light_lock:
             c_au = convert_units(SPEED_OF_LIGHT, AU / SECOND) * self.run_speed
-            if self.scroll_vel.length() > c_au:
-                self.scroll_vel = self.scroll_vel.clamp_magnitude(c_au)
+            if self.camera.vel.length() > c_au:
+                self.camera.vel = self.camera.vel.clamp_magnitude(c_au)
 
         self._refresh_body_buttons()
 
@@ -823,13 +692,30 @@ class BrowseSystemState(State):
             planet.orbit_phase += self.run_speed * planet.orbit_direction * (2 * math.pi) * dt_s / planet.orbit_duration
             planet.orbit_phase %= (2 * math.pi)
 
+    def save_seed(self) -> None:
+        assert self.game.star_system is not None
+
+        self.game.saved_seeds.append(
+            SeedRecord(
+                metadata=self.game.star_system.seed_metadata,
+                notes=self.notes_input_box.text
+            )
+        )
+
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         assert self.game.star_system is not None
 
         elem = self.gui.hit_test(pg.mouse.get_pos())
 
         for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                self.notes_input_box.on_mouse_down(event)
+
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
+                self.notes_input_box.on_mouse_up()
+
+                if elem is self.save_seed_button:
+                    self.save_seed()
                 if elem is self.back_button:
                     self.game.enter_state(StateID.ENTER_SEED)
                     return
@@ -837,8 +723,7 @@ class BrowseSystemState(State):
                     self.game.enter_state(StateID.BROWSE_STAR)
                     return
                 if elem is self.recentre_button:
-                    self.scroll_disp.update(0, 0)
-                    self.scroll_vel.update(0, 0)
+                    self.camera.reset()
                 if elem is self.light_lock_button:
                     self.light_lock = not self.light_lock
                     self._update_light_lock_button_appearance()
@@ -862,27 +747,26 @@ class BrowseSystemState(State):
                 else:
                     self._adjust_speed(self.run_speed)
             if event.type == pg.MOUSEWHEEL:
-                self.scroll_vel.x += event.x * SCROLL_SENSITIVITY * self.zoom_level_au_per_pixel
-                self.scroll_vel.y -= event.y * SCROLL_SENSITIVITY * self.zoom_level_au_per_pixel
+                self.camera.handle_scroll(event)
 
                 if self.light_lock:
                     c_au = convert_units(SPEED_OF_LIGHT, AU / SECOND) * self.run_speed
-                    if self.scroll_vel.length() > c_au:
-                        self.scroll_vel = self.scroll_vel.clamp_magnitude(c_au)
+                    if self.camera.vel.length() > c_au:
+                        self.camera.vel = self.camera.vel.clamp_magnitude(c_au)
 
         if pg.mouse.get_pressed()[0]:
             if elem is self.zoom_in_button:
-                self._adjust_zoom(self.zoom_level_au_per_pixel / ZOOM_RATE ** dt_s)
+                self._adjust_zoom(self.camera.zoom_au_per_pix / ZOOM_RATE ** dt_s)
             if elem is self.zoom_out_button:
-                self._adjust_zoom(self.zoom_level_au_per_pixel * ZOOM_RATE ** dt_s)
+                self._adjust_zoom(self.camera.zoom_au_per_pix * ZOOM_RATE ** dt_s)
             if elem is self.fast_button:
                 self._adjust_speed(self.run_speed * SPEED_ADJUST_RATE ** dt_s)
             if elem is self.slow_button:
                 self._adjust_speed(self.run_speed / SPEED_ADJUST_RATE ** dt_s)
 
         for button, value, bound in (
-            (self.zoom_out_button, self.zoom_level_au_per_pixel, OUTER_ZOOM_LIMIT),
-            (self.zoom_in_button, self.zoom_level_au_per_pixel, INNER_ZOOM_LIMIT),
+            (self.zoom_out_button, self.camera.zoom_au_per_pix, OUTER_ZOOM_LIMIT),
+            (self.zoom_in_button, self.camera.zoom_au_per_pix, INNER_ZOOM_LIMIT),
             (self.fast_button, self.run_speed, MAX_SPEED),
             (self.slow_button, self.run_speed, MIN_SPEED),
         ):
@@ -897,28 +781,29 @@ class BrowseSystemState(State):
                 button.k_fg_hovered = ThemeKey.FG_HOVERED
                 button.k_fg_pressed = ThemeKey.FG_PRESSED
 
+        self.notes_input_box.handle_input(events=events, dt_s=dt_s)
+
     def draw(self, screen: pg.Surface) -> None:
         assert self.game.star_system is not None
 
         screen.fill(self.game.current_theme()[ThemeKey.BG_SCREEN])
 
-        # Draw the stars
-        if self.star_positions is not None:
-            for layer in self.star_positions:
-                self._draw_stars(screen, layer)
-
         # Draw the habitable zone
-        centre_x = CENTRE_POS[0] - self.scroll_disp.x / self.zoom_level_au_per_pixel
-        centre_y = CENTRE_POS[1] - self.scroll_disp.y / self.zoom_level_au_per_pixel
+        centre_x = CENTRE_POS[0] - self.camera.pos.x / self.camera.zoom_au_per_pix
+        centre_y = CENTRE_POS[1] - self.camera.pos.y / self.camera.zoom_au_per_pix
 
         inner, outer = calculate_habitable_zone(self.game.star_system.star.luminosity)
-        inner_r, outer_r = inner / self.zoom_level_au_per_pixel, outer / self.zoom_level_au_per_pixel
+        inner_r, outer_r = inner / self.camera.zoom_au_per_pix, outer / self.camera.zoom_au_per_pix
 
         if outer_r < CIRCLE_RADIUS_DRAW_LIMIT:
             self.hz_surface.fill(CLEAR)
             pg.draw.circle(self.hz_surface, self.game.current_theme()[ThemeKey.FG_HABITABLE_ZONE], (centre_x, centre_y), outer_r)
             pg.draw.circle(self.hz_surface, CLEAR, (centre_x, centre_y), inner_r)
             screen.blit(self.hz_surface)
+
+        # Draw the stars
+        if self.starfield is not None:
+            self.starfield.draw(screen, self.camera)
 
         # Draw the star system
 
@@ -935,7 +820,7 @@ class BrowseSystemState(State):
 
         # Draw distance rings
         for distance in DISTANCE_RINGS:
-            radius = distance / self.zoom_level_au_per_pixel
+            radius = distance / self.camera.zoom_au_per_pix
             if INNER_RING_DRAW_LIMIT < radius < CIRCLE_RADIUS_DRAW_LIMIT:
                 # TODO: eventually use pg.draw.arc hopefully so that I can draw the rings at any distance
                 # without compromising performance

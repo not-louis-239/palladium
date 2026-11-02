@@ -13,13 +13,12 @@
 # limitations under the License.
 
 
-import random
-
 import numpy as np
 import pygame as pg
 
 from palladium.core.custom_types import AColour
 from palladium.generation.objects.star_system import SeedMetadata
+
 
 # Set up star surface for drawing a single star
 STAR_GLOW_FIDELITY = 30
@@ -37,6 +36,34 @@ star_surface = pg.Surface((STAR_GLOW_RADIUS * 2, STAR_GLOW_RADIUS * 2), pg.SRCAL
 for radius, brightness in STAR_DRAW_LAYERS:
     pg.draw.circle(star_surface, (255, 255, 255, brightness), (STAR_GLOW_RADIUS, STAR_GLOW_RADIUS), radius)
 pg.draw.circle(star_surface, (255, 255, 255, 255), (STAR_GLOW_RADIUS, STAR_GLOW_RADIUS), 1)
+
+
+class Camera:
+    STARTING_ZOOM = 0.01
+    SCROLL_SENSITIVITY = 15
+    SCROLL_FRICTION = 0.9  # fraction of scroll velocity dissipated per second
+    EPS = 1e-6
+
+    def __init__(self) -> None:
+        self.pos = pg.Vector2(0, 0)  # au
+        self.vel = pg.Vector2(0, 0)  # au/s
+        self.zoom_au_per_pix = 0.01
+
+    def handle_scroll(self, event: pg.Event) -> None:
+        self.vel.x += event.x * self.SCROLL_SENSITIVITY * self.zoom_au_per_pix
+        self.vel.y -= event.y * self.SCROLL_SENSITIVITY * self.zoom_au_per_pix
+
+    def update(self, dt_s: float) -> None:
+        self.pos += self.vel * dt_s
+        self.vel *= (1 - self.SCROLL_FRICTION) ** dt_s
+
+        if self.vel.length() < self.EPS:
+            self.vel.update(0, 0)
+
+    def reset(self) -> None:
+        self.zoom_au_per_pix = self.STARTING_ZOOM
+        self.pos.update(0, 0)
+        self.vel.update(0, 0)
 
 
 def draw_transparent_rect(surface: pg.Surface, colour: AColour, rect: pg.Rect) -> None:

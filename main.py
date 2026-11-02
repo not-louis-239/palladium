@@ -200,59 +200,61 @@ def main():
 
     running = True
 
-    while running:
-        dt_s = clock.tick(60) / 1_000.0
-        keys = pg.key.get_pressed()
-        events = pg.event.get()
-
-        for event in events:
-            if event.type == pg.QUIT:
-                running = False
-
-        t_i = time.time()
-        game.update(dt_s)
-        t_update = time.time()
-        game.take_input(keys=keys, events=events, dt_s=dt_s)
-        t_input = time.time()
-        game.draw(screen)
-
-        # Start moving the pg.Surface data down into OpenGL
-        # The full pipeline: James -> Palladium -> pg.Surface -> bytes -> texture -> quads -> window
-
-        # Convert the Pygame surface to bytes so that OpenGL can use it.
-        pixels = pg.image.tobytes(screen, "RGBA", True)
-
-        # Set the texture that we want OpenGL to use, i.e. `texture`, which is the framebuffer.
-        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
-
-        # Copy the block of pixel data into the texture.
-        GL.glTexSubImage2D(
-            GL.GL_TEXTURE_2D,  # We are uploading to a 2D texture.
-            0,  # Mipmap level. We want the top-level and we're not using mipmap, so 0 is OK.
-            0,  # X-offset at which the replacement data begins (screen space).
-            0,  # Y-offset at which the replacement data begins (screen space).
-            WN_W,  # Width of the image being uploaded (screen space).
-            WN_H,  # Height of the image being uploaded (screen space).
-            GL.GL_RGBA,  # The format of the image data, i.e. RGBA (Red, Green, Blue, Alpha).
-            GL.GL_UNSIGNED_BYTE,  # The type of data contained in each channel, i.e. unsigned 8-bit int.
-            pixels,  # The actual byte array that we want to upload.
-        )
-
-        # Clear the previous frame from the OpenGL colour buffer.
-        clear_gl_colour_buffer()
-        # Draw our fullscreen quad.
-        draw_fullscreen_opengl_quad()
-
-        pg.display.flip()
-        t_draw = time.time()
-
-        game.profiler.record_snapshot(t_i=t_i, t_update=t_update, t_input=t_input, t_draw=t_draw)
-
-    pg.quit()
-
-if __name__ == "__main__":
     try:
-        main()
+        while running:
+            dt_s = clock.tick(60) / 1_000.0
+            keys = pg.key.get_pressed()
+            events = pg.event.get()
+
+            for event in events:
+                if event.type == pg.QUIT:
+                    running = False
+
+            t_i = time.time()
+            game.update(dt_s)
+            t_update = time.time()
+            game.take_input(keys=keys, events=events, dt_s=dt_s)
+            t_input = time.time()
+            game.draw(screen)
+
+            # Start moving the pg.Surface data down into OpenGL
+            # The full pipeline: James -> Palladium -> pg.Surface -> bytes -> texture -> quads -> window
+
+            # Convert the Pygame surface to bytes so that OpenGL can use it.
+            pixels = pg.image.tobytes(screen, "RGBA", True)
+
+            # Set the texture that we want OpenGL to use, i.e. `texture`, which is the framebuffer.
+            GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
+
+            # Copy the block of pixel data into the texture.
+            GL.glTexSubImage2D(
+                GL.GL_TEXTURE_2D,  # We are uploading to a 2D texture.
+                0,  # Mipmap level. We want the top-level and we're not using mipmap, so 0 is OK.
+                0,  # X-offset at which the replacement data begins (screen space).
+                0,  # Y-offset at which the replacement data begins (screen space).
+                WN_W,  # Width of the image being uploaded (screen space).
+                WN_H,  # Height of the image being uploaded (screen space).
+                GL.GL_RGBA,  # The format of the image data, i.e. RGBA (Red, Green, Blue, Alpha).
+                GL.GL_UNSIGNED_BYTE,  # The type of data contained in each channel, i.e. unsigned 8-bit int.
+                pixels,  # The actual byte array that we want to upload.
+            )
+
+            # Clear the previous frame from the OpenGL colour buffer.
+            clear_gl_colour_buffer()
+            # Draw our fullscreen quad.
+            draw_fullscreen_opengl_quad()
+
+            pg.display.flip()
+            t_draw = time.time()
+
+            game.profiler.record_snapshot(t_i=t_i, t_update=t_update, t_input=t_input, t_draw=t_draw)
+
     except KeyboardInterrupt:
         print("KeyboardInterrupt received. Exiting now.")
-        sys.exit(0)
+
+    game.quit()
+    pg.quit()
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()

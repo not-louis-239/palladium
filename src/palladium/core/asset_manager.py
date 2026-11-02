@@ -48,6 +48,9 @@ class Images:
         self.water = IMAGES_DIR / "water.png"
         self.shading = IMAGES_DIR / "shading.png"
 
+        self.bookmark_empty = IMAGES_DIR / "bookmark_empty.png"
+        self.bookmark_filled = IMAGES_DIR / "bookmark_filled.png"
+
 
 class Fonts:
     def __init__(self) -> None:

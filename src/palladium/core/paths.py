@@ -28,3 +28,6 @@ ASSETS_DIR = ROOT_DIR / "assets"
 
 IMAGES_DIR = ASSETS_DIR / "images"
 FONTS_DIR = ASSETS_DIR / "fonts"
+
+# Directory for storing user data
+DATA_DIR = ROOT_DIR / "data"

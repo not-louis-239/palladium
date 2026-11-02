@@ -89,6 +89,10 @@ class InputBoxKwargs(TypedDict, total=False):
     k_border_colour: ThemeKey
     k_border_hovered: ThemeKey
     k_border_pressed: ThemeKey
+    k_cursor: ThemeKey
+    k_sentinel: ThemeKey
+    k_bg_selection: ThemeKey
+    border_w: int
     inset: int
 
 DEFAULT_INPUT_BOX_ATTRS: InputBoxKwargs = {
@@ -101,6 +105,10 @@ DEFAULT_INPUT_BOX_ATTRS: InputBoxKwargs = {
     "k_border_colour": ThemeKey.BORDER,
     "k_border_hovered": ThemeKey.BORDER_HOVERED,
     "k_border_pressed": ThemeKey.BORDER_PRESSED,
+    "k_cursor": ThemeKey.CURSOR,
+    "k_sentinel": ThemeKey.FG_SENTINEL,
+    "k_bg_selection": ThemeKey.FG_SELECTION,
+    "border_w": BORDER_W,
     "inset": UI_MARGIN_S
 }
 
