@@ -21,6 +21,7 @@ from __future__ import annotations
 import math
 
 from typing import TYPE_CHECKING
+from datetime import datetime, timezone
 
 import pygame as pg
 from james import GUI, CircleButton, Group, HBox, Label, Panel, Spacer, VBox, InputBox, SBox, RectButton
@@ -204,7 +205,7 @@ class BrowseSystemState(State):
                         font=self.fonts.heading,
                         **DEFAULT_ATTRS_DARK_BG,
                         hover_tooltip=Label(
-                            text=f"Limit scroll speed to the speed of light",
+                            text=f"limit scroll speed to the speed of light",
                             k_bg=ThemeKey.BG_DARK,
                             k_fg=ThemeKey.FG_ELEMS,
                             inset=UI_MARGIN_S,
@@ -579,9 +580,6 @@ class BrowseSystemState(State):
         # Cancel scroll displacement and velocity
         self.camera.reset()
 
-        # Refresh bookmark label
-        # TODO: this
-
     def _refresh_with_seed_offset(self, offset: int) -> None:
         assert self.game.star_system is not None
 
@@ -692,15 +690,19 @@ class BrowseSystemState(State):
             planet.orbit_phase += self.run_speed * planet.orbit_direction * (2 * math.pi) * dt_s / planet.orbit_duration
             planet.orbit_phase %= (2 * math.pi)
 
-    def save_seed(self) -> None:
+    def _save_seed(self) -> None:
         assert self.game.star_system is not None
 
         self.game.saved_seeds.append(
             SeedRecord(
-                metadata=self.game.star_system.seed_metadata,
-                notes=self.notes_input_box.text
+                seed_metadata=self.game.star_system.seed_metadata,
+                notes=self.notes_input_box.text,
+                added=datetime.now(timezone.utc)
             )
         )
+
+        self.notes_input_box.reset()
+        self.save_seed_dialog.hide()
 
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         assert self.game.star_system is not None
@@ -714,39 +716,55 @@ class BrowseSystemState(State):
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 self.notes_input_box.on_mouse_up()
 
+                if elem is self.bookmark_button:
+                    self.save_seed_dialog.toggle_visibility()
                 if elem is self.save_seed_button:
-                    self.save_seed()
+                    self._save_seed()
                 if elem is self.back_button:
                     self.game.enter_state(StateID.ENTER_SEED)
                     return
-                if elem is self.star_button:
-                    self.game.enter_state(StateID.BROWSE_STAR)
-                    return
+
                 if elem is self.recentre_button:
                     self.camera.reset()
                 if elem is self.light_lock_button:
                     self.light_lock = not self.light_lock
                     self._update_light_lock_button_appearance()
+
+                if elem is self.star_button:
+                    self.game.enter_state(StateID.BROWSE_STAR)
+                    return
                 for i, button in enumerate(self.planet_buttons):
                     if elem is button:
                         self.game.planet_idx = i
                         self.game.enter_state(StateID.BROWSE_TERRAIN)
                         return
 
-            if event.type == pg.KEYDOWN and event.key == Controls.SEED_MINUS_ONE:
-                self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
-            if event.type == pg.KEYDOWN and event.key == Controls.SEED_PLUS_ONE:
-                self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset + 1)
+            if event.type == pg.KEYDOWN:
+                if not self.save_seed_dialog.visible:
+                    if event.key == Controls.SEED_MINUS_ONE:
+                        self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset - 1)
 
-            if event.type == pg.KEYDOWN and event.key == Controls.PAUSE_SIMULATION:
-                self.paused = not self.paused
-                if self.paused:
-                    self.speed_text_label.text = ""
-                    self.speed_mult_label.text = "simulation paused"
-                    self.overlay_panel.layout(SCREEN_RECT)
-                else:
-                    self._adjust_speed(self.run_speed)
-            if event.type == pg.MOUSEWHEEL:
+                    elif event.key == Controls.SEED_PLUS_ONE:
+                        self._refresh_with_seed_offset(self.game.star_system.seed_metadata.offset + 1)
+
+                    elif event.key == Controls.PAUSE_SIMULATION:
+                        self.paused = not self.paused
+                        if self.paused:
+                            self.speed_text_label.text = ""
+                            self.speed_mult_label.text = "simulation paused"
+                            self.overlay_panel.layout(SCREEN_RECT)
+                        else:
+                            self._adjust_speed(self.run_speed)
+
+                elif event.key == Controls.GENERIC_ESCAPE:
+                    if self.save_seed_dialog.visible:
+                        self.save_seed_dialog.hide()
+
+                elif event.key == Controls.GENERIC_SUBMIT:
+                    if self.save_seed_dialog.visible:
+                        self._save_seed()
+
+            if event.type == pg.MOUSEWHEEL and elem is None:
                 self.camera.handle_scroll(event)
 
                 if self.light_lock:

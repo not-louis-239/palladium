@@ -122,3 +122,48 @@ def get_seed_messages(seed_metadata: SeedMetadata) -> tuple[str, str, str]:
         seed_int_label = ""
 
     return (seed_str, offset_text, seed_int_label)
+
+
+def format_fuzzy_time(seconds: float) -> str:
+    """Returns: a string representing fuzzy time for a given number of `seconds`."""
+
+    # Seconds, minutes, hours
+    if seconds < 60:
+        return "a few seconds"
+
+    minutes = seconds / 60
+    if minutes < 60:
+        return f"{int(minutes)} minute{'' if int(minutes) == 1 else 's'}"
+
+    hours = minutes / 60
+    if hours < 24:
+        return f"{int(hours)} hour{'' if int(hours) == 1 else 's'}"
+
+    # Days
+    days = hours / 24
+    if days < 7:
+        return f"{int(days)} day{'' if int(days) == 1 else 's'}"
+
+    # Weeks
+    weeks = days / 7
+    if days < 30:
+        return f"{int(weeks)} week{'' if int(weeks) == 1 else 's'}"
+
+    # Months
+    months = days / 30
+    if days < 365.242:
+       # allowing month values up to 12 and
+       # clamping to 11 removes that awkward gap where 360->365 days
+       # gets registered as "0 years"
+       # hence, values just under a year will show as "11 months"
+       return f"{min(11, int(months))} month{'' if int(months) == 1 else 's'}"
+
+    # Years
+    years = days / 365.242
+    return f"{int(years)} year{'' if int(years) == 1 else 's'}"
+
+
+def format_save_duration_ago(seconds: float) -> str:
+    if seconds < 10:
+        return "just now"
+    return format_fuzzy_time(seconds) + " ago"

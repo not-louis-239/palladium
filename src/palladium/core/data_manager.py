@@ -19,21 +19,37 @@
 # Module to manage user data
 
 
-import json
-from dataclasses import dataclass, asdict
+from __future__ import annotations
 
+import json
+from datetime import datetime
+from dataclasses import dataclass, asdict
 
 from palladium.generation.objects.star_system import SeedMetadata
 from palladium.core.paths import DATA_DIR
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SeedRecord:
-    metadata: SeedMetadata
+    seed_metadata: SeedMetadata
     notes: str = ""
+    added: datetime
 
-    def __hash__(self) -> int:
-        return self.metadata.integer_value
+    def to_json(self) -> dict:
+        return {
+            "seed_metadata": asdict(self.seed_metadata),
+            "notes": self.notes,
+            "added": self.added.isoformat()
+        }
+
+    @classmethod
+    def from_json(cls, json_data: dict) -> SeedRecord:
+        metadata = SeedMetadata(**json_data["seed_metadata"])
+        return cls(
+            seed_metadata=metadata,
+            notes=json_data["notes"],
+            added=datetime.fromisoformat(json_data["added"])
+        )
 
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -54,12 +70,12 @@ def read_saved_seeds() -> list[SeedRecord]:
         print(f"An error occurred while reading saved seeds: {e}. Resetting saved seeds.")
         return []
 
-    seed_records = [SeedRecord(**seed_record) for seed_record in json_data]
+    seed_records = [SeedRecord.from_json(seed_record) for seed_record in json_data]
     return seed_records
 
 
 def write_saved_seeds(seed_records: list[SeedRecord]) -> None:
-    json_data = [asdict(seed_record) for seed_record in seed_records]
+    json_data = [seed_record.to_json() for seed_record in seed_records]
 
     try:
         with open(SAVED_SEEDS_FP, "w") as file:

@@ -122,13 +122,22 @@ class SeedState(State):
                     cell_inset=UI_MARGIN_S // 2,
                 ),
                 Spacer(),
-                SBox(
+                HBox(
+                    Spacer(),
                     proceed_button := RectButton(
                         **DEFAULT_ATTRS,
                         font=self.fonts.ui,
                         text="proceed",
                         border_w=BORDER_W
                     ),
+                    view_saved_button := RectButton(
+                        **DEFAULT_ATTRS,
+                        font=self.fonts.ui,
+                        text="view saved",
+                        border_w=BORDER_W
+                    ),
+                    Spacer(),
+                    gap=UI_MARGIN_S
                 ),
                 gap=UI_MARGIN_S,
             )
@@ -136,6 +145,7 @@ class SeedState(State):
 
         self.back_button = back_button
         self.proceed_button = proceed_button
+        self.view_saved_button = view_saved_button
         self.seed_input_box = seed_input_box
         self.offset_input_box = offset_input_box
 
@@ -199,6 +209,8 @@ class SeedState(State):
                     self.game.enter_state(StateID.TITLE)
                 if elem is self.proceed_button and self.is_valid:
                     self._proceed()
+                if elem is self.view_saved_button:
+                    self.game.enter_state(StateID.SAVED_SEEDS)
 
                 for input_box in (self.seed_input_box, self.offset_input_box):
                     input_box.on_mouse_up()

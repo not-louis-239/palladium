@@ -22,6 +22,10 @@ import pygame as pg
 
 
 class Controls(IntEnum):
+    # Generic keys
+    GENERIC_ESCAPE = pg.K_ESCAPE
+    GENERIC_SUBMIT = pg.K_RETURN
+
     # System browser
     SEED_MINUS_ONE = pg.K_j
     SEED_PLUS_ONE = pg.K_l

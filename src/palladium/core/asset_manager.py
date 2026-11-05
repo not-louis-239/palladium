@@ -23,24 +23,26 @@ from palladium.core.paths import FONTS_DIR, IMAGES_DIR
 
 class Images:
     def __init__(self) -> None:
+        # Navigation
         self.back = IMAGES_DIR / "back.png"
         self.proceed = IMAGES_DIR / "proceed.png"
 
-        self.recentre = IMAGES_DIR / "recentre.png"
-
-        self.zoom_in = IMAGES_DIR / "zoom_in.png"
-        self.zoom_out = IMAGES_DIR / "zoom_out.png"
-
-        self.forward = IMAGES_DIR / "forward.png"
-        self.backward = IMAGES_DIR / "backward.png"
-
+        # General use icons
+        self.clock = IMAGES_DIR / "clock.png"
         self.info = IMAGES_DIR / "info.png"
-        self.view_modes = IMAGES_DIR / "view_modes.png"
-
         self.eye = IMAGES_DIR / "eye.png"
         self.eye_crossed_out = IMAGES_DIR / "eye_crossed_out.png"
 
+        # System browser icons
+        self.recentre = IMAGES_DIR / "recentre.png"
+        self.zoom_in = IMAGES_DIR / "zoom_in.png"
+        self.zoom_out = IMAGES_DIR / "zoom_out.png"
+        self.forward = IMAGES_DIR / "forward.png"
+        self.backward = IMAGES_DIR / "backward.png"
+
         # View modes
+        self.view_modes = IMAGES_DIR / "view_modes.png"
+
         self.trees = IMAGES_DIR / "trees.png"
         self.sun = IMAGES_DIR / "sun.png"
         self.height = IMAGES_DIR / "height.png"
@@ -48,6 +50,7 @@ class Images:
         self.water = IMAGES_DIR / "water.png"
         self.shading = IMAGES_DIR / "shading.png"
 
+        # Seed saving
         self.bookmark_empty = IMAGES_DIR / "bookmark_empty.png"
         self.bookmark_filled = IMAGES_DIR / "bookmark_filled.png"
 
@@ -55,6 +58,7 @@ class Images:
 class Fonts:
     def __init__(self) -> None:
         self._font_path = FONTS_DIR / "lato/Lato-Regular.ttf"
+
         self.title = pg.font.Font(self._font_path, 64)
         self.heading = pg.font.Font(self._font_path, 54)
         self.ui = pg.font.Font(self._font_path, 45)

@@ -33,9 +33,6 @@ class SeedMetadata:
     is_string: bool  # True if the `display_str` is not a pure integer
     integer_value: int  # internal integer value of the seed, including `offset`
 
-    def __hash__(self) -> int:
-        return self.integer_value
-
 
 class StarSystem:
     def __init__(self, star: StarProfile, planets: list[Planet], seed_metadata: SeedMetadata) -> None:
