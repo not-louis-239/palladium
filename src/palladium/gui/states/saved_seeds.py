@@ -22,8 +22,9 @@ from datetime import date, datetime, timezone
 
 import pygame as pg
 
-from james import *  # HACK: we can keep the wildcard import for now but should remove it once this module is stable.
+from james import HBox, VBox, Panel, ScrollableDisplay, Scrollbar, Label, Spacer, CircleButton, Element, GUI
 
+from palladium.core.constants import WN_W
 from palladium.gui.utils import format_save_duration_ago, get_seed_messages
 from palladium.gui.states.base import StateID
 from palladium.gui.themes import ThemeKey
@@ -34,6 +35,9 @@ from palladium.core.data_manager import SeedRecord
 
 if TYPE_CHECKING:
     from palladium.game.game import Game
+
+
+# TODO: add a setting to ScrollableDisplay where all its children inherit its width or height
 
 
 def _format_date(value: date) -> str:
@@ -59,8 +63,7 @@ class SavedSeedsState(State):
         self.setup_ui()
 
     def setup_ui(self) -> None:
-        self.seeds_vbox = VBox(
-            flex=1,
+        self.seeds_vbox: VBox = VBox(
             gap=UI_MARGIN_S,
         )
 
@@ -69,7 +72,6 @@ class SavedSeedsState(State):
                 HBox(
                     back_button := CircleButton(
                         r=ICON_SIZE // 2,
-                        font=self.fonts.ui,
                         img_path=self.images.back,
                         **DEFAULT_ATTRS,
                     ),
@@ -87,8 +89,6 @@ class SavedSeedsState(State):
                     ),
                     CircleButton(
                         r=ICON_SIZE // 2,
-                        text="",
-                        font=self.fonts.heading,
                         k_fg_colour=ThemeKey.FG_ACCENT,
                         img_inset=UI_MARGIN_S,
                         img_path=self.images.trees
@@ -98,6 +98,7 @@ class SavedSeedsState(State):
                     seeds_scrollable := ScrollableDisplay(
                         flex=1.0,
                         shrink=1.0,
+                        min_internal_w=WN_W - 3 * UI_MARGIN_M - UI_MARGIN_S,
                         child=self.seeds_vbox
                     ),
                     Scrollbar(
@@ -109,7 +110,6 @@ class SavedSeedsState(State):
                         k_bar_pressed=ThemeKey.FG_PRESSED,
                         k_groove=ThemeKey.FG_SENTINEL,
                     ),
-                    flex=1.0,
                 ),
                 gap=UI_MARGIN_S
             ),
@@ -120,6 +120,30 @@ class SavedSeedsState(State):
         self.back_button = back_button
         self.seed_count_label = world_count_label
         self.seeds_scrollable = seeds_scrollable
+        self.hovered_panel = None
+
+        # Make a triplet of action buttons that can be subbed in anywhere
+        self.action_buttons = HBox(
+            # Load seed
+            CircleButton(
+                r=ICON_SIZE // 2,
+                k_fg_colour=ThemeKey.FG_ACCENT,
+                img_path=self.images.play
+            ),
+            # Edit seed
+            CircleButton(
+                r=ICON_SIZE // 2,
+                k_fg_colour=ThemeKey.FG_ACCENT,
+                img_path=self.images.pencil
+            ),
+            # Delete seed
+            CircleButton(
+                r=ICON_SIZE // 2,
+                k_fg_colour=ThemeKey.FG_ACCENT,
+                img_path=self.images.garbage_bin
+            ),
+        )
+
 
         self.gui = GUI(
             self.panel
@@ -131,49 +155,56 @@ class SavedSeedsState(State):
         seed_text, offset_text, seed_int_text = get_seed_messages(seed_record.seed_metadata)
 
         panel = Panel(
-            VBox(
-                HBox(
-                    Label(
-                        text=seed_text,
-                        font=self.fonts.text,
-                        k_fg=ThemeKey.FG_ACCENT
-                    ),
-                    Label(
-                        text=offset_text,
-                        font=self.fonts.text,
-                        k_fg=ThemeKey.FG_ACCENT2
-                    ),
-                    Label(
-                        text=seed_int_text,
-                        font=self.fonts.text,
-                        k_fg=ThemeKey.FG_SENTINEL
-                    ),
-                ),
-                HBox(
-                    CircleButton(
-                        r=self.fonts.tips.get_height() // 2,
-                        font=self.fonts.tips,
-                        k_fg_colour=ThemeKey.FG_SENTINEL,
-                        img_path=self.images.clock,
-                    ),
-                    Label(
-                        text=format_save_duration_ago(
-                            (datetime.now(timezone.utc) - seed_record.added).total_seconds()
+            HBox(
+                VBox(
+                    HBox(
+                        Label(
+                            text=seed_text,
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ACCENT,
+                            shrink=1.0,
                         ),
-                        font=self.fonts.tips,
-                        k_fg=ThemeKey.FG_SENTINEL
+                        Label(
+                            text=offset_text,
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_ACCENT2
+                        ),
+                        Label(
+                            text=seed_int_text,
+                            font=self.fonts.text,
+                            k_fg=ThemeKey.FG_SENTINEL
+                        ),
+                        Spacer(),
                     ),
-                    Label(
-                        text=seed_record.notes,
-                        font=self.fonts.tips,
-                        k_fg=ThemeKey.FG_ELEMS,
-                        shrink=1.0,  # to avoid overflow
+                    HBox(
+                        CircleButton(
+                            r=self.fonts.tips.get_height() // 2,
+                            k_fg_colour=ThemeKey.FG_SENTINEL,
+                            img_path=self.images.clock,
+                        ),
+                        Label(
+                            text=format_save_duration_ago(
+                                (datetime.now(timezone.utc) - seed_record.added).total_seconds()
+                            ),
+                            font=self.fonts.tips,
+                            k_fg=ThemeKey.FG_SENTINEL
+                        ),
+                        Label(
+                            text=seed_record.notes,
+                            font=self.fonts.tips,
+                            k_fg=ThemeKey.FG_ELEMS,
+                            shrink=1.0,  # to avoid overflow
+                        ),
+                        Spacer(),
+                        gap=UI_MARGIN_S,
                     ),
-                    Spacer(),
-                    gap=UI_MARGIN_S
+                    gap=UI_MARGIN_S,
                 ),
-                gap=UI_MARGIN_S
+                gap=UI_MARGIN_S,
             ),
+            k_bg=ThemeKey.BG_DARK_HOVERED,
+            horiz_padding=UI_MARGIN_S,
+            vert_padding=UI_MARGIN_S,
         )
 
         return panel
@@ -188,6 +219,21 @@ class SavedSeedsState(State):
 
         self.gui.layout([SCREEN_RECT])
 
+    def _get_hovered_seed_panel(self, hovered_elem: Element | None) -> Panel | None:
+        if not hovered_elem:
+            return None
+
+        panels: list[Panel] = self.seeds_vbox.children  # type: ignore
+
+        for panel in panels:
+            if (
+                hovered_elem is panel
+                or panel in hovered_elem.parents
+            ):
+                return panel
+
+        return None
+
     def on_entered(self) -> None:
         self._refresh_gui()
 
@@ -197,6 +243,11 @@ class SavedSeedsState(State):
     def take_input(self, keys: pg.key.ScancodeWrapper, events: list[pg.Event], dt_s: float) -> None:
         elem = self.gui.hit_test(pg.mouse.get_pos())
 
+        # Update hovered panel with buttons
+        self.hovered_panel = self._get_hovered_seed_panel(elem)
+
+
+        # Process events
         for event in events:
             if event.type == pg.MOUSEBUTTONUP and event.button == 1:
                 if elem is self.back_button:

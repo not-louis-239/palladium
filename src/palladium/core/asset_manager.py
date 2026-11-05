@@ -54,6 +54,11 @@ class Images:
         self.bookmark_empty = IMAGES_DIR / "bookmark_empty.png"
         self.bookmark_filled = IMAGES_DIR / "bookmark_filled.png"
 
+        # Seed actions
+        self.play = IMAGES_DIR / "play.png"
+        self.pencil = IMAGES_DIR / "pencil.png"
+        self.garbage_bin = IMAGES_DIR / "garbage_bin.png"
+
 
 class Fonts:
     def __init__(self) -> None:

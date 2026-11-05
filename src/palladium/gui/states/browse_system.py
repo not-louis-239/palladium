@@ -148,7 +148,7 @@ class BrowseSystemState(State):
 
         # Making the star button slightly bigger than the displayed star size itself for ease of use
         self.star_button = CircleButton(
-            r=0 + UI_MARGIN_S, font=self.fonts.ui,
+            r=0 + UI_MARGIN_S,
             **DEFAULT_ATTRS,
         )
 
@@ -159,7 +159,6 @@ class BrowseSystemState(State):
                         **DEFAULT_ATTRS_DARK_BG,
                         r=ICON_SIZE // 2,
                         img_path=self.images.back,
-                        font=self.fonts.ui
                     ),
                     Spacer(),
                     Panel(
@@ -194,7 +193,6 @@ class BrowseSystemState(State):
                         **DEFAULT_ATTRS_DARK_BG,
                         r=ICON_SIZE // 2,
                         img_path=self.images.bookmark_empty,
-                        font=self.fonts.ui
                     ),
                 ),
                 Spacer(),
@@ -202,7 +200,6 @@ class BrowseSystemState(State):
                     light_lock_button := CircleButton(
                         r=ICON_SIZE // 2,
                         img_path=self.images.sun,
-                        font=self.fonts.heading,
                         **DEFAULT_ATTRS_DARK_BG,
                         hover_tooltip=Label(
                             text=f"limit scroll speed to the speed of light",
@@ -240,31 +237,26 @@ class BrowseSystemState(State):
                         zoom_in_button := CircleButton(
                             r=ICON_SIZE // 2,
                             img_path=self.images.zoom_in,
-                            font=self.fonts.heading,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
                         zoom_out_button := CircleButton(
                             r=ICON_SIZE // 2,
                             img_path=self.images.zoom_out,
-                            font=self.fonts.heading,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
                         slow_button := CircleButton(
                             r=ICON_SIZE // 2,
                             img_path=self.images.backward,
-                            font=self.fonts.heading,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
                         fast_button := CircleButton(
                             r=ICON_SIZE // 2,
                             img_path=self.images.forward,
-                            font=self.fonts.heading,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
                         recentre_button := CircleButton(
                             r=ICON_SIZE // 2,
                             img_path=self.images.recentre,
-                            font=self.fonts.heading,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
                         gap=UI_MARGIN_S,
@@ -568,7 +560,7 @@ class BrowseSystemState(State):
         self.planet_buttons.clear_children()
         for i in range(len(self.game.star_system.planets)):
             self.planet_buttons.add_child(CircleButton(
-                r=0, font=self.fonts.text, **DEFAULT_ATTRS,
+                r=0, **DEFAULT_ATTRS,
             ))
 
         self._refresh_body_buttons()

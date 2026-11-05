@@ -107,7 +107,6 @@ class PlanetInfoState(State):
                 HBox(
                     back_button := CircleButton(
                         r=ICON_SIZE // 2,
-                        font=self.fonts.text,
                         img_path=self.images.back,
                         **DEFAULT_ATTRS_DARK_BG,
                     ),

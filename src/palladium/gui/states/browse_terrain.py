@@ -81,7 +81,6 @@ class BrowseTerrainState(State):
                     HBox(
                         back_button := CircleButton(
                             r=ICON_SIZE // 2,
-                            font=self.fonts.text,
                             img_path=self.images.back,
                             **DEFAULT_ATTRS_DARK_BG,
                         ),
@@ -120,7 +119,6 @@ class BrowseTerrainState(State):
                         HBox(
                             info_button := CircleButton(
                                 r=ICON_SIZE // 2,
-                                font=self.fonts.ui,
                                 **DEFAULT_ATTRS_DARK_BG,
                                 img_path=self.images.info
                             ),
@@ -140,14 +138,12 @@ class BrowseTerrainState(State):
                 VBox(
                     hide_gui_button := CircleButton(
                         r=ICON_SIZE // 2,
-                        font=self.fonts.text,
                         **DEFAULT_ATTRS_DARK_BG,
                         img_path=self.images.eye_crossed_out,
                     ),
                     view_mode_collapsible := Collapsible(
                         trigger=(view_modes_button := CircleButton(
                             r=ICON_SIZE // 2,
-                            font=self.fonts.ui,
                             **DEFAULT_ATTRS_DARK_BG,
                             img_path=self.images.view_modes,
                         )),
@@ -155,7 +151,6 @@ class BrowseTerrainState(State):
                             child=(view_modes_vbox := VBox(
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.trees,
                                     hover_tooltip=Label(
@@ -166,7 +161,6 @@ class BrowseTerrainState(State):
                                 ),
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.sun,
                                     hover_tooltip=Label(
@@ -177,7 +171,6 @@ class BrowseTerrainState(State):
                                 ),
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.height,
                                     hover_tooltip=Label(
@@ -188,7 +181,6 @@ class BrowseTerrainState(State):
                                 ),
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.flame,
                                     hover_tooltip=Label(
@@ -199,7 +191,6 @@ class BrowseTerrainState(State):
                                 ),
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.water,
                                     hover_tooltip=Label(
@@ -210,7 +201,6 @@ class BrowseTerrainState(State):
                                 ),
                                 CircleButton(
                                     r=ICON_SIZE // 2,
-                                    font=self.fonts.ui,
                                     **DEFAULT_ATTRS_DARK_BG,
                                     img_path=self.images.shading,
                                     hover_tooltip=Label(

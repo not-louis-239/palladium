@@ -1,4 +1,4 @@
-james @ git+https://github.com/not-louis-239/james@c9c88211da466de12dd94e82fd884e3f2e5004cf
+james @ git+https://github.com/not-louis-239/james@6eb2832996d3304842a161c976c864cb0543a048
 markdown-it-py==4.2.0
 mdurl==0.1.2
 noise==1.2.2

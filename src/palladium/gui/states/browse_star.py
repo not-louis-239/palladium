@@ -105,7 +105,6 @@ class BrowseStarState(State):
                             back_button := CircleButton(
                                 r=ICON_SIZE // 2,
                                 img_path=self.images.back,
-                                font=self.fonts.heading,
                                 **DEFAULT_ATTRS_DARK_BG,
                             ),
                             Spacer(min_w=UI_MARGIN_S),
@@ -140,13 +139,11 @@ class BrowseStarState(State):
                             zoom_in_button := CircleButton(
                                 r=ICON_SIZE // 2,
                                 img_path=self.images.zoom_in,
-                                font=self.fonts.heading,
                                 **DEFAULT_ATTRS_DARK_BG,
                             ),
                             zoom_out_button := CircleButton(
                                 r=ICON_SIZE // 2,
                                 img_path=self.images.zoom_out,
-                                font=self.fonts.heading,
                                 **DEFAULT_ATTRS_DARK_BG,
                             ),
                             gap=UI_MARGIN_S,
