@@ -166,7 +166,7 @@ class BrowseSystemState(State):
                             Label(
                                 text="star system ",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                             seed_label := Label(
                                 text="",
@@ -204,7 +204,7 @@ class BrowseSystemState(State):
                         hover_tooltip=Label(
                             text=f"limit scroll speed to the speed of light",
                             k_bg=ThemeKey.BG_DARK,
-                            k_fg=ThemeKey.FG_ELEMS,
+                            k_fg=ThemeKey.FG,
                             inset=UI_MARGIN_S,
                             font=self.fonts.text,
                         )
@@ -227,7 +227,7 @@ class BrowseSystemState(State):
                 HBox(
                     coords_label := Label(
                         font=self.fonts.text,
-                        k_fg=ThemeKey.FG_ELEMS,
+                        k_fg=ThemeKey.FG,
                         inset=UI_MARGIN_S,
                         k_bg=ThemeKey.BG_DARK
                     ),
@@ -268,7 +268,7 @@ class BrowseSystemState(State):
                         HBox(
                             speed_text_label := Label(
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS,
+                                k_fg=ThemeKey.FG,
                             ),
                             speed_mult_label := Label(
                                 font=self.fonts.text,
@@ -283,7 +283,7 @@ class BrowseSystemState(State):
                 HBox(
                     scale_bar := ScaleBar(
                         k_bg=ThemeKey.BG_DARK,
-                        k_fg=ThemeKey.FG_ELEMS,
+                        k_fg=ThemeKey.FG,
                         bar_width=round(1 / self.camera.zoom_au_per_pix),
                         text="",
                         font=self.fonts.text,
@@ -296,7 +296,7 @@ class BrowseSystemState(State):
                         font=self.fonts.text,
                         inset=UI_MARGIN_S,
                         k_bg=ThemeKey.BG_DARK,
-                        k_fg=ThemeKey.FG_ELEMS
+                        k_fg=ThemeKey.FG
                     ),
                 ),
 
@@ -316,7 +316,7 @@ class BrowseSystemState(State):
                             Label(
                                 text="save seed",
                                 font=self.fonts.ui,
-                                k_fg=ThemeKey.FG_ELEMS,
+                                k_fg=ThemeKey.FG,
                             ),
                         ),
                         SBox(
@@ -399,16 +399,16 @@ class BrowseSystemState(State):
             VBox(
                 hover_name := Label(
                     font=self.fonts.ui,
-                    k_fg=ThemeKey.FG_ELEMS
+                    k_fg=ThemeKey.FG
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS, text="surface temperature:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="surface temperature:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS, text="radius:"),
+                Label(font=self.fonts.text, k_fg=ThemeKey.FG, text="radius:"),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_label_radius := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -689,7 +689,8 @@ class BrowseSystemState(State):
             SeedRecord(
                 seed_metadata=self.game.star_system.seed_metadata,
                 notes=self.notes_input_box.text,
-                added=datetime.now(timezone.utc)
+                added=datetime.now(timezone.utc),
+                num_planets=len(self.game.star_system.planets),
             )
         )
 
@@ -787,7 +788,7 @@ class BrowseSystemState(State):
                 button.k_fg_hovered = ThemeKey.FG_SENTINEL
                 button.k_fg_pressed = ThemeKey.FG_SENTINEL
             else:
-                button.k_fg_colour = ThemeKey.FG_ELEMS
+                button.k_fg_colour = ThemeKey.FG
                 button.k_fg_hovered = ThemeKey.FG_HOVERED
                 button.k_fg_pressed = ThemeKey.FG_PRESSED
 

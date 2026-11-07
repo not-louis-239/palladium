@@ -31,21 +31,37 @@ TRANSLUCENT_BLACK: AColour = (0, 0, 0, 170)
 class ThemeKey(StrEnum):
     BG_SCREEN = "BG_SCREEN"  # this is screen background
 
-    BG_ELEMS = "BG"
+    BG = "BG"
     BG_HOVERED = "BG_HOVERED"
-    BG_ACTIVE = "BG_ACTIVE"
+    BG_PRESSED = "BG_ACTIVE"
 
     BG_DARK = "BG_DARK"
     BG_DARK_HOVERED = "BG_DARK_HOVERED"
     BG_DARK_PRESSED = "BG_DARK_PRESSED"
 
-    FG_ELEMS = "FG"
+    BG_TRANSLUCENT = "FG_TRANSLUCENT"
+    BG_TRANSLUCENT_HOVERED = "FG_TRANSLUCENT_HOVERED"
+    BG_TRANSLUCENT_PRESSED = "FG_TRANSLUCENT_PRESSED"
+
+    FG = "FG"
     FG_HOVERED = "FG_HOVERED"
     FG_PRESSED = "FG_PRESSED"
+
+    BG_DIM = "BG_DIM"
+    BG_DIM_HOVERED = "BG_DIM_HOVERED"
+    BG_DIM_PRESSED = "BG_DIM_PRESSED"
+
+    FG_DIM = "FG_DIM"
+    FG_DIM_HOVERED = "FG_DIM_HOVERED"
+    FG_DIM_PRESSED = "FG_DIM_PRESSED"
 
     FG_INPUT_TEXT = "FG_INPUT_TEXT"
     FG_INPUT_TEXT_HOVERED = "FG_INPUT_TEXT_HOVERED"
     FG_INPUT_TEXT_PRESSED = "FG_INPUT_TEXT_PRESSED"
+
+    BG_ACCENT = "BG_ACCENT"
+    BG_ACCENT_HOVERED = "BG_ACCENT_HOVERED"
+    BG_ACCENT_PRESSED = "BG_ACCENT_PRESSED"
 
     FG_ACCENT = "FG_ACCENT"
     FG_ACCENT_HOVERED = "FG_ACCENT_HOVERED"
@@ -56,6 +72,10 @@ class ThemeKey(StrEnum):
     FG_SENTINEL = "FG_SENTINEL"
     FG_SENTINEL_HOVERED = "FG_SENTINEL_HOVERED"
     FG_SENTINEL_PRESSED = "FG_SENTINEL_PRESSED"
+
+    BG_ERROR = "BG_ERROR"
+    BG_ERROR_HOVERED = "BG_ERROR_HOVERED"
+    BG_ERROR_PRESSED = "BG_ERROR_PRESSED"
 
     FG_ERROR = "FG_ERROR"
     FG_ERROR_HOVERED = "FG_ERROR_HOVERED"
@@ -68,6 +88,7 @@ class ThemeKey(StrEnum):
     CURSOR = "CURSOR"
     FG_SELECTION = "FG_SELECTION"
     FG_HABITABLE_ZONE = "FG_HABITABLE_ZONE"
+    FG_PROGRESS_ARC = "FG_PROGRESS_ARC"
 
     FG_PROFILER_UPDATE = "FG_PROFILER_UPDATE"
     FG_PROFILER_INPUT = "FG_PROFILER_INPUT"
@@ -87,15 +108,27 @@ THEMES = [
     Theme("Dark", {
         ThemeKey.BG_SCREEN: (12, 12, 24),
 
-        ThemeKey.BG_ELEMS: (0, 0, 0, 0),
+        ThemeKey.BG: (0, 0, 0, 0),
         ThemeKey.BG_HOVERED: (210, 210, 255, 20),
-        ThemeKey.BG_ACTIVE: (210, 210, 255, 30),
+        ThemeKey.BG_PRESSED: (210, 210, 255, 30),
 
         ThemeKey.BG_DARK: TRANSLUCENT_BLACK,
         ThemeKey.BG_DARK_HOVERED: (30, 30, 38, 170),
         ThemeKey.BG_DARK_PRESSED: (45, 45, 58, 170),
 
-        ThemeKey.FG_ELEMS: (210, 210, 255),
+        ThemeKey.BG_TRANSLUCENT: (210, 210, 255, 70),
+        ThemeKey.BG_TRANSLUCENT_HOVERED: (210, 210, 255, 90),
+        ThemeKey.BG_TRANSLUCENT_PRESSED: (210, 210, 255, 110),
+
+        ThemeKey.BG_DIM: (170, 170, 205, 20),
+        ThemeKey.BG_DIM_HOVERED: (170, 170, 205, 40),
+        ThemeKey.BG_DIM_PRESSED: (170, 170, 205, 60),
+
+        ThemeKey.FG_DIM: (150, 150, 185),
+        ThemeKey.FG_DIM_HOVERED: (170, 170, 205),
+        ThemeKey.FG_DIM_PRESSED: (190, 190, 225),
+
+        ThemeKey.FG: (210, 210, 255),
         ThemeKey.FG_HOVERED: (235, 235, 255),
         ThemeKey.FG_PRESSED: (255, 255, 255),
 
@@ -103,9 +136,13 @@ THEMES = [
         ThemeKey.FG_INPUT_TEXT_HOVERED: (255, 233, 199),
         ThemeKey.FG_INPUT_TEXT_PRESSED: (255, 245, 227),
 
+        ThemeKey.BG_ACCENT: (90, 255, 255, 70),
+        ThemeKey.BG_ACCENT_HOVERED: (90, 255, 255, 90),
+        ThemeKey.BG_ACCENT_PRESSED: (90, 255, 255, 110),
+
         ThemeKey.FG_ACCENT: (90, 255, 255),
-        ThemeKey.FG_ACCENT_HOVERED: (110, 255, 255),
-        ThemeKey.FG_ACCENT_PRESSED: (130, 255, 255),
+        ThemeKey.FG_ACCENT_HOVERED: (150, 255, 255),
+        ThemeKey.FG_ACCENT_PRESSED: (210, 255, 255),
 
         ThemeKey.FG_ACCENT2: (230, 90, 255),
 
@@ -113,9 +150,13 @@ THEMES = [
         ThemeKey.FG_SENTINEL_HOVERED: (143, 143, 160),
         ThemeKey.FG_SENTINEL_PRESSED: (158, 158, 175),
 
+        ThemeKey.BG_ERROR: (255, 0, 76, 70),
+        ThemeKey.BG_ERROR_HOVERED: (255, 0, 76, 90),
+        ThemeKey.BG_ERROR_PRESSED: (255, 0, 76, 110),
+
         ThemeKey.FG_ERROR: (255, 0, 76),
-        ThemeKey.FG_ERROR_HOVERED: (255, 20, 90),
-        ThemeKey.FG_ERROR_PRESSED: (255, 38, 117),
+        ThemeKey.FG_ERROR_HOVERED: (255, 50, 126),
+        ThemeKey.FG_ERROR_PRESSED: (255, 100, 176),
 
         ThemeKey.BORDER: (170, 170, 220),
         ThemeKey.BORDER_HOVERED: (205, 205, 240),
@@ -124,6 +165,7 @@ THEMES = [
         ThemeKey.CURSOR: (255, 255, 255),
         ThemeKey.FG_SELECTION: (75, 126, 166),
         ThemeKey.FG_HABITABLE_ZONE: (0, 50, 0),
+        ThemeKey.FG_PROGRESS_ARC: (255, 255, 255, 210),
 
         ThemeKey.FG_PROFILER_UPDATE: (100, 255, 255),
         ThemeKey.FG_PROFILER_INPUT: (100, 100, 255),

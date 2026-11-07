@@ -47,8 +47,8 @@ class TitleState(State):
         # Draw background star overlay
         self.star_overlay_surface = pg.Surface((WN_W, WN_H), pg.SRCALPHA)
         star_positions = generate_bg_star_positions(
-            seed=STAR_BG_SEED, 
-            wrap_bounds=(WN_W, WN_H), 
+            seed=STAR_BG_SEED,
+            wrap_bounds=(WN_W, WN_H),
             star_density_per_pix2=0.0001
         )
 
@@ -63,7 +63,7 @@ class TitleState(State):
                     Label(
                         text="palladium",
                         font=self.fonts.title,
-                        k_fg=ThemeKey.FG_ELEMS,
+                        k_fg=ThemeKey.FG,
                     ),
                 ),
                 Spacer(),

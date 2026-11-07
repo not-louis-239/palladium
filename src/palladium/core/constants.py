@@ -41,3 +41,5 @@ class Controls(IntEnum):
 WN_W, WN_H = 1280, 720
 
 ZOOM_RATE = 5 # multiply/divide by this per second
+
+DUMMY_SURFACE = pg.Surface((1, 1), pg.SRCALPHA)

@@ -76,7 +76,7 @@ class SeedState(State):
                     Label(
                         text="generation",
                         font=self.fonts.heading,
-                        k_fg=ThemeKey.FG_ELEMS
+                        k_fg=ThemeKey.FG
                     ),
                     Spacer(),
                 ),
@@ -87,7 +87,7 @@ class SeedState(State):
                             Label(
                                 text="seed",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
@@ -103,7 +103,7 @@ class SeedState(State):
                             Label(
                                 text="offset",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                         ),
                         Spacer(flex=0.0, min_w=UI_MARGIN_S),
@@ -174,7 +174,7 @@ class SeedState(State):
             self.proceed_button.k_fg_pressed = ThemeKey.FG_SENTINEL
         else:
             self.proceed_button.disabled = False
-            self.proceed_button.k_fg_colour = ThemeKey.FG_ELEMS
+            self.proceed_button.k_fg_colour = ThemeKey.FG
             self.proceed_button.k_fg_hovered = ThemeKey.FG_HOVERED
             self.proceed_button.k_fg_pressed = ThemeKey.FG_PRESSED
 

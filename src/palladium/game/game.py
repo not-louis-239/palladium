@@ -24,6 +24,7 @@ from palladium.core.profiler import Profiler
 from palladium.core.data_manager import read_saved_seeds, write_saved_seeds
 from palladium.generation.objects.planet import Planet
 from palladium.generation.objects.star_system import StarSystem
+from palladium.generation.generators.star_system_gen import generate_star_system
 from palladium.gui.states import (
     BrowseStarState,
     BrowseSystemState,
@@ -74,6 +75,18 @@ class Game:
         assert self.star_system is not None
         assert self.planet_idx is not None
         return self.star_system.planets[self.planet_idx]
+
+    def refresh_seed_stats(self) -> None:
+        """Regenerate each saved seed to refresh its generated statistics,
+        including planet counts. Existing notes and metadata will be preserved."""
+
+        for seed_record in self.saved_seeds:
+            # Regenerate the system using the internal integer value
+            integer_value = seed_record.seed_metadata.integer_value
+            system = generate_star_system(integer_value)
+
+            # Refresh properties
+            seed_record.num_planets = len(system.planets)
 
     def enter_state(self, state: StateID) -> None:
         self.state = state

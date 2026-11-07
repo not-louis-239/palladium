@@ -34,12 +34,14 @@ class SeedRecord:
     seed_metadata: SeedMetadata
     notes: str = ""
     added: datetime
+    num_planets: int = 0
 
     def to_json(self) -> dict:
         return {
             "seed_metadata": asdict(self.seed_metadata),
             "notes": self.notes,
-            "added": self.added.isoformat()
+            "added": self.added.isoformat(),
+            "num_planets": self.num_planets
         }
 
     @classmethod
@@ -48,7 +50,8 @@ class SeedRecord:
         return cls(
             seed_metadata=metadata,
             notes=json_data["notes"],
-            added=datetime.fromisoformat(json_data["added"])
+            added=datetime.fromisoformat(json_data["added"]),
+            num_planets=json_data.get("num_planets", 0)
         )
 
 

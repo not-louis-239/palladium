@@ -81,7 +81,7 @@ def _disable(button: CircleButton):
     button.disabled = True
 
 def _enable(button: CircleButton):
-    button.k_fg_colour = ThemeKey.FG_ELEMS
+    button.k_fg_colour = ThemeKey.FG
     button.k_fg_hovered = ThemeKey.FG_HOVERED
     button.k_fg_pressed = ThemeKey.FG_PRESSED
     button.disabled = False
@@ -153,7 +153,7 @@ class BrowseStarState(State):
                     HBox(
                         scale_bar := ScaleBar(
                             k_bg=ThemeKey.BG_DARK,
-                            k_fg=ThemeKey.FG_ELEMS,
+                            k_fg=ThemeKey.FG,
                             bar_width=round(1 / self.zoom_level),
                             text="",
                             font=self.fonts.text,
@@ -171,7 +171,7 @@ class BrowseStarState(State):
                             Label(
                                 text="surface temperature:",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                             HBox(
                                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
@@ -185,7 +185,7 @@ class BrowseStarState(State):
                             Label(
                                 text="radius:",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                             HBox(
                                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
@@ -207,7 +207,7 @@ class BrowseStarState(State):
                             Label(
                                 text="mass:",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                             HBox(
                                 Spacer(flex=0.0, min_w=UI_MARGIN_M),
@@ -221,7 +221,7 @@ class BrowseStarState(State):
                             Label(
                                 text="luminosity:",
                                 font=self.fonts.text,
-                                k_fg=ThemeKey.FG_ELEMS
+                                k_fg=ThemeKey.FG
                             ),
                             HBox(
                                 Spacer(flex=0.0, min_w=UI_MARGIN_M),

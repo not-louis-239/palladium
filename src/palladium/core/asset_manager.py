@@ -32,6 +32,8 @@ class Images:
         self.info = IMAGES_DIR / "info.png"
         self.eye = IMAGES_DIR / "eye.png"
         self.eye_crossed_out = IMAGES_DIR / "eye_crossed_out.png"
+        self.refresh = IMAGES_DIR / "refresh.png"
+        self.planet = IMAGES_DIR / "planet.png"
 
         # System browser icons
         self.recentre = IMAGES_DIR / "recentre.png"

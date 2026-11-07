@@ -124,7 +124,7 @@ class BrowseTerrainState(State):
                             ),
                             planet_name_label := Label(
                                 k_bg=ThemeKey.BG_DARK,
-                                k_fg=ThemeKey.FG_ELEMS,
+                                k_fg=ThemeKey.FG,
                                 font=self.fonts.text,
                                 inset=UI_MARGIN_S
                             ),
@@ -226,27 +226,27 @@ class BrowseTerrainState(State):
         self.hover_panel = Panel(
             k_bg=ThemeKey.BG_DARK,
             child=VBox(
-                hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
+                hover_location := Label(font=self.fonts.text, k_fg=ThemeKey.FG),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="surface temperature:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
+                Label(text="surface temperature:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_surface_temp := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="altitude:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
+                Label(text="altitude:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_altitude := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="humidity:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
+                Label(text="humidity:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_humidity := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
                 ),
                 Spacer(flex=0, min_h=UI_MARGIN_XS),
-                Label(text="biome:", font=self.fonts.text, k_fg=ThemeKey.FG_ELEMS),
+                Label(text="biome:", font=self.fonts.text, k_fg=ThemeKey.FG),
                 HBox(
                     Spacer(flex=0, min_w=UI_MARGIN_S),
                     hover_biome := Label(font=self.fonts.text, k_fg=ThemeKey.FG_ACCENT),
@@ -309,7 +309,7 @@ class BrowseTerrainState(State):
                 title_text="altitude (m)",
                 gradient_anchors=COLOUR_SCHEMES[ViewMode.ALTITUDE][0],
                 k_bg=ThemeKey.BG_DARK,
-                k_fg=ThemeKey.FG_ELEMS,
+                k_fg=ThemeKey.FG,
                 value_transform="equidistant"
             ),
             ViewMode.TEMPERATURE: GradientScale(
@@ -327,7 +327,7 @@ class BrowseTerrainState(State):
                 title_text="temperature (°C)",
                 gradient_anchors=COLOUR_SCHEMES[ViewMode.TEMPERATURE][0],
                 k_bg=ThemeKey.BG_DARK,
-                k_fg=ThemeKey.FG_ELEMS,
+                k_fg=ThemeKey.FG,
                 value_transform="equidistant",
             ),
             ViewMode.HUMIDITY: GradientScale(
@@ -345,7 +345,7 @@ class BrowseTerrainState(State):
                 title_text="humidity (%)",
                 gradient_anchors=COLOUR_SCHEMES[ViewMode.HUMIDITY][0],
                 k_bg=ThemeKey.BG_DARK,
-                k_fg=ThemeKey.FG_ELEMS,
+                k_fg=ThemeKey.FG,
             ),
             ViewMode.SHADING: GradientScale(
                 inset=UI_MARGIN_S,
@@ -365,7 +365,7 @@ class BrowseTerrainState(State):
                 title_text="lighting",
                 gradient_anchors=COLOUR_SCHEMES[ViewMode.SHADING][0],
                 k_bg=ThemeKey.BG_DARK,
-                k_fg=ThemeKey.FG_ELEMS,
+                k_fg=ThemeKey.FG,
             ),
         }
 

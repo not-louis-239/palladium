@@ -51,10 +51,10 @@ class UIKwargs(TypedDict, total=False):
     img_inset: int
 
 DEFAULT_ATTRS: UIKwargs = {
-    "k_bg_colour": ThemeKey.BG_ELEMS,
+    "k_bg_colour": ThemeKey.BG,
     "k_bg_hovered": ThemeKey.BG_HOVERED,
-    "k_bg_pressed": ThemeKey.BG_ACTIVE,
-    "k_fg_colour": ThemeKey.FG_ELEMS,
+    "k_bg_pressed": ThemeKey.BG_PRESSED,
+    "k_fg_colour": ThemeKey.FG,
     "k_fg_hovered": ThemeKey.FG_HOVERED,
     "k_fg_pressed": ThemeKey.FG_PRESSED,
     "k_border_colour": ThemeKey.BORDER,
@@ -68,7 +68,7 @@ DEFAULT_ATTRS_DARK_BG: UIKwargs = {
     "k_bg_colour": ThemeKey.BG_DARK,
     "k_bg_hovered": ThemeKey.BG_DARK_HOVERED,
     "k_bg_pressed": ThemeKey.BG_DARK_PRESSED,
-    "k_fg_colour": ThemeKey.FG_ELEMS,
+    "k_fg_colour": ThemeKey.FG,
     "k_fg_hovered": ThemeKey.FG_HOVERED,
     "k_fg_pressed": ThemeKey.FG_PRESSED,
     "k_border_colour": ThemeKey.BORDER,
@@ -96,9 +96,9 @@ class InputBoxKwargs(TypedDict, total=False):
     inset: int
 
 DEFAULT_INPUT_BOX_ATTRS: InputBoxKwargs = {
-    "k_bg_colour": ThemeKey.BG_ELEMS,
+    "k_bg_colour": ThemeKey.BG,
     "k_bg_hovered": ThemeKey.BG_HOVERED,
-    "k_bg_active": ThemeKey.BG_ACTIVE,
+    "k_bg_active": ThemeKey.BG_PRESSED,
     "k_fg_colour": ThemeKey.FG_INPUT_TEXT,
     "k_fg_hovered": ThemeKey.FG_INPUT_TEXT_HOVERED,
     "k_fg_pressed": ThemeKey.FG_INPUT_TEXT_PRESSED,
@@ -121,7 +121,7 @@ class HoverLabelKwargs(TypedDict):
 
 HOVER_LABEL_ATTRS: HoverLabelKwargs = {
     "k_bg": ThemeKey.BG_DARK,
-    "k_fg": ThemeKey.FG_ELEMS,
+    "k_fg": ThemeKey.FG,
     "k_border": ThemeKey.BORDER,
     "inset": UI_MARGIN_S
 }
